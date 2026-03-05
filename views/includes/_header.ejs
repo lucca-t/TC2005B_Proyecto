@@ -10,9 +10,9 @@
 </head>
 
 <body>
-  <nav class="navbar is-transparent" role="navigation" aria-label="main navigation">
+  <nav class="navbar is-light" role="navigation" aria-label="main navigation">
     <div class="navbar-brand">
-      <a class="navbar-item" href="/prototype">
+      <a class="navbar-item" style="margin-left: 50px; height: 100px; width: 200px;" href="/prototype">
         <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Change.org_logo.svg/500px-Change.org_logo.svg.png" alt="Logo Daily Standup+" style="max-height: 70px;">
       </a>
 
@@ -24,25 +24,25 @@
       </a>
     </div>
 
-    <div id="navbarBasicExample" class="navbar-menu">
+    <!-- <div id="navbarBasicExample" class="navbar-menu">
       <div class="navbar-start">
-        <a class="navbar-item" href="/personajes">
-          Personajes
+        <a class="navbar-item" href="/prototype">
+          Home
         </a>
-      </div>
+      </div> -->
 
       <div class="navbar-end">
         <div class="navbar-item">
           <div class="buttons">
-            <a class="button is-primary" href="/users/signup">
+            <a class="button is-warning" href="/users/signup">
               <strong>Sign up</strong>
             </a>
             <% if (username=='' ) { %>
-              <a class="button is-light" href="/users/login">
+              <a class="button is-warning" href="/users/login">
                 Log in
               </a>
               <% } else { %>
-                <a class="button is-light" href="/users/logout">
+                <a class="button is-warning" href="/users/logout">
                   Log out
                 </a>
                 <% } %>
@@ -51,13 +51,3 @@
       </div>
     </div>
   </nav>
-
-
-  <section class="section">
-    <div class="container" id="upperTitle">
-      <h1 class="title">
-        <a href="/prototype">Daily Standup+</a>
-      </h1>
-    </div>
-  </section>
-  <div class="content px-6 mx-6">
