@@ -19,6 +19,12 @@ app.use(session({
     saveUninitialized: false,
 }));
 
+//This is so that the ejs can acces which page is in, mainly to change the navbar
+app.use((req, res, next) => {
+    res.locals.urlActual = req.path; 
+    next();
+});
+
 //Rutes
 
 const ruta_prototype = require('./routes/prototype.routes');
