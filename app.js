@@ -22,7 +22,9 @@ app.use(session({
 //Rutes
 
 const ruta_prototype = require('./routes/prototype.routes');
+const ruta_users = require('./routes/users.routes');
 app.use('/prototype', ruta_prototype);
+app.use('/users', ruta_users);
 
 app.use((request, response, next) => {
     response.status(404).send('404 Not Found');
