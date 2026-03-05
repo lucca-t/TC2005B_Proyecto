@@ -23,6 +23,8 @@ app.use(session({
 
 const ruta_prototype = require('./routes/prototype.routes');
 app.use('/prototype', ruta_prototype);
+const ruta_reports = require('./routes/reports.routes');
+app.use('/reports', ruta_reports);
 
 app.use((request, response, next) => {
     response.status(404).send('404 Not Found');
