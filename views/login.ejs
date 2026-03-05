@@ -1,0 +1,39 @@
+<%- include('includes/_header') %>
+
+<section class="section">
+    <div class="container">
+        <div class="columns is-centered">
+            <div class="column is-4">
+                <div class="box">
+                    <h1 class="title has-text-centered">Iniciar Sesión</h1>
+                    
+                    <form action="/users/login" method="POST">
+                        <div class="field">
+                            <label class="label">Usuario</label>
+                            <div class="control">
+                                <input class="input" type="text" name="username" placeholder="nombre" required>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="label">Contraseña</label>
+                            <div class="control">
+                                <input class="input" type="password" name="password" placeholder="*******" required>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <div class="control">
+                                <button type="submit" class="button is-warning is-fullwidth">
+                                    <strong>Ingresar</strong>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<%- include('includes/_footer') %>
