@@ -1,0 +1,50 @@
+<section class="section">
+    <div class="container" style="max-width: 600px;">
+        <h1 class="title has-text-centered">Generate a Report</h1>
+
+        <div class="box">
+            <form action="/reports/results" method="GET">
+
+                <div class="field">
+                    <label class="label">Report Type</label>
+                    <div class="control">
+                        <div class="select is-fullwidth">
+                            <select name="type" required>
+                                <option value="" disabled selected>Select User, Team, or Project</option>
+                                <option value="User">User</option>
+                                <option value="Team">Team</option>
+                                <option value="Project">Project</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <i>We want to add a selector here based on which type of report the user selects, so 
+                that the dropdown shows the options to choose</i>
+
+                <div class="field">
+                    <label class="label">Start Date</label>
+                    <div class="control">
+                        <input class="input" type="date" name="startDate" required>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">End Date</label>
+                    <div class="control">
+                        <input class="input" type="date" name="endDate" required>
+                    </div>
+                </div>
+
+                <div class="field mt-5">
+                    <div class="control">
+                        <button type="submit" class="button is-warning is-fullwidth">
+                            <strong>Generate Report</strong>
+                        </button>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</section>
