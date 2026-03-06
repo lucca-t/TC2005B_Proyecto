@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html data-theme="light">
 
 <head>
   <meta charset="utf-8">
@@ -17,19 +17,32 @@
       </a>
 
       <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
-        <span aria-hidden="true"></span>
+        <span aria-hidden="false"></span>
         <span aria-hidden="true"></span>
         <span aria-hidden="true"></span>
         <span aria-hidden="true"></span>
       </a>
     </div>
 
-    <!-- <div id="navbarBasicExample" class="navbar-menu">
-      <div class="navbar-start">
-        <a class="navbar-item" href="/prototype">
-          Home
-        </a>
-      </div> -->
+    <!-- This element will only appear if the user is not in reports-->
+    <% if (!urlActual.startsWith('/reports')) { %>
+      <a href="/reports" class="navbar-item">
+        Reports
+      </a>
+    <% } %>
+
+    <!-- This will only appear if the user is in reports -->
+    <% if (urlActual.startsWith('/reports')) { %>
+      <a href="/reports/user" class="navbar-item">
+        Users
+      </a>
+      <a href="/reports/team" class="navbar-item">
+        Teams
+      </a>
+      <a href="/reports/project" class="navbar-item">
+        Projects
+      </a>
+    <% } %>
 
       <div class="navbar-end">
         <div class="navbar-item">
