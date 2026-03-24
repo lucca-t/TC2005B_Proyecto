@@ -12,7 +12,7 @@
 <body>
   <nav class="navbar is-light" role="navigation" aria-label="main navigation">
     <div class="navbar-brand">
-      <a class="navbar-item" style="margin-left: 50px; height: 100px; width: 200px;" href="/prototype">
+      <a class="navbar-item" style="margin-left: 50px; height: 100px; width: 200px;" href="/homepage">
         <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Change.org_logo.svg/500px-Change.org_logo.svg.png" alt="Logo Daily Standup+" style="max-height: 70px;">
       </a>
 
@@ -23,13 +23,6 @@
         <span aria-hidden="true"></span>
       </a>
     </div>
-
-    <!-- This element will only appear if the user is not in reports-->
-    <% if (!urlActual.startsWith('/reports')) { %>
-      <a href="/reports" class="navbar-item">
-        Reports
-      </a>
-    <% } %>
 
     <!-- This will only appear if the user is in reports -->
     <% if (urlActual.startsWith('/reports')) { %>
@@ -47,9 +40,6 @@
       <div class="navbar-end">
         <div class="navbar-item">
           <div class="buttons">
-            <a class="button is-warning" href="/users/signup">
-              <strong>Sign up</strong>
-            </a>
             <% if (username=='' ) { %>
               <a class="button is-warning" href="/users/login">
                 Log in
