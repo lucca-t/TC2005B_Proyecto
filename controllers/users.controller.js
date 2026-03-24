@@ -25,8 +25,12 @@ exports.logout = (request, response, next) => {
 };
 
 exports.get_home = (request, response, next) => {
-    request.session.username = request.body.username;
+    const error = request.session.error || '';
+    request.session.error = '';
     response.render('home', {
-        
-    })
-}
+        csrfToken: request.csrfToken(),
+        error: error,
+        title: "Home - Daily Standup+",
+        username: request.session.username || '',
+    });
+};
