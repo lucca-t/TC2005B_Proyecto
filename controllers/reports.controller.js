@@ -1,4 +1,4 @@
-const Prototype = require('../models/reports.model');
+const Reports = require('../models/reports.model');
 
 exports.get_user_report = ((request, response, next) => {
     response.render('userReport', {
