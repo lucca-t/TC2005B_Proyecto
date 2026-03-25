@@ -1,10 +1,8 @@
-<!-- THIS SECTION IS ENTIRELY VIBE CODED, ONLY FOR VISUAL PURPOSES -->
 <section class="section">
     <div class="container" style="max-width: 700px;">
 
         <div class="box">
-            <form action="/teams/update/1" method="POST"> 
-                <!-- HERE SHOULD GO THE TEAM ID ON THE FORM SOMETHING -->
+            <form action="/teams/update/1" method="POST">
 
                 <div class="level mb-2">
                     <div class="level-left">
@@ -16,7 +14,6 @@
                     <label class="label">Team Name</label>
                     <div class="control">
                         <input class="input is-medium" type="text" name="teamName" value="Ositos" required>
-                        <!-- HERE SHOULD GO SOMETHING OF THE TEAM NAME -->
                     </div>
                 </div>
 
@@ -26,69 +23,87 @@
 
                 <div class="box" style="background-color: #fafafa; border: 1px solid #dbdbdb;">
 
-                    <% if (typeof team.members !=='undefined' && team.members.length> 0) { %>
-                        <% team.members.forEach(member=> { %>
+                    <div class="level is-mobile"
+                        style="border-bottom: 1px solid #eaeaea; padding-bottom: 10px; margin-bottom: 10px;">
+                        <div class="level-left">
+                            <div class="level-item">
+                                <p>
+                                    <strong>Joel Garcia</strong>
+                                    <span class="tag is-warning is-light ml-2">Lead</span>
+                                </p>
+                            </div>
+                        </div>
 
-                            <div class="level is-mobile"
-                                style="border-bottom: 1px solid #eaeaea; padding-bottom: 10px; margin-bottom: 10px;">
-                                <div class="level-left">
-                                    <div class="level-item">
-                                        <p>
-                                            <strong>
-                                                <%= member.name %>
-                                            </strong>
-                                            <% if (member.isLead) { %>
-                                                <span class="tag is-warning is-light ml-2">Lead</span>
-                                                <% } %>
-                                        </p>
+                        <div class="level-right">
+                            <div class="level-item">
+                                <div class="dropdown is-right is-hoverable">
+                                    <div class="dropdown-trigger">
+                                        <button type="button" class="button is-small is-ghost" aria-haspopup="true">
+                                            <span style="font-size: 1.2rem; font-weight: bold;">&#8942;</span>
+                                        </button>
                                     </div>
-                                </div>
-
-                                <div class="level-right">
-                                    <div class="level-item">
-                                        <div class="dropdown is-right is-hoverable">
-                                            <div class="dropdown-trigger">
-                                                <button type="button" class="button is-small is-ghost"
-                                                    aria-haspopup="true">
-                                                    <span style="font-size: 1.2rem; font-weight: bold;">&#8942;</span>
-                                                </button>
-                                            </div>
-                                            <div class="dropdown-menu" role="menu">
-                                                <div class="dropdown-content">
-
-                                                    <a href="/teams/<%= team.id %>/make-lead/<%= member.id %>"
-                                                        class="dropdown-item">
-                                                        Make lead member
-                                                    </a>
-                                                    <hr class="dropdown-divider">
-                                                    <a href="/teams/<%= team.id %>/remove/<%= member.id %>"
-                                                        class="dropdown-item has-text-danger">
-                                                        Remove member
-                                                    </a>
-
-                                                </div>
-                                            </div>
+                                    <div class="dropdown-menu" role="menu">
+                                        <div class="dropdown-content">
+                                            <a href="#dummy-make-lead" class="dropdown-item">
+                                                Make lead member
+                                            </a>
+                                            <hr class="dropdown-divider">
+                                            <a href="#dummy-remove" class="dropdown-item has-text-danger">
+                                                Remove member
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
 
-                            <% }) %>
-                                <% } else { %>
-                                    <p class="has-text-grey is-size-7 mb-3">No members in this team.</p>
-                                    <% } %>
+                    <div class="level is-mobile"
+                        style="border-bottom: 1px solid #eaeaea; padding-bottom: 10px; margin-bottom: 10px;">
+                        <div class="level-left">
+                            <div class="level-item">
+                                <p>
+                                    <strong>Alice Smith</strong>
+                                </p>
+                            </div>
+                        </div>
 
-                                        <div class="mt-4">
-                                            <button type="button" class="button is-small is-info is-light">
-                                                + Add more members
-                                            </button>
+                        <div class="level-right">
+                            <div class="level-item">
+                                <div class="dropdown is-right is-hoverable">
+                                    <div class="dropdown-trigger">
+                                        <button type="button" class="button is-small is-ghost" aria-haspopup="true">
+                                            <span style="font-size: 1.2rem; font-weight: bold;">&#8942;</span>
+                                        </button>
+                                    </div>
+                                    <div class="dropdown-menu" role="menu">
+                                        <div class="dropdown-content">
+                                            <a href="#dummy-make-lead" class="dropdown-item">
+                                                Make lead member
+                                            </a>
+                                            <hr class="dropdown-divider">
+                                            <a href="#dummy-remove" class="dropdown-item has-text-danger">
+                                                Remove member
+                                            </a>
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="button" class="button is-small is-info is-light">
+                            + Add more members
+                        </button>
+                    </div>
+
                 </div>
 
                 <div class="field mt-5">
                     <div class="control">
                         <button type="submit" class="button is-warning is-fullwidth is-medium">
-                            <strong>Confirm changes</strong>
+                            <strong>Save changes</strong>
                         </button>
                     </div>
                 </div>
