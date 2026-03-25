@@ -1,0 +1,58 @@
+<!-- THIS SECTION IS ENTIRELY VIBE CODED, ONLY FOR VISUAL PURPOSES -->
+<section class="section">
+    <div class="container">
+        <div class="level mb-4">
+            <div class="level-left">
+                <h1 class="title">Team Management</h1>
+            </div>
+            <div class="level-right">
+                <a href="/teams/new" class="button is-warning"><strong>+ New Team</strong></a>
+            </div>
+        </div>
+
+        <div class="box">
+            <table class="table is-fullwidth is-striped is-hoverable">
+                <thead>
+                    <tr>
+                        <th>Team Name</th>
+                        <th>Members</th>
+                        <th class="has-text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (typeof teams !=='undefined' && teams.length> 0) { %>
+                        <% teams.forEach(team=> { %>
+                            <tr>
+                                <td class="is-vcentered"><strong>
+                                        <%= team.name %>
+                                    </strong></td>
+                                <td class="is-vcentered">
+                                    <span class="tag is-info is-light">
+                                        <%= team.memberCount %> members
+                                    </span>
+                                </td>
+                                <td class="has-text-right is-vcentered">
+                                    <div class="buttons is-right">
+                                        <a href="/teams/edit/<%= team.id %>" class="button is-small is-light">Edit</a>
+
+                                        <form action="/teams/delete/<%= team.id %>" method="POST"
+                                            style="display:inline;">
+                                            <button type="submit"
+                                                class="button is-small is-danger is-outlined">Delete</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            <% }) %>
+                                <% } else { %>
+                                    <tr>
+                                        <td colspan="3" class="has-text-centered has-text-grey py-5">
+                                            No teams registered yet.
+                                        </td>
+                                    </tr>
+                                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
