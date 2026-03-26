@@ -15,7 +15,7 @@ exports.get_login = (request, response, next) => {
 exports.post_login = (request, response, next) => {
     request.session.username = request.body.username;
     request.session.password = request.body.password; 
-    response.redirect('/users/home');
+    response.redirect('/homepage');
 };
 
 exports.logout = (request, response, next) => {
