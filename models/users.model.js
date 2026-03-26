@@ -3,11 +3,10 @@ const bcrypt = require('bcrypt');
 
 module.exports = class User {
 
-    constructor(myUsername, myPassword, myFullName, myUserState, mySlackHandle, mySlackId) {
+    constructor(myUsername, myPassword, myFullName, mySlackHandle, mySlackId) {
     this.username = myUsername;
     this.password = myPassword;
     this.fullName = myFullName;
-    this.userState = myUserState;
     this.slackHandle = mySlackHandle;
     this.slackId = mySlackId;
 }
@@ -15,8 +14,8 @@ module.exports = class User {
     save() {
         return bcrypt.hash(this.password, 12).then((password_hash) => {
             return db.execute(
-            `INSERT INTO User(username, password, full_name, user_state, slack_handle, slack_id) VALUES (?, ?, ?, ?, ?, ?)`,
-            [this.username, password_hash, this.full_name, this.user_state, this.slack_handle, this.slack_id]
+            `INSERT INTO User(username, password, full_name, slack_handle, slack_id) VALUES (?, ?, ?, ?, ?)`,
+            [this.username, password_hash, this.fullName, this.slackHandle, this.slackId]
             );
         }).catch((error) => {
             console.log(error);
@@ -32,7 +31,7 @@ module.exports = class User {
 
     static getAll() {
         return db.execute(
-            `SELECT username, password, full_name, user_state, slack_handle, slack_id FROM User`
+            `SELECT username, password, full_name, slack_handle, slack_id FROM User`
         );
     }
 
