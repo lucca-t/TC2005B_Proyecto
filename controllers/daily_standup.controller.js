@@ -1,4 +1,4 @@
-//const Standup = require('../models/standup.model');
+const Standup = require('../models/standup.model');
 
 exports.get_standup_form = (request, response, next) => {
     const error = request.session.error || '';
@@ -10,7 +10,7 @@ exports.get_standup_form = (request, response, next) => {
         csrfToken: request.csrfToken(),
         error: error,
         success: success,
-        title: 'Registrar Actividad - Daily Standup+',
+        title: 'Register activity - Daily Standup+',
         username: request.session.username || '',
     });
 };
@@ -20,43 +20,43 @@ exports.post_standup = (request, response, next) => {
         return response.redirect('/users/login');
     }
 
-    // const { did_today, do_tomorrow, blockers } = request.body;
+    const { did_today, do_tomorrow, blockers } = request.body;
 
-    // if (!did_today || !did_today.trim() || !do_tomorrow || !do_tomorrow.trim()) {
-    //     request.session.error = 'Por favor completa los campos obligatorios: ¿Qué hiciste hoy? y ¿Qué harás mañana?';
-    //     return response.redirect('/daily_standup');
-    // }
+    if (!did_today || !did_today.trim() || !do_tomorrow || !do_tomorrow.trim()) {
+        request.session.error = 'Please fill in the required fields: What did you do today? and What will you do tomorrow?';
+        return response.redirect('/daily_standup');
+    }
 
-    // const username = request.session.username;
-    // const today = new Date().toISOString().split('T')[0];
+    const username = request.session.username;
+    const today = new Date().toISOString().split('T')[0];
 
-    // Standup.getUserId(username)
-    //     .then(([rows]) => {
-    //         if (rows.length === 0) {
-    //             request.session.error = 'Usuario no encontrado.';
-    //             return response.redirect('/daily_standup');
-    //         }
+    Standup.getUserId(username)
+        .then(([rows]) => {
+            if (rows.length === 0) {
+                request.session.error = 'User not found';
+                return response.redirect('/daily_standup');
+            }
 
-    //         const user_id = rows[0].user_id;
+            const user_id = rows[0].user_id;
 
-    //         return Standup.checkDuplicate(user_id, today)
-    //             .then(([existing]) => {
-    //                 if (existing.length > 0) {
-    //                     request.session.error = 'Ya existe un reporte registrado para el día de hoy.';
-    //                     return response.redirect('/daily_standup');
-    //                 }
+            return Standup.checkDuplicate(user_id, today)
+                .then(([existing]) => {
+                    if (existing.length > 0) {
+                        request.session.error = 'A standup report already exists for today';
+                        return response.redirect('/daily_standup');
+                    }
 
-    //                 const standup = new Standup(today, did_today.trim(), do_tomorrow.trim(), (blockers || '').trim(), user_id);
-    //                 return standup.save()
-    //                     .then(() => {
-    //                         request.session.success = 'Proceso completado. Tu actividad del día ha sido registrada exitosamente.';
-    //                         return response.redirect('/daily_standup');
-    //                     });
-    //             });
-    //     })
-    //     .catch((err) => {
-    //         console.error('Error al guardar standup:', err);
-    //         request.session.error = 'Ocurrió un error al guardar tu actividad. Intenta de nuevo.';
-    //         return response.redirect('/daily_standup');
-    //     });
+                    const standup = new Standup(today, did_today.trim(), do_tomorrow.trim(), (blockers || '').trim(), user_id);
+                    return standup.save()
+                        .then(() => {
+                            request.session.success = 'Process completed. Your daily activity has been successfully registered';
+                            return response.redirect('/daily_standup');
+                        });
+                });
+        })
+        .catch((err) => {
+            console.error('Error saving standup:', err);
+            request.session.error = 'An error occurred while saving your activity. Please try again';
+            return response.redirect('/daily_standup');
+        });
 };
