@@ -70,12 +70,11 @@ CREATE TABLE
     ) ENGINE = InnoDB DEFAULT CHARSET = utf8 COLLATE = utf8_spanish2_ci;
 
 CREATE TABLE
-    `Team` (
-        `team_id` int (11) NOT NULL AUTO_INCREMENT,
-        `team_name` varchar(100) COLLATE utf8_spanish2_ci NOT NULL,
-        `team_start_date` date DEFAULT NULL,
-        `deleted_at` DATETIME DEFAULT NULL,
-        PRIMARY KEY (`team_id`)
+    `team` (
+        `team_id` int (11) NOT NULL,
+        `team_name` varchar(100) NOT NULL,
+        `team_start_date` date DEFAULT current_timestamp(),
+        `deleted_at` datetime DEFAULT NULL
     ) ENGINE = InnoDB DEFAULT CHARSET = utf8 COLLATE = utf8_spanish2_ci;
 
 -- 3. Creación de Tablas Relacionales (con Llaves Foráneas)
