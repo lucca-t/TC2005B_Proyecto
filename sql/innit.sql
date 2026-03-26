@@ -53,7 +53,7 @@ CREATE TABLE
 CREATE TABLE
     `User` (
         `user_id` int (11) NOT NULL AUTO_INCREMENT,
-        `username` varchar(50) COLLATE utf8_spanish2_ci NOT NULL,
+        `email` varchar(50) COLLATE utf8_spanish2_ci NOT NULL,
         `password` varchar(255) COLLATE utf8_spanish2_ci NOT NULL,
         `full_name` varchar(150) COLLATE utf8_spanish2_ci DEFAULT NULL,
         `slack_handle` varchar(100) COLLATE utf8_spanish2_ci DEFAULT NULL,
@@ -61,7 +61,7 @@ CREATE TABLE
         `created_at` DATETIME NOT NULL DEFAULT current_timestamp(),
         `deleted_at` DATETIME DEFAULT NULL,
         PRIMARY KEY (`user_id`),
-        UNIQUE KEY `username` (`username`),
+        UNIQUE KEY `email` (`email`),
         UNIQUE KEY `slack_id` (`slack_id`)
     ) ENGINE = InnoDB DEFAULT CHARSET = utf8 COLLATE = utf8_spanish2_ci;
 

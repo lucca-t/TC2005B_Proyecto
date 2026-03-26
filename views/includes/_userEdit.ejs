@@ -1,0 +1,73 @@
+<section class="section">
+    <div class="container" style="max-width: 700px;">
+
+        <div class="box">
+            <form action="/users/edit/<%= user.email %>" method="POST">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+                <div class="level mb-2">
+                    <div class="level-left">
+                        <h2 class="title is-4">Edit User</h2>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Email</label>
+                    <div class="control">
+                        <input class="input is-medium" type="email" name="email" value="<%= user.email %>" autocomplete="email" pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$" required>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Full Name</label>
+                    <div class="control">
+                        <input class="input is-medium" type="text" name="full_name" value="<%= user.full_name || '' %>">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Password</label>
+                    <div class="control">
+                        <input class="input is-medium" type="password" name="password" placeholder="Leave blank to keep current password">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Slack Handle</label>
+                    <div class="control">
+                        <input class="input is-medium" type="text" name="slack_handle" value="<%= user.slack_handle || '' %>">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Slack ID</label>
+                    <div class="control">
+                        <input class="input is-medium" type="text" name="slack_id" value="<%= user.slack_id || '' %>">
+                    </div>
+                </div>
+
+                <div class="field mt-5">
+                    <div class="control">
+                        <button type="submit" class="button is-warning is-fullwidth is-medium">
+                            <strong>Save changes</strong>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="field mt-3">
+                    <div class="control">
+                        <a href="/users/list" class="button is-light is-fullwidth">Cancel</a>
+                    </div>
+                </div>
+
+                <% if (typeof error !== 'undefined' && error) { %>
+                    <div class="notification is-danger is-light mt-4">
+                        <%= error %>
+                    </div>
+                <% } %>
+
+            </form>
+        </div>
+
+    </div>
+</section>
