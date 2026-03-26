@@ -60,3 +60,31 @@ exports.post_standup = (request, response, next) => {
             return response.redirect('/daily_standup');
         });
 };
+
+exports.get_standup_history = (request, response, next) => {
+    if (!request.session.username) {
+        return response.redirect('/users/login');
+    }
+ 
+    const username = request.session.username;
+ 
+    Standup.getHistory(username)
+        .then(([rows]) => {
+            response.render('standup_history', {
+                csrfToken: request.csrfToken(),
+                title: 'Activity History - Daily Standup+',
+                username: username,
+                standups: rows,
+            });
+        })
+        .catch((err) => {
+            console.error('Error fetching standup history:', err);
+            response.render('standup_history', {
+                csrfToken: request.csrfToken(),
+                title: 'Activity History - Daily Standup+',
+                username: username,
+                standups: [],
+                error: 'Server connection error. Please try again later.',
+            });
+        });
+};

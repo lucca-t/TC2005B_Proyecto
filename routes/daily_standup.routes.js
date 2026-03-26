@@ -6,4 +6,6 @@ router.get('/', standupController.get_standup_form);
 
 router.post('/', standupController.post_standup);
 
+router.get('/history', standupController.get_standup_history);
+
 module.exports = router;

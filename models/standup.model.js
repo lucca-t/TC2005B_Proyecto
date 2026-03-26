@@ -30,4 +30,17 @@ module.exports = class Standup {
             [user_id, date]
         );
     }
+
+    static getHistory(username) {
+        return db.execute(
+            `SELECT s.standup_id, s.date, s.did_today, s.do_tomorrow, s.blockers
+             FROM Standup s
+             INNER JOIN User u ON s.user_id = u.user_id
+             WHERE u.username = ?
+             ORDER BY s.date DESC`,
+            [username]
+        );
+    }
+
 }
+
