@@ -93,12 +93,16 @@ CREATE TABLE
 CREATE TABLE
     `Project` (
         `project_id` int (11) NOT NULL AUTO_INCREMENT,
+        `name` varchar(150) COLLATE utf8_spanish2_ci NOT NULL,
         `description` text COLLATE utf8_spanish2_ci DEFAULT NULL,
         `start_date` date DEFAULT NULL,
         `end_date` date DEFAULT NULL,
+        `status` varchar(20) COLLATE utf8_spanish2_ci DEFAULT 'active',
+        `created_at` DATETIME NOT NULL DEFAULT current_timestamp(),
         `project_state` varchar(20) COLLATE utf8_spanish2_ci DEFAULT NULL,
         `team_id` int (11) DEFAULT NULL,
-        PRIMARY KEY (`project_id`)
+        PRIMARY KEY (`project_id`),
+        UNIQUE KEY `uq_project_name_team` (`name`, `team_id`)
     ) ENGINE = InnoDB DEFAULT CHARSET = utf8 COLLATE = utf8_spanish2_ci;
 
 CREATE TABLE
