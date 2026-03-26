@@ -5,7 +5,7 @@ exports.get_add = (request, response, next) => {
 		.then(([rows, fieldData]) => {
 			response.render('projectsAdd', {
 				csrfToken: request.csrfToken(),
-				username: request.session.username || '',
+				email: request.session.email || '',
 				teams: rows,
 				formData: {
 					name: '',
@@ -41,7 +41,7 @@ exports.post_add = async (request, response, next) => {
 		const [teams] = await Project.getTeams();
 		response.status(payload.statusCode || 400).render('projectsAdd', {
 			csrfToken: request.csrfToken(),
-			username: request.session.username || '',
+			email: request.session.email || '',
 			teams,
 			formData,
 			errors: payload.errors || '',
@@ -75,7 +75,7 @@ exports.post_add = async (request, response, next) => {
 
 		return response.render('projectShow', {
 			csrfToken: request.csrfToken(),
-			username: request.session.username || '',
+			email: request.session.email || '',
 			project: insertedProject,
 			success: 'Project created successfully.',
 		});

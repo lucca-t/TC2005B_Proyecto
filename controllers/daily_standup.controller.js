@@ -11,12 +11,12 @@ exports.get_standup_form = (request, response, next) => {
         error: error,
         success: success,
         title: 'Register activity - Daily Standup+',
-        username: request.session.username || '',
+        email: request.session.email || '',
     });
 };
 
 exports.post_standup = (request, response, next) => {
-    if (!request.session.username) {
+    if (!request.session.email) {
         return response.redirect('/users/login');
     }
 
@@ -27,10 +27,10 @@ exports.post_standup = (request, response, next) => {
         return response.redirect('/daily_standup');
     }
 
-    const username = request.session.username;
+    const email = request.session.email;
     const today = new Date().toISOString().split('T')[0];
 
-    Standup.getUserId(username)
+    Standup.getUserId(email)
         .then(([rows]) => {
             if (rows.length === 0) {
                 request.session.error = 'User not found';
@@ -62,18 +62,18 @@ exports.post_standup = (request, response, next) => {
 };
 
 exports.get_standup_history = (request, response, next) => {
-    if (!request.session.username) {
+    if (!request.session.email) {
         return response.redirect('/users/login');
     }
  
-    const username = request.session.username;
+    const email = request.session.email;
  
-    Standup.getHistory(username)
+    Standup.getHistory(email)
         .then(([rows]) => {
             response.render('standup_history', {
                 csrfToken: request.csrfToken(),
                 title: 'Activity History - Daily Standup+',
-                username: username,
+                email: email,
                 standups: rows,
             });
         })
@@ -82,7 +82,7 @@ exports.get_standup_history = (request, response, next) => {
             response.render('standup_history', {
                 csrfToken: request.csrfToken(),
                 title: 'Activity History - Daily Standup+',
-                username: username,
+                email: email,
                 standups: [],
                 error: 'Server connection error. Please try again later.',
             });

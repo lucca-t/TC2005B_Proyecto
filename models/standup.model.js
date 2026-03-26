@@ -17,10 +17,10 @@ module.exports = class Standup {
         );
     }
 
-    static getUserId(username) {
+    static getUserId(email) {
         return db.execute(
-            'SELECT user_id FROM User WHERE username = ?',
-            [username]
+            'SELECT user_id FROM User WHERE email = ?',
+            [email]
         );
     }
 
@@ -31,14 +31,14 @@ module.exports = class Standup {
         );
     }
 
-    static getHistory(username) {
+    static getHistory(email) {
         return db.execute(
             `SELECT s.standup_id, s.date, s.did_today, s.do_tomorrow, s.blockers
              FROM Standup s
              INNER JOIN User u ON s.user_id = u.user_id
-             WHERE u.username = ?
+             WHERE u.email = ?
              ORDER BY s.date DESC`,
-            [username]
+            [email]
         );
     }
 
