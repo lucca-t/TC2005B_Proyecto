@@ -15,29 +15,48 @@
       <a class="navbar-item" style="margin-left: 50px; height: 100px; width: 200px;" href="/homepage">
         <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Change.org_logo.svg/500px-Change.org_logo.svg.png" alt="Logo Daily Standup+" style="max-height: 70px;">
       </a>
-
-      <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
-        <span aria-hidden="false"></span>
-        <span aria-hidden="true"></span>
-        <span aria-hidden="true"></span>
-        <span aria-hidden="true"></span>
-      </a>
+      
     </div>
 
-    
-
-    <!-- This will only appear if the user is in reports -->
-    <% if (urlActual.startsWith('/reports')) { %>
-      <a href="/reports/user" class="navbar-item">
+    <div class="navbar-item has-dropdown is-hoverable">
+      <a href="/reports/user" class="navbar-link">
         Users
       </a>
-      <a href="/reports/team" class="navbar-item">
+      <div class="navbar-dropdown">
+        <a href="/reports/user" class="navbar-item">Objeto de users</a>
+        <a href="/reports/user" class="navbar-item">Objeto2 de users</a>
+      </div>
+    </div>
+
+    <div class="navbar-item has-dropdown is-hoverable">
+      <a href="/teams/list" class="navbar-link">
         Teams
       </a>
-      <a href="/reports/project" class="navbar-item">
+      <div class="navbar-dropdown">
+        <a href="/teams" class="navbar-item">Objeto de teams</a>
+        <a href="/teams" class="navbar-item">Objeto2 de teams</a>
+      </div>
+    </div>
+
+    <div class="navbar-item has-dropdown is-hoverable">
+      <a href="/reports/project" class="navbar-link">
         Projects
       </a>
-    <% } %>
+      <div class="navbar-dropdown">
+        <a href="/reports/project" class="navbar-item">Objeto de projects</a>
+        <a href="/reports/project" class="navbar-item">Objeto2 de projects</a>
+      </div>
+    </div>
+
+    <div class="navbar-item has-dropdown is-hoverable">
+      <a href="/reports/project" class="navbar-link">
+        Highlights
+      </a>
+      <div class="navbar-dropdown">
+        <a href="/reports/project" class="navbar-item">Objeto de highlights</a>
+        <a href="/reports/project" class="navbar-item">Objeto2 de highlights</a>
+      </div>
+    </div>
 
       <div class="navbar-end">
         <div class="navbar-item">
