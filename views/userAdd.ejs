@@ -1,0 +1,90 @@
+<%- include('includes/_header') %>
+
+<section class="section">
+    <div class="container">
+        <div class="level mb-4">
+            <div class="level-left">
+                <h1 class="title">User Management</h1>
+            </div>
+            <div class="level-right">
+                <a href="/users/list" class="button is-light"><strong>← Back</strong></a>
+            </div>
+        </div>
+
+```
+    <div class="columns is-centered">
+        <div class="column is-6">
+            <div class="box">
+                <h2 class="subtitle has-text-centered mb-5">Add New User</h2>
+
+                <form action="/users/add" method="POST">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+                    <div class="field">
+                        <label class="label">Username</label>
+                        <div class="control">
+                            <input class="input" type="text" name="username" placeholder="Enter username" required>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label class="label">Full Name</label>
+                        <div class="control">
+                            <input class="input" type="text" name="full_name" placeholder="Enter full name" required>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label class="label">Password</label>
+                        <div class="control">
+                            <input class="input" type="text" name="password" placeholder="Enter password" required>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label class="label">User State</label>
+                        <div class="control">
+                            <input class="input" type="text" name="user_state" placeholder="Enter user state" required>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label class="label">Slack Handle</label>
+                        <div class="control">
+                            <input class="input" type="text" name="slack_handle" placeholder="Enter slack handle" required>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label class="label">Slack ID</label>
+                        <div class="control">
+                            <input class="input" type="text" name="slack_id" placeholder="Enter slack id" required>
+                        </div>
+                    </div>
+
+                    <div class="field mt-5">
+                        <div class="control">
+                            <button type="submit" class="button is-primary is-fullwidth">
+                                <strong>Create User</strong>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <% if (typeof error !== 'undefined' && error) { %>
+                    <div class="notification is-danger is-light mt-4">
+                        <%= error %>
+                    </div>
+                <% } %>
+
+            </div>
+        </div>
+    </div>
+</div>
+```
+
+</section>
+
+
+<%- include('includes/_footer') %>
+<!-- THIS IS NOT DONE -->
