@@ -17,7 +17,6 @@
                     <tr>
                         <th>Username</th>
                         <th>Full Name</th>
-                        <th>User State</th>
                         <th>Slack Handle</th>
                         <th>Slack ID</th>
                         <th class="has-text-right">Actions</th>
@@ -35,12 +34,6 @@
 
                                 <td class="is-vcentered">
                                     <%= user.full_name || '—' %>
-                                </td>
-
-                                <td class="is-vcentered">
-                                    <span class="tag is-info is-light">
-                                        <%= user.user_state || 'N/A' %>
-                                    </span>
                                 </td>
 
                                 <td class="is-vcentered">

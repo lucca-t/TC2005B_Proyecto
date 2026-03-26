@@ -42,7 +42,6 @@ exports.post_add = (request, response, next) => {
         username,
         password,
         full_name,
-        user_state,
         slack_handle,
         slack_id
     } = request.body;
@@ -51,7 +50,6 @@ exports.post_add = (request, response, next) => {
         username,
         password,
         full_name,
-        user_state,
         slack_handle,
         slack_id
     );
