@@ -3,10 +3,10 @@
     <div class="container">
         <div class="level mb-4">
             <div class="level-left">
-                <h1 class="title">Team Management</h1>
+                <h1 class="title">User Management</h1>
             </div>
             <div class="level-right">
-                <a href="/teams/add" class="button is-warning"><strong>+ New Team</strong></a>
+                <a href="/users/add" class="button is-warning"><strong>+ New User</strong></a>
             </div>
         </div>
 
@@ -14,9 +14,8 @@
             <table class="table is-fullwidth is-striped is-hoverable">
                 <thead>
                     <tr>
-                        <th>Team Name</th>
                         <th>Members</th>
-                        <th class="has-text-right">Actions</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -33,9 +32,9 @@
                                 </td>
                                 <td class="has-text-right is-vcentered">
                                     <div class="buttons is-right">
-                                        <a href="/teams/edit/<%= team.id %>" class="button is-small is-light">Edit</a>
+                                        <a href="/users/edit/<%= team.id %>" class="button is-small is-light">Edit</a>
 
-                                        <form action="/teams/delete/<%= team.id %>" method="POST"
+                                        <form action="/users/delete/<%= team.id %>" method="POST"
                                             style="display:inline;">
                                             <button type="submit"
                                                 class="button is-small is-danger is-outlined">Delete</button>
@@ -47,7 +46,7 @@
                                 <% } else { %>
                                     <tr>
                                         <td colspan="3" class="has-text-centered has-text-grey py-5">
-                                            No teams registered yet.
+                                            No users registered yet.
                                         </td>
                                     </tr>
                                     <% } %>

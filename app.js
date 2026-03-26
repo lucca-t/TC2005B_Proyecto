@@ -35,6 +35,7 @@ const route_homepage = require('./routes/homepage.routes');
 const route_login = require('./routes/login.routes');
 const route_reports = require('./routes/reports.routes');
 const route_teams = require('./routes/teams.routes');
+const route_users = require('./routes/users.routes');
 const route_standup = require('./routes/daily_standup.routes');
 
 
@@ -42,6 +43,7 @@ app.use('/homepage', route_homepage);
 app.use('/login', route_login);
 app.use('/reports', route_reports);
 app.use('/teams', route_teams);
+app.use('/users', route_users);
 app.use('/daily_standup', route_standup);
 
 app.use((req, res, next) => {
