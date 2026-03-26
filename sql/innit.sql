@@ -60,9 +60,9 @@ CREATE TABLE
         `username` varchar(50) COLLATE utf8_spanish2_ci NOT NULL,
         `password` varchar(255) COLLATE utf8_spanish2_ci NOT NULL,
         `full_name` varchar(150) COLLATE utf8_spanish2_ci DEFAULT NULL,
-        `user_state` varchar(20) COLLATE utf8_spanish2_ci DEFAULT NULL,
         `slack_handle` varchar(100) COLLATE utf8_spanish2_ci DEFAULT NULL,
         `slack_id` varchar(50) COLLATE utf8_spanish2_ci DEFAULT NULL,
+        `created_at` DATETIME NOT NULL DEFAULT current_timestamp(),
         `deleted_at` DATETIME DEFAULT NULL,
         PRIMARY KEY (`user_id`),
         UNIQUE KEY `username` (`username`),
@@ -75,6 +75,7 @@ CREATE TABLE
         `team_name` varchar(100) COLLATE utf8_spanish2_ci NOT NULL,
         `team_start_date` date DEFAULT NULL,
         `deleted_at` DATETIME DEFAULT NULL,
+        `created_at` DATETIME NOT NULL DEFAULT current_timestamp(),
         PRIMARY KEY (`team_id`)
     ) ENGINE = InnoDB DEFAULT CHARSET = utf8 COLLATE = utf8_spanish2_ci;
 
