@@ -66,7 +66,7 @@ CREATE TABLE
     ) ENGINE = InnoDB DEFAULT CHARSET = utf8 COLLATE = utf8_spanish2_ci;
 
 CREATE TABLE
-    `team` (
+    `Team` (
         `team_id` int (11) NOT NULL AUTO_INCREMENT,
         `team_name` varchar(100) NOT NULL,
         `team_start_date` date DEFAULT current_timestamp(),
