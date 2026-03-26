@@ -3,31 +3,28 @@ const bcrypt = require('bcrypt');
 
 module.exports = class Team {
 
-    constructor(myTeamId, myTeamName, myTeamStartDate, myTeamDeletedAt, myTeamCreatedAt) {
-        this.teamId = myTeamId;
+    constructor(myTeamName) {
         this.teamName = myTeamName;
-        this.teamStartDate = myTeamStartDate;
-        this.teamDeletedAt = myTeamDeletedAt;
-        this.teamCreatedAt = myTeamCreatedAt;
     }
 
     save() {
         return db.execute(
-            `INSERT INTO Team(team_id, team_name) VALUES (?, ?)`,
-            [this.teamId, this.teamName]
+            `INSERT INTO Team(team_name) VALUES (?)`,
+            [this.teamName]
         );
     }
 
-    // missing
-    static fetchOne(username) {
+    static fetchOne(team_idSearch) {
         return db.execute(
-            `SELECT * FROM User WHERE username = ?`, [username]
+            `SELECT * FROM Team WHERE team_id = ?`, [team_idSearch]
         );
     }
-
+    
     static getAll() {
-        return db.execute(
-            `SELECT username, password, full_name, user_state, slack_handle, slack_id FROM User`
+        return db.execute(`
+            SELECT team_id, team_name, team_start_date, deleted_at 
+            FROM User
+            WHERE deleted_at IS NULL`
         );
     }
 
