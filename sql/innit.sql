@@ -75,7 +75,6 @@ CREATE TABLE
         `team_name` varchar(100) COLLATE utf8_spanish2_ci NOT NULL,
         `team_start_date` date DEFAULT NULL,
         `deleted_at` DATETIME DEFAULT NULL,
-        `created_at` DATETIME NOT NULL DEFAULT current_timestamp(),
         PRIMARY KEY (`team_id`)
     ) ENGINE = InnoDB DEFAULT CHARSET = utf8 COLLATE = utf8_spanish2_ci;
 
