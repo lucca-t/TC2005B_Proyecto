@@ -1,0 +1,14 @@
+[data-theme="light"],
+:root {
+    --bulma-primary-h: 52deg;
+    --bulma-primary-s: 98%;
+    --bulma-primary-l: 54%;
+    --bulma-link-h: 216deg;
+    --bulma-info-h: 2deg;
+    --bulma-info-s: 88%;
+    --bulma-info-l: 62%;
+    --bulma-success-h: 135deg;
+    --bulma-warning-h: 25deg;
+    --bulma-danger-h: 360deg;
+    --bulma-danger-l: 54%;
+}
