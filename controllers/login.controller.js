@@ -20,7 +20,7 @@ exports.post_login = (request, response, next) => {
 
 exports.logout = (request, response, next) => {
     request.session.destroy(() => {
-        response.redirect('/users/login'); 
+        response.redirect('/login/login'); 
     });
 };
 
