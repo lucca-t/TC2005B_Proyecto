@@ -8,12 +8,12 @@ exports.get_login = (request, response, next) => {
         csrfToken: request.csrfToken(),
         error: error,
         title: "Login - Daily Standup+", 
-        username: request.session.username || '',
+        email: request.session.email || '',
     });
 };
 
 exports.post_login = (request, response, next) => {
-    request.session.username = request.body.username;
+    request.session.email = request.body.email || request.body.username;
     request.session.password = request.body.password; 
     response.redirect('/homepage');
 };

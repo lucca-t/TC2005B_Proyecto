@@ -10,9 +10,9 @@
                     <form action="/login" method="POST">
                         <input type="hidden" name="_csrf" value="<%= csrfToken %>" >
                         <div class="field">
-                            <label class="label">User</label>
+                            <label class="label">Email</label>
                             <div class="control">
-                                <input class="input" type="text" name="username" placeholder="Username" required>
+                                <input class="input" type="email" name="email" placeholder="Enter your email" autocomplete="email" required>
                             </div>
                         </div>
 

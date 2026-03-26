@@ -2,7 +2,7 @@
     <div class="container" style="max-width: 700px;">
 
         <div class="box">
-            <form action="/users/edit/<%= user.username %>" method="POST">
+            <form action="/users/edit/<%= user.email %>" method="POST">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
 
                 <div class="level mb-2">
@@ -14,7 +14,7 @@
                 <div class="field">
                     <label class="label">Email</label>
                     <div class="control">
-                        <input class="input is-medium" type="email" name="username" value="<%= user.username %>" autocomplete="email" pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$" required>
+                        <input class="input is-medium" type="email" name="email" value="<%= user.email %>" autocomplete="email" pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$" required>
                     </div>
                 </div>
 
