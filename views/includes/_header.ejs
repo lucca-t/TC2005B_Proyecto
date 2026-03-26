@@ -29,10 +29,10 @@
     <div id="navbarMain" class="navbar-menu">
       <div class="navbar-start">
         <div class="navbar-item has-dropdown is-hoverable">
-          <a href="/reports/user" class="navbar-link">Users</a>
+          <a href="/users/list" class="navbar-link">Users</a>
           <div class="navbar-dropdown">
-            <a href="/reports/user" class="navbar-item">Object1</a>
-            <a href="/reports/user" class="navbar-item">Object2</a>
+            <a href="/users/list" class="navbar-item">Object1</a>
+            <a href="/users/list" class="navbar-item">Object2</a>
           </div>
         </div>
         <div class="navbar-item has-dropdown is-hoverable">
@@ -64,7 +64,7 @@
             <% if (username=='' ) { %>
               <a class="button is-primary" href="/login">Log in</a>
             <% } else { %>
-              <a href="/homepage" class="button is-primary"><b>Register Daily Standup</b></a>
+              <a href="/daily_standup" class="button is-primary"><b>Register Daily Standup</b></a>
               <a class="button is-danger" href="/logout">Log out</a>
             <% } %>
           </div>
@@ -73,7 +73,7 @@
     </div>
   </nav>
 
-  <!-- This is to be a hamburguer menu on mobile -->
+  <!-- This is supposed to be a hamburguer menu on mobile -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const burger = document.querySelector('.navbar-burger');
