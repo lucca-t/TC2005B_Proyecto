@@ -1,0 +1,99 @@
+<%- include('includes/_header') %>
+
+<section class="section">
+    <div class="container">
+        <h1 class="title">Registrar Actividad Diaria</h1>
+        <h2 class="subtitle">Completa tu standup del día de hoy</h2>
+    </div>
+</section>
+
+<section class="section" style="padding-top: 0;">
+    <div class="container">
+        <div class="columns is-centered">
+            <div class="column is-half">
+
+                <% if (error && error.length > 0) { %>
+                    <div class="notification is-danger is-light">
+                        <button class="delete" onclick="this.parentElement.remove()"></button>
+                        <%= error %>
+                    </div>
+                <% } %>
+
+                <% if (success && success.length > 0) { %>
+                    <div class="notification is-success is-light">
+                        <button class="delete" onclick="this.parentElement.remove()"></button>
+                        <%= success %>
+                    </div>
+                <% } %>
+
+                <div class="box">
+                    <form action="/daily_standup" method="POST">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+                        <div class="field">
+                            <label class="label">
+                                ¿Qué hiciste hoy?
+                                <span class="has-text-danger">*</span>
+                            </label>
+                            <div class="control">
+                                <textarea
+                                    class="textarea"
+                                    name="did_today"
+                                    placeholder="Describe las tareas que completaste hoy..."
+                                    rows="4"
+                                    required
+                                ></textarea>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="label">
+                                ¿Qué harás mañana?
+                                <span class="has-text-danger">*</span>
+                            </label>
+                            <div class="control">
+                                <textarea
+                                    class="textarea"
+                                    name="do_tomorrow"
+                                    placeholder="Describe las tareas que planeas hacer mañana..."
+                                    rows="4"
+                                    required
+                                ></textarea>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="label">Blockers</label>
+                            <div class="control">
+                                <textarea
+                                    class="textarea"
+                                    name="blockers"
+                                    placeholder="¿Tienes algún impedimento o bloqueo? (opcional)"
+                                    rows="3"
+                                ></textarea>
+                            </div>
+                            <p class="help">Este campo es opcional.</p>
+                        </div>
+
+                        <div class="field">
+                            <div class="control">
+                                <button type="submit" class="button is-primary is-fullwidth">
+                                    Enviar respuestas
+                                </button>
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
+
+                <p class="has-text-grey has-text-centered is-size-7">
+                    Solo puedes registrar una actividad por día. Los campos marcados con
+                    <span class="has-text-danger">*</span> son obligatorios.
+                </p>
+
+            </div>
+        </div>
+    </div>
+</section>
+
+<%- include('includes/_footer') %>
