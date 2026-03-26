@@ -35,4 +35,24 @@ module.exports = class User {
         );
     }
 
+    static updateWithoutPassword(originalUsername, username, fullName, slackHandle, slackId) {
+        return db.execute(
+            `UPDATE User
+             SET username = ?, full_name = ?, slack_handle = ?, slack_id = ?
+             WHERE username = ?`,
+            [username, fullName, slackHandle, slackId, originalUsername]
+        );
+    }
+
+    static updateWithPassword(originalUsername, username, password, fullName, slackHandle, slackId) {
+        return bcrypt.hash(password, 12).then((passwordHash) => {
+            return db.execute(
+                `UPDATE User
+                 SET username = ?, password = ?, full_name = ?, slack_handle = ?, slack_id = ?
+                 WHERE username = ?`,
+                [username, passwordHash, fullName, slackHandle, slackId, originalUsername]
+            );
+        });
+    }
+
 }
