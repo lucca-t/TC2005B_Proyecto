@@ -4,13 +4,13 @@ const bcrypt = require('bcrypt');
 module.exports = class User {
 
     constructor(myUsername, myPassword, myFullName, myUserState, mySlackHandle, mySlackId) {
-        this.username = myUsername;
-        this.password = myPassword;
-        this.full_name = myFullName;
-        this.user_state = myUserState;
-        this.slack_handle = mySlackHandle;
-        this.slack_id = mySlackId;
-    }
+    this.username = myUsername;
+    this.password = myPassword;
+    this.fullName = myFullName;
+    this.userState = myUserState;
+    this.slackHandle = mySlackHandle;
+    this.slackId = mySlackId;
+}
 
     save() {
         return bcrypt.hash(this.password, 12).then((password_hash) => {

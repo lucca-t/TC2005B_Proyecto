@@ -1,4 +1,3 @@
--- 1. Eliminar tablas si existen (en orden inverso para evitar errores de llaves foráneas)
 SET
     FOREIGN_KEY_CHECKS = 0;
 
@@ -34,12 +33,9 @@ DROP TABLE IF EXISTS `Role`;
 
 DROP TABLE IF EXISTS `Privilege`;
 
-DROP TABLE IF EXISTS `User_Highlights`;
-
 SET
     FOREIGN_KEY_CHECKS = 1;
 
--- 2. Creación de Tablas Principales e Independientes
 CREATE TABLE
     `Privilege` (
         `privilege_id` int (11) NOT NULL AUTO_INCREMENT,
@@ -71,13 +67,13 @@ CREATE TABLE
 
 CREATE TABLE
     `team` (
-        `team_id` int (11) NOT NULL,
+        `team_id` int (11) NOT NULL AUTO_INCREMENT,
         `team_name` varchar(100) NOT NULL,
         `team_start_date` date DEFAULT current_timestamp(),
-        `deleted_at` datetime DEFAULT NULL
+        `deleted_at` datetime DEFAULT NULL,
+        UNIQUE KEY `team_id` (`team_id`)
     ) ENGINE = InnoDB DEFAULT CHARSET = utf8 COLLATE = utf8_spanish2_ci;
 
--- 3. Creación de Tablas Relacionales (con Llaves Foráneas)
 CREATE TABLE
     `Standup` (
         `standup_id` INT NOT NULL AUTO_INCREMENT,
@@ -126,7 +122,6 @@ CREATE TABLE
         PRIMARY KEY (`report_id`)
     ) ENGINE = InnoDB DEFAULT CHARSET = utf8 COLLATE = utf8_spanish2_ci;
 
--- 4. Tablas Intermedias (Muchos a Muchos)
 CREATE TABLE
     `Role_Privilege` (
         `role_id` int (11) NOT NULL,
@@ -166,7 +161,6 @@ CREATE TABLE
         PRIMARY KEY (`report_id`, `standup_id`)
     ) ENGINE = InnoDB DEFAULT CHARSET = utf8 COLLATE = utf8_spanish2_ci;
 
--- 5. Tablas Hijas de Herencia (ISA)
 CREATE TABLE
     `User_Report` (
         `report_id` int (11) NOT NULL,
@@ -188,7 +182,6 @@ CREATE TABLE
         PRIMARY KEY (`report_id`)
     ) ENGINE = InnoDB DEFAULT CHARSET = utf8 COLLATE = utf8_spanish2_ci;
 
--- 6. Agregar Restricciones de Llaves Foráneas (Foreign Keys)
 ALTER TABLE `Role_Privilege` ADD CONSTRAINT `role_privilege_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `Role` (`role_id`) ON DELETE CASCADE ON UPDATE CASCADE,
 ADD CONSTRAINT `role_privilege_ibfk_2` FOREIGN KEY (`privilege_id`) REFERENCES `Privilege` (`privilege_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
