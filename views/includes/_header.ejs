@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Daily Standup+</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css">
+  <link rel="stylesheet" href="/css/cssExtraStyles.css"> 
   <link rel="icon" type="image/x-icon" href="/favicon.ico" />
 </head>
 
@@ -13,9 +14,11 @@
   <nav class="navbar is-light" role="navigation" aria-label="main navigation">
     <div class="navbar-brand">
       <a class="navbar-item" style="margin-left: 50px; height: 100px; width: 200px;" href="/homepage">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Change.org_logo.svg/500px-Change.org_logo.svg.png" alt="Logo Daily Standup+" style="max-height: 70px;">
+        <img
+          src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Change.org_logo.svg/500px-Change.org_logo.svg.png"
+          alt="Logo Daily Standup+" style="max-height: 70px;">
       </a>
-      
+
     </div>
 
     <div class="navbar-item has-dropdown is-hoverable">
@@ -23,8 +26,8 @@
         Users
       </a>
       <div class="navbar-dropdown">
-        <a href="/reports/user" class="navbar-item">Objeto de users</a>
-        <a href="/reports/user" class="navbar-item">Objeto2 de users</a>
+        <a href="/reports/user" class="navbar-item">Object1</a>
+        <a href="/reports/user" class="navbar-item">Object2</a>
       </div>
     </div>
 
@@ -33,8 +36,8 @@
         Teams
       </a>
       <div class="navbar-dropdown">
-        <a href="/teams" class="navbar-item">Objeto de teams</a>
-        <a href="/teams" class="navbar-item">Objeto2 de teams</a>
+        <a href="/teams" class="navbar-item">Object1</a>
+        <a href="/teams" class="navbar-item">Object2</a>
       </div>
     </div>
 
@@ -43,8 +46,8 @@
         Projects
       </a>
       <div class="navbar-dropdown">
-        <a href="/reports/project" class="navbar-item">Objeto de projects</a>
-        <a href="/reports/project" class="navbar-item">Objeto2 de projects</a>
+        <a href="/reports/project" class="navbar-item">Object1</a>
+        <a href="/reports/project" class="navbar-item">Object2</a>
       </div>
     </div>
 
@@ -53,25 +56,28 @@
         Highlights
       </a>
       <div class="navbar-dropdown">
-        <a href="/reports/project" class="navbar-item">Objeto de highlights</a>
-        <a href="/reports/project" class="navbar-item">Objeto2 de highlights</a>
+        <a href="/reports/project" class="navbar-item">Object1</a>
+        <a href="/reports/project" class="navbar-item">Object2</a>
       </div>
     </div>
 
-      <div class="navbar-end">
-        <div class="navbar-item">
-          <div class="buttons">
-            <% if (username=='' ) { %>
-              <a class="button is-warning" href="/users/login">
-                Log in
+    <div class="navbar-end">
+      <div class="navbar-item">
+        <div class="buttons">
+          <a href="/homepage" class="button is-primary">
+            <b>Register Daily Standup</b>
+          </a>
+          <% if (username=='' ) { %>
+            <a class="button is-link" href="/users/login">
+              Log in
+            </a>
+            <% } else { %>
+              <a class="button is-danger" href="/users/logout">
+                Log out
               </a>
-              <% } else { %>
-                <a class="button is-warning" href="/users/logout">
-                  Log out
-                </a>
-                <% } %>
-          </div>
+              <% } %>
         </div>
       </div>
+    </div>
     </div>
   </nav>
