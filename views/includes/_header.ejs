@@ -19,65 +19,67 @@
           alt="Logo Daily Standup+" style="max-height: 70px;">
       </a>
 
-    </div>
-
-    <div class="navbar-item has-dropdown is-hoverable">
-      <a href="/reports/user" class="navbar-link">
-        Users
+      <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarMain">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
       </a>
-      <div class="navbar-dropdown">
-        <a href="/reports/user" class="navbar-item">Object1</a>
-        <a href="/reports/user" class="navbar-item">Object2</a>
-      </div>
     </div>
 
-    <div class="navbar-item has-dropdown is-hoverable">
-      <a href="/teams/list" class="navbar-link">
-        Teams
-      </a>
-      <div class="navbar-dropdown">
-        <a href="/teams" class="navbar-item">Object1</a>
-        <a href="/teams" class="navbar-item">Object2</a>
+    <div id="navbarMain" class="navbar-menu">
+      <div class="navbar-start">
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a href="/reports/user" class="navbar-link">Users</a>
+          <div class="navbar-dropdown">
+            <a href="/reports/user" class="navbar-item">Object1</a>
+            <a href="/reports/user" class="navbar-item">Object2</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a href="/teams/list" class="navbar-link">Teams</a>
+          <div class="navbar-dropdown">
+            <a href="/teams" class="navbar-item">Object1</a>
+            <a href="/teams" class="navbar-item">Object2</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a href="/reports/project" class="navbar-link">Projects</a>
+          <div class="navbar-dropdown">
+            <a href="/reports/project" class="navbar-item">Object1</a>
+            <a href="/reports/project" class="navbar-item">Object2</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a href="/reports/project" class="navbar-link">Highlights</a>
+          <div class="navbar-dropdown">
+            <a href="/reports/project" class="navbar-item">Object1</a>
+            <a href="/reports/project" class="navbar-item">Object2</a>
+          </div>
+        </div>
       </div>
-    </div>
 
-    <div class="navbar-item has-dropdown is-hoverable">
-      <a href="/reports/project" class="navbar-link">
-        Projects
-      </a>
-      <div class="navbar-dropdown">
-        <a href="/reports/project" class="navbar-item">Object1</a>
-        <a href="/reports/project" class="navbar-item">Object2</a>
-      </div>
-    </div>
-
-    <div class="navbar-item has-dropdown is-hoverable">
-      <a href="/reports/project" class="navbar-link">
-        Highlights
-      </a>
-      <div class="navbar-dropdown">
-        <a href="/reports/project" class="navbar-item">Object1</a>
-        <a href="/reports/project" class="navbar-item">Object2</a>
-      </div>
-    </div>
-
-    <div class="navbar-end">
-      <div class="navbar-item">
-        <div class="buttons">
-          <a href="/homepage" class="button is-primary">
-            <b>Register Daily Standup</b>
-          </a>
-          <% if (username=='' ) { %>
-            <a class="button is-link" href="/users/login">
-              Log in
-            </a>
+      <div class="navbar-end">
+        <div class="navbar-item">
+          <div class="buttons">
+            <% if (username=='' ) { %>
+              <a class="button is-primary" href="/users/login">Log in</a>
             <% } else { %>
-              <a class="button is-danger" href="/users/logout">
-                Log out
-              </a>
-              <% } %>
+              <a href="/homepage" class="button is-primary"><b>Register Daily Standup</b></a>
+              <a class="button is-danger" href="/users/logout">Log out</a>
+            <% } %>
+          </div>
         </div>
       </div>
     </div>
-    </div>
   </nav>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const burger = document.querySelector('.navbar-burger');
+      const menu = document.getElementById(burger.dataset.target);
+      burger.addEventListener('click', () => {
+        burger.classList.toggle('is-active');
+        menu.classList.toggle('is-active');
+      });
+    });
+  </script>
