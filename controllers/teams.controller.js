@@ -7,7 +7,7 @@ exports.get_list = (request, response, next) => {
     response.render('teamList', {
         csrfToken: request.csrfToken(),
         error: error, 
-        username: request.session.username || '',
+        email: request.session.email || '',
     });
 };
 
@@ -18,7 +18,7 @@ exports.get_edit = (request, response, next) => {
     response.render('teamEdit', {
         csrfToken: request.csrfToken(),
         error: error,
-        username: request.session.username || '',
+        email: request.session.email || '',
     });
 };
 
@@ -28,6 +28,6 @@ exports.get_add = (request, response, next) => {
     response.render('teamAdd', {
         csrfToken: request.csrfToken(),
         error: error,
-        username: request.session.username || '',
+        email: request.session.email || '',
     });
 };

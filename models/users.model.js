@@ -3,8 +3,8 @@ const bcrypt = require('bcrypt');
 
 module.exports = class User {
 
-    constructor(myUsername, myPassword, myFullName, mySlackHandle, mySlackId) {
-    this.username = myUsername;
+    constructor(myEmail, myPassword, myFullName, mySlackHandle, mySlackId) {
+    this.email = myEmail;
     this.password = myPassword;
     this.fullName = myFullName;
     this.slackHandle = mySlackHandle;
@@ -14,8 +14,8 @@ module.exports = class User {
     save() {
         return bcrypt.hash(this.password, 12).then((password_hash) => {
             return db.execute(
-            `INSERT INTO User(username, password, full_name, slack_handle, slack_id) VALUES (?, ?, ?, ?, ?)`,
-            [this.username, password_hash, this.fullName, this.slackHandle, this.slackId]
+            `INSERT INTO User(email, password, full_name, slack_handle, slack_id) VALUES (?, ?, ?, ?, ?)`,
+            [this.email, password_hash, this.fullName, this.slackHandle, this.slackId]
             );
         }).catch((error) => {
             console.log(error);
@@ -23,16 +23,36 @@ module.exports = class User {
         });
     }
     
-    static fetchOne(username) {
+    static fetchOne(email) {
         return db.execute(
-            `SELECT * FROM User WHERE username = ?`, [username]
+            `SELECT * FROM User WHERE email = ?`, [email]
         );
     }
 
     static getAll() {
         return db.execute(
-            `SELECT username, password, full_name, slack_handle, slack_id FROM User`
+            `SELECT email, password, full_name, slack_handle, slack_id FROM User`
         );
+    }
+
+    static updateWithoutPassword(originalEmail, email, fullName, slackHandle, slackId) {
+        return db.execute(
+            `UPDATE User
+             SET email = ?, full_name = ?, slack_handle = ?, slack_id = ?
+             WHERE email = ?`,
+            [email, fullName, slackHandle, slackId, originalEmail]
+        );
+    }
+
+    static updateWithPassword(originalEmail, email, password, fullName, slackHandle, slackId) {
+        return bcrypt.hash(password, 12).then((passwordHash) => {
+            return db.execute(
+                `UPDATE User
+                 SET email = ?, password = ?, full_name = ?, slack_handle = ?, slack_id = ?
+                 WHERE email = ?`,
+                [email, passwordHash, fullName, slackHandle, slackId, originalEmail]
+            );
+        });
     }
 
 }

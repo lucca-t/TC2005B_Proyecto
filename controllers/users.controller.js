@@ -1,10 +1,12 @@
 const User = require('../models/users.model');
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 exports.get_list = (request, response, next) => {
     User.getAll().then(([rows, fieldData]) => {
         response.render('userList', {
             csrfToken: request.csrfToken(),
-            username: request.session.username || '',
+            email: request.session.email || '',
             users: rows,
         });
     })
@@ -16,19 +18,18 @@ exports.get_list = (request, response, next) => {
 exports.get_add = (request, response, next) => {
     response.render('userAdd', {
         csrfToken: request.csrfToken(),
-        username: request.session.username || '',
+        email: request.session.email || '',
     });
 };
 
-//Modify to allow get edit of a specific team
 exports.get_edit = (request, response, next) => {
-    User.fetchOne(request.params.username)
+    User.fetchOne(request.params.email)
     .then(([rows, fieldData]) => {
 
         response.render('userEdit', {
             user: rows[0],
             csrfToken: request.csrfToken(),
-            username: request.session.username || '',
+            email: request.session.email || '',
         });
 
     })
@@ -39,15 +40,23 @@ exports.get_edit = (request, response, next) => {
 
 exports.post_add = (request, response, next) => {
     const {
-        username,
+        email,
         password,
         full_name,
         slack_handle,
         slack_id
     } = request.body;
 
+    if (!EMAIL_REGEX.test((email || '').trim())) {
+        return response.status(400).render('userAdd', {
+            csrfToken: request.csrfToken(),
+            email: request.session.email || '',
+            error: 'Email format is invalid. Please use a valid email address.'
+        });
+    }
+
     const user = new User(
-        username,
+        email,
         password,
         full_name,
         slack_handle,
@@ -62,8 +71,56 @@ exports.post_add = (request, response, next) => {
             console.error('[POST /users/add] Failed to save user:', error.sqlMessage || error.message);
             response.status(400).render('userAdd', {
                 csrfToken: request.csrfToken(),
-                username: request.session.username || '',
+                email: request.session.email || '',
                 error: 'Error creating user: ' + (error.sqlMessage || error.message || 'Unknown error')
+            });
+        });
+};
+
+exports.post_edit = (request, response, next) => {
+    const originalEmail = request.params.email;
+    const {
+        email,
+        password,
+        full_name,
+        slack_handle,
+        slack_id
+    } = request.body;
+
+    if (!EMAIL_REGEX.test((email || '').trim())) {
+        return response.status(400).render('userEdit', {
+            user: {
+                email,
+                full_name,
+                slack_handle,
+                slack_id
+            },
+            csrfToken: request.csrfToken(),
+            email: request.session.email || '',
+            error: 'Email format is invalid. Please use a valid email address.'
+        });
+    }
+
+    const updatePromise = password && password.trim() !== ''
+        ? User.updateWithPassword(originalEmail, email.trim(), password, full_name, slack_handle, slack_id)
+        : User.updateWithoutPassword(originalEmail, email.trim(), full_name, slack_handle, slack_id);
+
+    updatePromise
+        .then(() => {
+            return response.redirect('/users/list');
+        })
+        .catch((error) => {
+            console.error('[POST /users/edit] Failed to update user:', error.sqlMessage || error.message);
+            response.status(400).render('userEdit', {
+                user: {
+                    email,
+                    full_name,
+                    slack_handle,
+                    slack_id
+                },
+                csrfToken: request.csrfToken(),
+                email: request.session.email || '',
+                error: 'Error updating user: ' + (error.sqlMessage || error.message || 'Unknown error')
             });
         });
 };

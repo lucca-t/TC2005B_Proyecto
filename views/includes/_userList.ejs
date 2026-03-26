@@ -15,7 +15,7 @@
             <table class="table is-fullwidth is-striped is-hoverable">
                 <thead>
                     <tr>
-                        <th>Username</th>
+                        <th>Email</th>
                         <th>Full Name</th>
                         <th>Slack Handle</th>
                         <th>Slack ID</th>
@@ -29,7 +29,7 @@
                         <% users.forEach(user => { %>
                             <tr>
                                 <td class="is-vcentered">
-                                    <strong><%= user.username %></strong>
+                                    <strong><%= user.email %></strong>
                                 </td>
 
                                 <td class="is-vcentered">
@@ -59,7 +59,7 @@
                                 <td class="has-text-right is-vcentered">
                                     <div class="buttons is-right">
 
-                                        <a href="/users/edit/<%= user.username %>" 
+                                        <a href="/users/edit/<%= user.email %>" 
                                         class="button is-small is-light">
                                         Edit
                                         </a>
