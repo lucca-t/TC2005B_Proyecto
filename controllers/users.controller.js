@@ -1,5 +1,7 @@
 const User = require('../models/users.model');
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 exports.get_list = (request, response, next) => {
     User.getAll().then(([rows, fieldData]) => {
         response.render('userList', {
@@ -46,6 +48,14 @@ exports.post_add = (request, response, next) => {
         slack_id
     } = request.body;
 
+    if (!EMAIL_REGEX.test((username || '').trim())) {
+        return response.status(400).render('userAdd', {
+            csrfToken: request.csrfToken(),
+            username: request.session.username || '',
+            error: 'Email format is invalid. Please use a valid email address.'
+        });
+    }
+
     const user = new User(
         username,
         password,
@@ -64,6 +74,54 @@ exports.post_add = (request, response, next) => {
                 csrfToken: request.csrfToken(),
                 username: request.session.username || '',
                 error: 'Error creating user: ' + (error.sqlMessage || error.message || 'Unknown error')
+            });
+        });
+};
+
+exports.post_edit = (request, response, next) => {
+    const originalUsername = request.params.username;
+    const {
+        username,
+        password,
+        full_name,
+        slack_handle,
+        slack_id
+    } = request.body;
+
+    if (!EMAIL_REGEX.test((username || '').trim())) {
+        return response.status(400).render('userEdit', {
+            user: {
+                username,
+                full_name,
+                slack_handle,
+                slack_id
+            },
+            csrfToken: request.csrfToken(),
+            username: request.session.username || '',
+            error: 'Email format is invalid. Please use a valid email address.'
+        });
+    }
+
+    const updatePromise = password && password.trim() !== ''
+        ? User.updateWithPassword(originalUsername, username.trim(), password, full_name, slack_handle, slack_id)
+        : User.updateWithoutPassword(originalUsername, username.trim(), full_name, slack_handle, slack_id);
+
+    updatePromise
+        .then(() => {
+            return response.redirect('/users/list');
+        })
+        .catch((error) => {
+            console.error('[POST /users/edit] Failed to update user:', error.sqlMessage || error.message);
+            response.status(400).render('userEdit', {
+                user: {
+                    username,
+                    full_name,
+                    slack_handle,
+                    slack_id
+                },
+                csrfToken: request.csrfToken(),
+                username: request.session.username || '',
+                error: 'Error updating user: ' + (error.sqlMessage || error.message || 'Unknown error')
             });
         });
 };
