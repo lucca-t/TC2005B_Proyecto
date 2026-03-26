@@ -1,0 +1,52 @@
+<%- include('includes/_header') %>
+
+<section class="section">
+    <div class="container">
+        <h1 class="title">Activity History</h1>
+        <h2 class="subtitle">Your daily standup records</h2>
+    </div>
+</section>
+
+<section class="section" style="padding-top: 0;">
+    <div class="container">
+
+        <% if (typeof error !== 'undefined' && error.length > 0) { %>
+            <div class="notification is-danger is-light">
+                <button class="delete" onclick="this.parentElement.remove()"></button>
+                <%= error %>
+            </div>
+        <% } %>
+
+        <% if (standups.length === 0) { %>
+            <div class="notification is-warning is-light">
+                No records found.
+            </div>
+        <% } else { %>
+            <div class="table-container">
+                <table class="table is-fullwidth is-striped is-hoverable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>What did you do?</th>
+                            <th>What will you do tomorrow?</th>
+                            <th>Blockers</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% standups.forEach(standup => { %>
+                            <tr>
+                                <td><%= standup.date.toISOString().split('T')[0] %></td>
+                                <td><%= standup.did_today %></td>
+                                <td><%= standup.do_tomorrow %></td>
+                                <td><%= standup.blockers || '-' %></td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        <% } %>
+
+    </div>
+</section>
+
+<%- include('includes/_footer') %>
