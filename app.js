@@ -44,6 +44,12 @@ app.use('/reports', route_reports);
 app.use('/teams', route_teams);
 app.use('/daily_standup', route_standup);
 
+app.use((req, res, next) => {
+    if (req.path === '/') {
+        return res.redirect('/login');
+    }
+    next();
+});
 
 app.use((request, response, next) => {
     response.status(404).send('404 Not Found');

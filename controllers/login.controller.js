@@ -18,19 +18,8 @@ exports.post_login = (request, response, next) => {
     response.redirect('/homepage');
 };
 
-exports.logout = (request, response, next) => {
+exports.get_logout = (request, response, next) => {
     request.session.destroy(() => {
-        response.redirect('/login/login'); 
-    });
-};
-
-exports.get_home = (request, response, next) => {
-    const error = request.session.error || '';
-    request.session.error = '';
-    response.render('home', {
-        csrfToken: request.csrfToken(),
-        error: error,
-        title: "Home - Daily Standup+",
-        username: request.session.username || '',
+        response.redirect('/login'); 
     });
 };
