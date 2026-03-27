@@ -1,0 +1,107 @@
+@startuml
+skinparam style strictuml
+
+actor Lead as U
+boundary "Routes" as RO
+boundary "View: projects/new.ejs" as V
+control "project.controller" as C
+entity "Project.model" as PM
+database "MySQL" as BD
+
+activate U
+U -> RO: GET /projects/new
+deactivate U
+
+activate RO
+RO -> C: getNew(request, response)
+deactivate RO
+
+activate C
+C -> V: response.render('projects/new.ejs')
+deactivate C
+
+activate V
+V -> U: HTML form
+deactivate V
+
+activate U
+U -> RO: POST /projects
+deactivate U
+
+activate RO
+RO -> C: create(request, response)
+deactivate RO
+
+activate C
+C -> C: validate(request.body)
+
+alt Invalid input (Flujo 5a: Campos vacíos)
+    C -> V: response.render('projects/new.ejs', {errors: "Faltan datos obligatorios"})
+    deactivate C
+
+    activate V
+    V -> U: HTML + Error messages (Conserva datos)
+    deactivate V
+
+else Valid input
+    C -> PM: findByNameAndTeam(name, team_id)
+    activate PM
+
+    PM -> BD: SELECT * FROM project WHERE name=? AND team_id=?
+    activate BD
+    BD --> PM: exists/null
+    deactivate BD
+
+    PM --> C: exists/null
+    deactivate PM
+
+    alt Project exists (Flujo 6a: Datos duplicados)
+        C -> V: response.render('projects/new.ejs', {error: "El proyecto ya existe para este equipo"})
+        deactivate C
+
+        activate V
+        V -> U: HTML + Error message
+        deactivate V
+
+    else New project
+        C -> C: generate project_id
+        C -> C: set status, created_at
+
+        C -> PM: insert({project_id, name, description, team_id, status, created_at})
+        activate PM
+
+        PM -> BD: INSERT INTO project (project_id, name, description, team_id, status, created_at)\nVALUES (?, ?, ?, ?, ?, ?)
+        activate BD
+
+        alt Insert success
+            BD --> PM: projectDTO (new record)
+            deactivate BD
+
+            PM --> C: projectDTO
+            deactivate PM
+
+            C -> V: response.render('projects/show.ejs', {project: projectDTO, success: "Proyecto registrado con éxito"})
+            deactivate C
+
+            activate V
+            V -> U: HTML + Success message
+            deactivate V
+
+        else Insert fail
+            BD --> PM: error
+            deactivate BD
+
+            PM --> C: error
+            deactivate PM
+
+            C -> V: response.render('projects/new.ejs', {msg: "No se pudo guardar el proyecto"})
+            deactivate C
+
+            activate V
+            V -> U: HTML + Error message
+            deactivate V
+        end
+    end
+end
+
+@enduml
