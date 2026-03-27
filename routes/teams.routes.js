@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
+const isAuth = require('../util/is-auth');
 const teamsController = require('../controllers/teams.controller');
 
-router.get('/list', teamsController.get_list); 
-router.get('/edit', teamsController.get_edit); //Here we should do a way to edit a specific team
-router.get('/add', teamsController.get_add);
+router.get('/list', isAuth, teamsController.get_list);
+router.get('/edit', isAuth, teamsController.get_edit);
+router.get('/add', isAuth, teamsController.get_add);
 
 module.exports = router;
