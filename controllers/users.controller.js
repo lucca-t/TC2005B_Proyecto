@@ -81,19 +81,37 @@ exports.post_edit = (request, response, next) => {
     const originalEmail = request.params.email;
     const {
         email,
-        password,
         full_name,
         slack_handle,
         slack_id
     } = request.body;
 
-    if (!EMAIL_REGEX.test((email || '').trim())) {
+    const normalizedEmail = (email || '').trim();
+    const normalizedFullName = (full_name || '').trim();
+    const normalizedSlackHandle = (slack_handle || '').trim();
+    const normalizedSlackId = (slack_id || '').trim();
+
+    if (!normalizedEmail || !normalizedFullName || !normalizedSlackHandle || !normalizedSlackId) {
         return response.status(400).render('userEdit', {
             user: {
-                email,
-                full_name,
-                slack_handle,
-                slack_id
+                email: normalizedEmail,
+                full_name: normalizedFullName,
+                slack_handle: normalizedSlackHandle,
+                slack_id: normalizedSlackId
+            },
+            csrfToken: request.csrfToken(),
+            email: request.session.email || '',
+            error: 'All fields are required. None can be empty.'
+        });
+    }
+
+    if (!EMAIL_REGEX.test(normalizedEmail)) {
+        return response.status(400).render('userEdit', {
+            user: {
+                email: normalizedEmail,
+                full_name: normalizedFullName,
+                slack_handle: normalizedSlackHandle,
+                slack_id: normalizedSlackId
             },
             csrfToken: request.csrfToken(),
             email: request.session.email || '',
@@ -101,9 +119,13 @@ exports.post_edit = (request, response, next) => {
         });
     }
 
-    const updatePromise = password && password.trim() !== ''
-        ? User.updateWithPassword(originalEmail, email.trim(), password, full_name, slack_handle, slack_id)
-        : User.updateWithoutPassword(originalEmail, email.trim(), full_name, slack_handle, slack_id);
+    const updatePromise = User.updateWithoutPassword(
+        originalEmail,
+        normalizedEmail,
+        normalizedFullName,
+        normalizedSlackHandle,
+        normalizedSlackId
+    );
 
     updatePromise
         .then(() => {
@@ -113,10 +135,10 @@ exports.post_edit = (request, response, next) => {
             console.error('[POST /users/edit] Failed to update user:', error.sqlMessage || error.message);
             response.status(400).render('userEdit', {
                 user: {
-                    email,
-                    full_name,
-                    slack_handle,
-                    slack_id
+                    email: normalizedEmail,
+                    full_name: normalizedFullName,
+                    slack_handle: normalizedSlackHandle,
+                    slack_id: normalizedSlackId
                 },
                 csrfToken: request.csrfToken(),
                 email: request.session.email || '',
