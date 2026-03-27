@@ -3,103 +3,204 @@ skinparam style strictuml
 
 actor Lead as U
 boundary "Routes" as RO
-boundary "View: projects/new.ejs" as V
-control "project.controller" as C
+boundary "Middleware: is-auth" as MW
+boundary "View: projectsAdd.ejs" as VA
+boundary "View: projectShow.ejs" as VS
+control "projects.controller" as C
 entity "Project.model" as PM
 database "MySQL" as BD
+control "Error Handler" as EH
 
 activate U
-U -> RO: GET /projects/new
+U -> RO: GET /projects/add
 deactivate U
 
 activate RO
-RO -> C: getNew(request, response)
-deactivate RO
+RO -> MW: isAuth(request, response, next)
 
-activate C
-C -> V: response.render('projects/new.ejs')
-deactivate C
+alt Not logged in
+    MW -> U: redirect('/login')
+    deactivate MW
+    deactivate RO
 
-activate V
-V -> U: HTML form
-deactivate V
+else Logged in
+    MW -> C: get_add(request, response, next)
+    deactivate MW
 
-activate U
-U -> RO: POST /projects
-deactivate U
-
-activate RO
-RO -> C: create(request, response)
-deactivate RO
-
-activate C
-C -> C: validate(request.body)
-
-alt Invalid input (Flujo 5a: Campos vacíos)
-    C -> V: response.render('projects/new.ejs', {errors: "Faltan datos obligatorios"})
-    deactivate C
-
-    activate V
-    V -> U: HTML + Error messages (Conserva datos)
-    deactivate V
-
-else Valid input
-    C -> PM: findByNameAndTeam(name, team_id)
+    activate C
+    C -> PM: getTeams()
     activate PM
 
-    PM -> BD: SELECT * FROM project WHERE name=? AND team_id=?
+    PM -> BD: SELECT team_id, team_name\nFROM Team\nWHERE deleted_at IS NULL\nORDER BY team_name ASC
     activate BD
-    BD --> PM: exists/null
-    deactivate BD
 
-    PM --> C: exists/null
-    deactivate PM
+    alt Teams query success
+        BD --> PM: rows
+        deactivate BD
 
-    alt Project exists (Flujo 6a: Datos duplicados)
-        C -> V: response.render('projects/new.ejs', {error: "El proyecto ya existe para este equipo"})
+        PM --> C: rows
+        deactivate PM
+
+        C -> VA: render('projectsAdd', {csrfToken, email, teams, formData, errors, error, msg})
         deactivate C
+        deactivate RO
 
-        activate V
-        V -> U: HTML + Error message
-        deactivate V
+        activate VA
+        VA -> U: HTML form
+        deactivate VA
 
-    else New project
-        C -> C: generate project_id
-        C -> C: set status, created_at
+    else Teams query fail
+        BD --> PM: error
+        deactivate BD
 
-        C -> PM: insert({project_id, name, description, team_id, status, created_at})
-        activate PM
+        PM --> C: error
+        deactivate PM
 
-        PM -> BD: INSERT INTO project (project_id, name, description, team_id, status, created_at)\nVALUES (?, ?, ?, ?, ?, ?)
-        activate BD
+        C -> EH: next(error)
+        deactivate C
+        deactivate RO
 
-        alt Insert success
-            BD --> PM: projectDTO (new record)
+        activate EH
+        EH -> U: 500 Internal Server Error
+        deactivate EH
+    end
+end
+
+activate U
+U -> RO: POST /projects/add
+deactivate U
+
+activate RO
+RO -> MW: isAuth(request, response, next)
+
+alt Not logged in
+    MW -> U: redirect('/login')
+    deactivate MW
+    deactivate RO
+
+else Logged in
+    MW -> C: post_add(request, response, next)
+    deactivate MW
+    activate C
+    C -> C: normalize name, description, team_id, status
+    C -> C: build formData
+
+    alt try block executes without exception
+        alt Missing required fields
+            C -> PM: getTeams()
+            activate PM
+
+            PM -> BD: SELECT team_id, team_name ...
+            activate BD
+            BD --> PM: teams
             deactivate BD
 
-            PM --> C: projectDTO
+            PM --> C: teams
             deactivate PM
 
-            C -> V: response.render('projects/show.ejs', {project: projectDTO, success: "Proyecto registrado con éxito"})
+            C -> VA: status(400).render('projectsAdd', {errors: 'Missing required fields.'})
             deactivate C
+            deactivate RO
 
-            activate V
-            V -> U: HTML + Success message
-            deactivate V
+            activate VA
+            VA -> U: HTML + validation error + preserved formData
+            deactivate VA
 
-        else Insert fail
+        else Required fields present
+            C -> PM: findByNameAndTeam(name, team_id)
+            activate PM
+
+            PM -> BD: SELECT project_id\nFROM Project\nWHERE LOWER(name)=LOWER(?) AND team_id=?\nLIMIT 1
+            activate BD
+            BD --> PM: existingRows
+            deactivate BD
+
+            PM --> C: existingRows
+            deactivate PM
+
+            alt Duplicate project found
+                C -> PM: getTeams()
+                activate PM
+
+                PM -> BD: SELECT team_id, team_name ...
+                activate BD
+                BD --> PM: teams
+                deactivate BD
+
+                PM --> C: teams
+                deactivate PM
+
+                C -> VA: status(400).render('projectsAdd', {error: 'A project with this name already exists for the selected team.'})
+                deactivate C
+                deactivate RO
+
+                activate VA
+                VA -> U: HTML + duplicate error + preserved formData
+                deactivate VA
+
+            else New project
+                C -> PM: insert({name, description, team_id, status, created_at})
+                activate PM
+
+                PM -> BD: INSERT INTO Project(name, description, team_id, status, created_at, project_state)\nVALUES (?, ?, ?, ?, ?, ?)
+                activate BD
+                BD --> PM: insertResult(insertId)
+                deactivate BD
+
+                PM -> BD: SELECT project_id, name, description, team_id, status, created_at, project_state\nFROM Project WHERE project_id=? LIMIT 1
+                activate BD
+                BD --> PM: inserted row
+                deactivate BD
+
+                PM --> C: insertedProject
+                deactivate PM
+
+                C -> VS: render('projectShow', {csrfToken, email, project: insertedProject, success: 'Project created successfully.'})
+                deactivate C
+                deactivate RO
+
+                activate VS
+                VS -> U: HTML + success message + project details
+                deactivate VS
+            end
+        end
+    else catch(error) path in post_add
+        C -> C: console.error('[POST /projects/add] ...')
+        C -> PM: getTeams() via renderForm()
+        activate PM
+
+        PM -> BD: SELECT team_id, team_name ...
+        activate BD
+
+        alt Recovery render success
+            BD --> PM: teams
+            deactivate BD
+
+            PM --> C: teams
+            deactivate PM
+
+            C -> VA: status(400).render('projectsAdd', {msg: 'Could not save the project.'})
+            deactivate C
+            deactivate RO
+
+            activate VA
+            VA -> U: HTML + warning message + preserved formData
+            deactivate VA
+
+        else Recovery render fails
             BD --> PM: error
             deactivate BD
 
-            PM --> C: error
+            PM --> C: renderError
             deactivate PM
 
-            C -> V: response.render('projects/new.ejs', {msg: "No se pudo guardar el proyecto"})
+            C -> EH: next(renderError)
             deactivate C
+            deactivate RO
 
-            activate V
-            V -> U: HTML + Error message
-            deactivate V
+            activate EH
+            EH -> U: 500 Internal Server Error
+            deactivate EH
         end
     end
 end
