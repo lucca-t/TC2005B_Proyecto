@@ -21,34 +21,27 @@
                 <div class="field">
                     <label class="label">Full Name</label>
                     <div class="control">
-                        <input class="input is-medium" type="text" name="full_name" value="<%= user.full_name || '' %>">
-                    </div>
-                </div>
-
-                <div class="field">
-                    <label class="label">Password</label>
-                    <div class="control">
-                        <input class="input is-medium" type="password" name="password" placeholder="Leave blank to keep current password">
+                        <input class="input is-medium" type="text" name="full_name" value="<%= user.full_name || '' %>" required>
                     </div>
                 </div>
 
                 <div class="field">
                     <label class="label">Slack Handle</label>
                     <div class="control">
-                        <input class="input is-medium" type="text" name="slack_handle" value="<%= user.slack_handle || '' %>">
+                        <input class="input is-medium" type="text" name="slack_handle" value="<%= user.slack_handle || '' %>" required>
                     </div>
                 </div>
-
+                
                 <div class="field">
                     <label class="label">Slack ID</label>
                     <div class="control">
-                        <input class="input is-medium" type="text" name="slack_id" value="<%= user.slack_id || '' %>">
+                        <input class="input is-medium" type="text" name="slack_id" value="<%= user.slack_id || '' %>" required>
                     </div>
                 </div>
 
                 <div class="field mt-5">
                     <div class="control">
-                        <button type="submit" class="button is-warning is-fullwidth is-medium">
+                        <button type="submit" class="button is-primary is-fullwidth is-medium">
                             <strong>Save changes</strong>
                         </button>
                     </div>
