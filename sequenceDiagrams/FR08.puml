@@ -1,0 +1,90 @@
+@startuml
+skinparam style strictuml
+
+actor Lead as U
+boundary "Routes" as RO
+boundary "View: userEdit.ejs + includes/_userEdit.ejs" as V
+control "users.controller" as C
+entity "users.model" as UM
+database "MySQL" as BD
+
+activate U
+U -> RO: GET /users/edit/:email
+activate RO
+RO -> C: get_edit(request, response)
+deactivate RO
+
+activate C
+C -> UM: fetchOne(params.email)
+activate UM
+UM -> BD: SELECT * FROM User WHERE email = ?
+activate BD
+BD --> UM: rows / error
+deactivate BD
+
+alt fetchOne success
+    UM --> C: rows
+    deactivate UM
+    C -> V: response.render('userEdit', { user: rows[0], csrfToken, email: session.email })
+    deactivate C
+
+    activate V
+    V -> U: HTML edit form
+    deactivate V
+else fetchOne error
+    UM --> C: error
+    deactivate UM
+    C -> RO: next(error)
+    deactivate C
+    RO -> U: Error response (middleware)
+end
+
+activate U
+U -> RO: POST /users/edit/:email
+activate RO
+RO -> C: post_edit(request, response)
+deactivate RO
+
+activate C
+C -> C: normalize body fields (trim)
+
+alt Some field is empty/null
+    C -> V: response.status(400).render('userEdit', { error: 'All fields are required. None can be empty.' })
+    deactivate C
+    activate V
+    V -> U: HTML + validation error
+    deactivate V
+
+else Email format invalid
+    C -> V: response.status(400).render('userEdit', { error: 'Email format is invalid...' })
+    deactivate C
+    activate V
+    V -> U: HTML + validation error
+    deactivate V
+
+else Valid data
+    C -> UM: updateWithoutPassword(originalEmail, email, full_name, slack_handle, slack_id)
+    activate UM
+    UM -> BD: UPDATE User\nSET email=?, full_name=?, slack_handle=?, slack_id=?\nWHERE email=?
+    activate BD
+    BD --> UM: ok / error
+    deactivate BD
+
+    alt update success
+        UM --> C: ok
+        deactivate UM
+        C -> RO: response.redirect('/users/list')
+        deactivate C
+        RO -> U: 302 Redirect to /users/list
+    else update error
+        UM --> C: error
+        deactivate UM
+        C -> V: response.status(400).render('userEdit', { error: 'Error updating user: ...' })
+        deactivate C
+        activate V
+        V -> U: HTML + DB error message
+        deactivate V
+    end
+end
+
+@enduml
