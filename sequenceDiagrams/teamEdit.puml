@@ -1,0 +1,26 @@
+@startuml
+skinparam style strictuml
+
+actor Lead as U
+boundary "Team Routes" as RO
+boundary "View: teams/teamEdit.ejs" as V
+control "teams.controller" as C
+entity "teams.model" as PM
+database "MySQL" as BD
+
+activate U
+U -> RO: GET /teams/edit/:team.id
+deactivate U
+
+activate RO
+RO -> C: getEdit(request, response)
+deactivate RO
+
+activate C
+C -> PM: findById(team.id)
+activate PM
+
+PM -> BD: SELECT * FROM teams WHERE id=?
+activate BD
+BD --> PM: team data
+deactivate BD
