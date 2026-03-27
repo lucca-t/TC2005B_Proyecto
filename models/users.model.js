@@ -31,7 +31,7 @@ module.exports = class User {
 
     static getAll() {
         return db.execute(
-            `SELECT email, password, full_name, slack_handle, slack_id FROM User`
+            `SELECT user_id, email, password, full_name, slack_handle, slack_id FROM User WHERE deleted_at IS NULL`
         );
     }
 
