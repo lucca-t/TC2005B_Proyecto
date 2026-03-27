@@ -7,6 +7,12 @@
                 <div class="box">
                     <h1 class="title has-text-centered">Log In</h1>
                     
+                    <% if (typeof error !== 'undefined' && error) { %>
+                        <div class="notification is-danger is-light mb-4">
+                            <%= error %>
+                        </div>
+                    <% } %>
+
                     <form action="/login" method="POST">
                         <input type="hidden" name="_csrf" value="<%= csrfToken %>" >
                         <div class="field">
