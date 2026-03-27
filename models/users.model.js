@@ -38,8 +38,8 @@ module.exports = class User {
     static updateWithoutPassword(originalEmail, email, fullName, slackHandle, slackId) {
         return db.execute(
             `UPDATE User
-             SET email = ?, full_name = ?, slack_handle = ?, slack_id = ?
-             WHERE email = ?`,
+            SET email = ?, full_name = ?, slack_handle = ?, slack_id = ?
+            WHERE email = ?`,
             [email, fullName, slackHandle, slackId, originalEmail]
         );
     }
@@ -48,8 +48,8 @@ module.exports = class User {
         return bcrypt.hash(password, 12).then((passwordHash) => {
             return db.execute(
                 `UPDATE User
-                 SET email = ?, password = ?, full_name = ?, slack_handle = ?, slack_id = ?
-                 WHERE email = ?`,
+                SET email = ?, password = ?, full_name = ?, slack_handle = ?, slack_id = ?
+                WHERE email = ?`,
                 [email, passwordHash, fullName, slackHandle, slackId, originalEmail]
             );
         });
