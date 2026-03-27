@@ -20,22 +20,17 @@ app.use(session({
 }));
 
 const csrf = require('csurf');
-const csrfProtection = csrf();
-app.use(csrfProtection);
+app.use(csrf());
 
-//This is so that the ejs can acces which page is in, mainly to change the navbar
+// Expose session data to all views
 app.use((req, res, next) => {
-    res.locals.urlActual = req.path; 
+    res.locals.urlActual = req.path;
+    res.locals.isLoggedIn = req.session.isLoggedIn || false;
+    res.locals.email = req.session.email || '';
     next();
 });
 
-//Routes
-
-app.use((req, res, next) => {
-    console.log(`${req.method} ${req.url}`);
-    next();
-});
-
+// Routes
 const route_homepage = require('./routes/homepage.routes');
 const route_login = require('./routes/login.routes');
 const loginController = require('./controllers/login.controller');
@@ -45,8 +40,7 @@ const route_users = require('./routes/users.routes');
 const route_projects = require('./routes/projects.routes');
 const route_standup = require('./routes/daily_standup.routes');
 
-//App Uses
-
+app.use('/', (req, res, next) => req.path === '/' ? res.redirect('/login') : next());
 app.use('/homepage', route_homepage);
 app.use('/login', route_login);
 app.get('/logout', loginController.get_logout);
@@ -55,13 +49,6 @@ app.use('/teams', route_teams);
 app.use('/users', route_users);
 app.use('/projects', route_projects);
 app.use('/daily_standup', route_standup);
-
-app.use((request, response, next) => {
-    if (request.path === '/') {
-        return response.redirect('/login');
-    }
-    next();
-});
 
 
 app.use((request, response, next) => {

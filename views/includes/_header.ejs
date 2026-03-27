@@ -28,6 +28,7 @@
 
     <div id="navbarMain" class="navbar-menu">
       <div class="navbar-start">
+        <% if (isLoggedIn) { %>
         <div class="navbar-item has-dropdown is-hoverable">
           <a href="/users/list" class="navbar-link">Users</a>
           <div class="navbar-dropdown">
@@ -41,7 +42,7 @@
           </div>
         </div>
         <div class="navbar-item has-dropdown is-hoverable">
-          <a href="/projects/add" class="navbar-link">Projects</a>
+          <a href="/reports/project" class="navbar-link">Projects</a>
           <div class="navbar-dropdown">
             <a href="/projects/add" class="navbar-item">Create project</a>
             <a href="/reports/project" class="navbar-item">Project reports</a>
@@ -54,12 +55,13 @@
             <a href="/reports/project" class="navbar-item">Object2</a>
           </div>
         </div>
+        <% } %>
       </div>
 
       <div class="navbar-end">
         <div class="navbar-item">
           <div class="buttons">
-            <% if (email=='' ) { %>
+            <% if (!isLoggedIn) { %>
               <a class="button is-primary" href="/login">Log in</a>
             <% } else { %>
               <a href="/daily_standup" class="button is-primary"><b>Register Daily Standup</b></a>
