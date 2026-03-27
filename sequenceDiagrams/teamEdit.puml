@@ -3,24 +3,70 @@ skinparam style strictuml
 
 actor Lead as U
 boundary "Team Routes" as RO
-boundary "View: teams/teamEdit.ejs" as V
 control "teams.controller" as C
-entity "teams.model" as PM
+entity "teams.model" as M
+entity "users.model" as UM
 database "MySQL" as BD
 
-activate U
-U -> RO: GET /teams/edit/:team.id
-deactivate U
-
+== Load Edit Form ==
+U -> RO: GET /teams/edit/:id
 activate RO
-RO -> C: getEdit(request, response)
+RO -> C: get_edit()
+activate C
+
+C -> M: fetchOne(id)
+activate M
+M -> BD: SELECT * FROM Team WHERE team_id=?
+activate BD
+BD --> M: team data
+deactivate BD
+M --> C: team object
+deactivate M
+
+C -> M: getTeamMembers(id)
+activate M
+M -> BD: SELECT u.* FROM User u JOIN User_Team ut ON u.user_id=ut.user_id WHERE ut.team_id=?
+activate BD
+BD --> M: team members
+deactivate BD
+M --> C: members list
+deactivate M
+
+C -> UM: getAll()
+activate UM
+UM -> BD: SELECT * FROM User
+activate BD
+BD --> UM: all users
+deactivate BD
+UM --> C: users list
+deactivate UM
+
+C --> RO: render teamEdit.ejs with team, members, users
+deactivate C
+RO --> U: display form with team data and member list
 deactivate RO
 
+== Submit Changes ==
+U -> RO: POST /teams/edit/:id
+activate RO
+RO -> C: post_edit()
 activate C
-C -> PM: findById(team.id)
-activate PM
 
-PM -> BD: SELECT * FROM teams WHERE id=?
+C -> M: update(id, teamName, members)
+activate M
+M -> BD: UPDATE Team SET team_name=? WHERE team_id=?
 activate BD
-BD --> PM: team data
+BD --> M: team updated
 deactivate BD
+
+M -> BD: UPDATE/DELETE User_Team records
+activate BD
+BD --> M: members updated
+deactivate BD
+M --> C: success
+deactivate M
+
+C --> RO: redirect
+deactivate C
+RO --> U: redirect to /teams/list
+deactivate RO
