@@ -28,8 +28,8 @@ exports.post_standup = (request, response, next) => {
     }
 
     const email = request.session.email;
-    const today = new Date().toISOString().split('T')[0];
-
+    const selectedDate = request.body.date || new Date().toISOString().split('T')[0];
+    
     Standup.getUserId(email)
         .then(([rows]) => {
             if (rows.length === 0) {
@@ -39,14 +39,14 @@ exports.post_standup = (request, response, next) => {
 
             const user_id = rows[0].user_id;
 
-            return Standup.checkDuplicate(user_id, today)
+            return Standup.checkDuplicate(user_id, selectedDate)
                 .then(([existing]) => {
                     if (existing.length > 0) {
                         request.session.error = 'A standup report already exists for today';
                         return response.redirect('/daily_standup');
                     }
 
-                    const standup = new Standup(today, did_today.trim(), do_tomorrow.trim(), (blockers || '').trim(), user_id);
+                    const standup = new Standup(selectedDate, did_today.trim(), do_tomorrow.trim(), (blockers || '').trim(), user_id);
                     return standup.save()
                         .then(() => {
                             request.session.success = 'Process completed. Your daily activity has been successfully registered';
