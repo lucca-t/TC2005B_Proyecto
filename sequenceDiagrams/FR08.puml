@@ -8,7 +8,8 @@ control "users.controller" as C
 entity "users.model" as UM
 database "MySQL" as BD
 
-activate U
+== GET: Load Edit Form ==
+
 U -> RO: GET /users/edit/:email
 activate RO
 RO -> C: get_edit(request, response)
@@ -39,7 +40,8 @@ else fetchOne error
     RO -> U: Error response (middleware)
 end
 
-activate U
+== POST: Submit Edit Form ==
+
 U -> RO: POST /users/edit/:email
 activate RO
 RO -> C: post_edit(request, response)
