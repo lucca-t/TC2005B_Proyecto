@@ -1,90 +1,123 @@
 @startuml
 skinparam style strictuml
+skinparam maxmessagesize 150
 
 actor Lead as U
 boundary "Routes" as RO
-boundary "View: userEdit.ejs + includes/_userEdit.ejs" as V
+boundary "View: userEdit.ejs" as V
 control "users.controller" as C
 entity "users.model" as UM
 database "MySQL" as BD
 
-== GET: Load Edit Form ==
 
 U -> RO: GET /users/edit/:email
+deactivate U
+
 activate RO
 RO -> C: get_edit(request, response)
 deactivate RO
 
 activate C
-C -> UM: fetchOne(params.email)
+C ->> UM: fetchOne(params.email)
 activate UM
-UM -> BD: SELECT * FROM User WHERE email = ?
+
+UM ->> BD: SELECT * FROM User\nWHERE email = ?
 activate BD
-BD --> UM: rows / error
+BD -->> UM: rows / error
 deactivate BD
 
 alt fetchOne success
-    UM --> C: rows
+    UM -->> C: rows
     deactivate UM
-    C -> V: response.render('userEdit', { user: rows[0], csrfToken, email: session.email })
+
+    C -> V: render('userEdit', {user: rows[0], csrfToken, email: session.email})
     deactivate C
 
     activate V
     V -> U: HTML edit form
+    activate U
+    deactivate U
     deactivate V
 else fetchOne error
-    UM --> C: error
+    
+    activate UM
+    UM -->> C: error
     deactivate UM
+
     C -> RO: next(error)
     deactivate C
-    RO -> U: Error response (middleware)
+    RO -> U: Error response
+    activate U
+    deactivate U
 end
 
-== POST: Submit Edit Form ==
 
 U -> RO: POST /users/edit/:email
+deactivate U
+
 activate RO
 RO -> C: post_edit(request, response)
 deactivate RO
 
 activate C
-C -> C: normalize body fields (trim)
+C -> C: normalize email, full_name, slack_handle, slack_id
 
 alt Some field is empty/null
-    C -> V: response.status(400).render('userEdit', { error: 'All fields are required. None can be empty.' })
+    C -> C: build user payload from normalized fields
+    C -> V: status(400).render('userEdit', {error: 'All fields are required. None can be empty.'})
     deactivate C
+
     activate V
     V -> U: HTML + validation error
+    activate U
+    deactivate U
     deactivate V
 
 else Email format invalid
-    C -> V: response.status(400).render('userEdit', { error: 'Email format is invalid...' })
+    activate C
+    C -> C: build user payload from normalized fields
+    C -> V: status(400).render('userEdit', {error: 'Email format is invalid. Please use a valid email address.'})
     deactivate C
+
     activate V
     V -> U: HTML + validation error
+    activate U
+    deactivate U
     deactivate V
 
 else Valid data
-    C -> UM: updateWithoutPassword(originalEmail, email, full_name, slack_handle, slack_id)
+    activate C
+    C ->> UM: updateWithoutPassword(originalEmail, normalizedEmail, normalizedFullName, normalizedSlackHandle, normalizedSlackId)
     activate UM
-    UM -> BD: UPDATE User\nSET email=?, full_name=?, slack_handle=?, slack_id=?\nWHERE email=?
+
+    UM ->> BD: UPDATE User\nSET email=?, full_name=?, slack_handle=?, slack_id=?\nWHERE email=?
     activate BD
-    BD --> UM: ok / error
+    BD -->> UM: ok / error
     deactivate BD
 
     alt update success
-        UM --> C: ok
+        UM -->> C: ok
         deactivate UM
+
         C -> RO: response.redirect('/users/list')
         deactivate C
         RO -> U: 302 Redirect to /users/list
+        activate U
+        deactivate U
     else update error
-        UM --> C: error
+        activate UM
+        UM -->> C: error
         deactivate UM
-        C -> V: response.status(400).render('userEdit', { error: 'Error updating user: ...' })
+        activate C
+        C -> C: console.error('[POST /users/edit] Failed to update user: ...')
+        C -> C: build user payload from normalized fields
+        C -> V: status(400).render('userEdit', {error: 'Error updating user: ...'})
         deactivate C
+
         activate V
         V -> U: HTML + DB error message
+        activate U
+        deactivate U
         deactivate V
     end
 end
