@@ -64,4 +64,11 @@ module.exports = class Team {
         }, Promise.resolve());
     }
 
+    static delete(teamId) {
+        return db.execute(
+            `UPDATE Team SET deleted_at = NOW() WHERE team_id = ?`,
+            [teamId]
+        );
+    }
+
 }
