@@ -1,3 +1,4 @@
+const { deleteRegister } = require('../controllers/daily_standup.controller');
 const db = require('../util/database');
 
 module.exports = class Standup {
@@ -39,6 +40,13 @@ module.exports = class Standup {
              WHERE u.email = ?
              ORDER BY s.date DESC`,
             [email]
+        );
+    }
+
+    static deleteRegister(standupId) {
+        return db.execute(
+            'DELETE FROM Standup WHERE standup_id = ?',
+            [standupId]
         );
     }
 

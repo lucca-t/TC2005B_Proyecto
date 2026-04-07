@@ -1,3 +1,4 @@
+const { response } = require('express');
 const Standup = require('../models/standup.model');
 
 exports.get_standup_form = (request, response, next) => {
@@ -88,3 +89,22 @@ exports.get_standup_history = (request, response, next) => {
             });
         });
 };
+
+exports.post_deleteRegister = (request, response, next) => {
+    if (!request.session.email) {
+        return response.redirect('/users/login');
+    }
+
+    const standupId = request.params.id;
+
+    Standup.deleteRegister(standupId)
+        .then(() => {
+            request.session.success = 'Record deleted successfully';
+            return response.redirect('/daily_standup/history');
+        })
+        .catch((err) => {
+            console.error('Error deleting standup:', err);
+            request.session.error = 'Error deleting record. Please try again.';
+            return response.redirect('/daily_standup/history');
+        });
+}
