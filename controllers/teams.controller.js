@@ -4,13 +4,9 @@ const bcrypt = require('bcrypt');
 
 exports.get_list = (request, response, next) => {
     const error = request.session.error || '';
-<<<<<<< HEAD
-    request.session.error = '';
-=======
     const success = request.session.success || '';
     request.session.error = '';
     request.session.success = '';
->>>>>>> cesar/ind
     
     Team.getAllWithMemberCount()
         .then(([rows, fieldData]) => {
@@ -23,12 +19,8 @@ exports.get_list = (request, response, next) => {
             
             response.render('teamList', {
                 csrfToken: request.csrfToken(),
-<<<<<<< HEAD
-                error: error, 
-=======
                 error: error,
                 success: success, 
->>>>>>> cesar/ind
                 email: request.session.email || '',
                 teams: teams,
             });
@@ -140,8 +132,6 @@ exports.post_add = (request, response, next) => {
                     });
                 });
         });
-<<<<<<< HEAD
-=======
 };
 
 exports.post_delete = (request, response, next) => {
@@ -163,5 +153,4 @@ exports.post_delete = (request, response, next) => {
             request.session.error = 'Error deleting team: ' + (error.sqlMessage || error.message || 'Unknown error');
             return response.redirect('/teams/list');
         });
->>>>>>> cesar/ind
 };
