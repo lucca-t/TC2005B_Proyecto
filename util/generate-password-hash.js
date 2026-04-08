@@ -15,3 +15,9 @@ bcrypt.hash(plainPassword, 12)
         console.error('Failed to generate hash:', error.message);
         process.exit(1);
     });
+
+/**
+ * INSERT INTO User (email, password, full_name, slack_handle, slack_id)
+VALUES ('admin@mail.com', 'HASH', 'admin', '@admin', '1234');
+ * 
+ */
