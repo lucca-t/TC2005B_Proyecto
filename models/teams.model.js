@@ -36,7 +36,7 @@ module.exports = class Team {
                 t.team_start_date,
                 COUNT(ut.user_id) as memberCount
             FROM Team t
-            LEFT JOIN User_Team ut ON t.team_id = ut.team_id
+            LEFT JOIN User_Team ut ON t.team_id = ut.team_id AND ut.date_end IS NULL
             WHERE t.deleted_at IS NULL
             GROUP BY t.team_id, t.team_name, t.team_start_date
             ORDER BY t.team_name ASC`
@@ -79,13 +79,21 @@ module.exports = class Team {
         );
     }
 
-    static updateTeamMembers(teamId,newUsers) {
-        // New users is a variable that stores the usersId separated by comas, ej. (1,2,5,9)
+    static updateTeamMembers(teamId, newUsers) {
+        // newUsers is a comma-separated string of user IDs (e.g., "1,2,5,9" or empty string "")
+        // We need to convert it to a JSON array format for the stored procedure
+        
+        let userIdsArray = [];
+        if (newUsers && newUsers.trim() !== '') {
+            userIdsArray = newUsers.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+        }
+        
+        // Convert to JSON array string, e.g., '[1, 2, 5]' or '[]'
+        const userIdsJson = JSON.stringify(userIdsArray);
+        
         return db.execute(
-            `
-            CALL updateTeamMembers(?, ?)
-            `, [teamId, newUsers]
-            
+            `CALL updateTeamMembers(?, ?)`,
+            [teamId, userIdsJson]
         );
     }
 
