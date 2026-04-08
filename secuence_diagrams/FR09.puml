@@ -1,0 +1,161 @@
+@startuml AddTeamSequence
+skinparam style strictuml
+
+actor "User" as user
+boundary "Browser" as browser
+boundary "teamAdd.ejs" as view
+control "teams.routes.js" as routes
+control "teams.controller.js" as controller
+entity "teams.model.js" as model
+entity "users.model.js" as usersModel
+database "MySQL" as db
+
+== Load Add Team Form ==
+activate user
+user -> browser: 1. Click "+ New Team"
+activate browser
+deactivate user
+browser -> routes: 2. GET /teams/add
+activate routes
+deactivate browser
+routes -> controller: 3. get_add(request, response)
+deactivate routes
+activate controller
+controller -> usersModel: 4. async User.getAll()
+activate usersModel
+
+usersModel -> db: 5. SELECT * FROM User
+activate db
+db --> usersModel: 6. User rows
+deactivate db
+
+usersModel --> controller: 7. [rows, fieldData]
+deactivate usersModel
+
+controller -> view: 8. render("teamAdd", {users, csrfToken})
+activate view
+
+view --> browser: 9. HTML form with user list
+deactivate view
+deactivate controller
+deactivate routes
+activate browser
+
+browser --> user: 10. Form displayed
+deactivate browser
+activate user
+
+== Submit New Team ==
+
+user -> browser: 11. Fill team name, select members
+user -> browser: 12. Click "Create Team"
+activate browser
+deactivate user
+browser -> routes: 13. POST /teams/add\n(teamName, members[], _csrf)
+activate routes
+deactivate browser
+routes -> controller: 14. post_add(request, response)
+activate controller
+deactivate routes
+controller -> controller: 15. Validate teamName
+alt teamName is empty
+    controller -> view: 16a. render("teamAdd",\n{error: "Team name is required."})
+    deactivate controller
+    activate view
+    view --> browser: 17a. Display error
+    activate browser
+    deactivate view
+    browser --> user: 18a. Show validation error
+    deactivate browser
+    activate user
+    
+else teamName is valid
+
+    controller -> model: 16b. Team.findByName(teamName)
+    deactivate user
+    activate controller
+    activate model
+    deactivate controller
+    model -> db: 17b. SELECT team_id, team_name\nFROM Team\nWHERE team_name = ? AND deleted_at IS NULL
+    deactivate controller
+    activate db
+    db --> model: 18b. [rows]
+    activate controller
+    deactivate db
+    deactivate model
+    model --> controller: 19b. [rows]
+    deactivate controller
+    deactivate model
+
+    alt Team name already exists
+        controller -> usersModel: 20a. User.getAll()
+        activate controller
+        activate usersModel
+        usersModel -> db: 21a. SELECT * FROM User
+        activate db
+        db --> usersModel: 22a. User rows
+        deactivate db
+        usersModel --> controller: 23a. [userRows]
+        deactivate controller
+        deactivate usersModel
+        controller -> view: 24a. render("teamAdd",\n{error: 'A team with the name "X" already exists.'})
+        activate view
+        view --> browser: 25a. Display duplicate name error
+        deactivate view
+        browser --> user: 26a. Show error
+    else Team name is unique
+
+        controller -> model: 20b. new Team(teamName).save()
+        activate model
+        model -> db: 21b. INSERT INTO Team(team_name) VALUES (?)
+        activate db
+        db --> model: 22b. {insertId: teamId}
+        deactivate db
+        model --> controller: 23b. [result]
+        deactivate model
+
+        alt No members selected
+            controller -> browser: 24b-i. redirect('/teams/list')
+        else Members selected
+            controller -> model: 24b-ii. Team.addMembersToTeam(teamId, members[])
+            activate model
+            loop For each memberId
+                model -> db: 25b. INSERT INTO User_Team\n(user_id, team_id, date_start)
+                activate db
+                db --> model: 26b. OK
+                deactivate db
+            end
+            model --> controller: 27b. Success
+            deactivate model
+            controller -> browser: 28b. redirect('/teams/list')
+        end
+
+    end
+end
+deactivate controller
+deactivate routes
+
+== Redirect to Team List ==
+
+browser -> routes: 29. GET /teams/list
+activate routes
+routes -> controller: 30. get_list(req, res)
+activate controller
+controller -> model: 31. Team.getAllWithMemberCount()
+activate model
+model -> db: 32. SELECT t.*, COUNT(ut.user_id)\nFROM Team t LEFT JOIN User_Team ut ...
+activate db
+db --> model: 33. Teams with member count
+deactivate db
+model --> controller: 34. [rows]
+deactivate model
+controller -> view: 35. render("teamList", {teams, success})
+activate view
+view --> browser: 36. HTML team list
+deactivate view
+deactivate controller
+deactivate routes
+browser --> user: 37. Team list displayed
+deactivate browser
+
+@enduml
