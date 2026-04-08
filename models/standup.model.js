@@ -1,4 +1,3 @@
-const { deleteRegister } = require('../controllers/daily_standup.controller');
 const db = require('../util/database');
 
 module.exports = class Standup {

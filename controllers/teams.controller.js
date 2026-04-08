@@ -47,6 +47,29 @@ exports.get_edit = (request, response, next) => {
     });
 };
 
+exports.post_edit = (request, response, next) => {
+    const teamId = request.params.teamId;
+    const { teamName, members } = request.body;
+
+    if (!teamName || teamName.trim() === '') {
+        request.session.error = 'Team name is required.';
+        return response.redirect(`/teams/edit/${teamId}`);
+    }
+
+    const memberList = Array.isArray(members) ? members.join(',') : (members || '');
+
+    Team.updateTeamMembers(teamId, memberList)
+        .then(() => {
+            request.session.success = 'Team updated successfully!';
+            return response.redirect('/teams/list');
+        })
+        .catch((error) => {
+            console.error('[POST /teams/edit] Failed to update team:', error.sqlMessage || error.message);
+            request.session.error = 'Error updating team: ' + (error.sqlMessage || error.message || 'Unknown error');
+            return response.redirect(`/teams/edit/${teamId}`);
+        });
+};
+
 exports.get_add = (request, response, next) => {
     const error = request.session.error || '';
     request.session.error = '';
