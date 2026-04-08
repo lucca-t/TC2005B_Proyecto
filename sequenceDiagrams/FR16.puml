@@ -40,20 +40,20 @@ deactivate VL
 
 ' Section about getting the info of one team '
 activate U
-U -> RO : GET /teams/edit/:teamID
+U -> RO : GET /teams/edit/:teamId
 deactivate U
 
 activate RO
-RO -> C : get_edit(request, response, teamID)
+RO -> C : get_edit(request, response, teamId)
 deactivate RO
 
 activate C
-C -->> TM : getTeamDetails(teamID)
+C -->> TM : getTeamDetails(teamId)
 deactivate C
 
 activate TM
 
-TM -->> BD : STORED PROCEDURES OF \n GET USERS OF TEAMS
+TM -->> BD : getTeamDetails(teamId)
 activate BD
 BD -->> TM : team
 deactivate BD
@@ -70,18 +70,18 @@ deactivate VE
 
 ' Section about posting the changes of users '
 activate U
-U -> RO : POST /teams/edit/:teamID
+U -> RO : POST /teams/edit/:teamId
 deactivate U
 
 activate RO
-RO -> C : post_edit(request, response, teamID)
+RO -> C : post_edit(request, response, teamId)
 deactivate RO
 
 activate C
-C -->> TM : postEdit(list[newUsers])
+C -->> TM : postEdit(teamId,list[newUsers])
 
 activate TM
-TM -->> BD : STORED PROCEDURE OF INSERT TEAM
+TM -->> BD : updateTeamMembers(teamId,newUsers)
 activate BD
 BD -->> TM :
 deactivate BD

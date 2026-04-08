@@ -71,4 +71,22 @@ module.exports = class Team {
         );
     }
 
+    static getTeamsDetails(teamId) {
+        return db.execute(
+            `
+            CALL getTeamDetails(?)
+            `, [teamId]
+        );
+    }
+
+    static updateTeamMembers(teamId,newUsers) {
+        // New users is a variable that stores the usersId separated by comas, ej. (1,2,5,9)
+        return db.execute(
+            `
+            CALL updateTeamMembers(?, ?)
+            `, [teamId, newUsers]
+            
+        );
+    }
+
 }
