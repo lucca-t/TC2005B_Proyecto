@@ -1,115 +1,176 @@
 <section class="section">
-    <div class="container" style="max-width: 700px;">
-
-        <div class="box">
-            <form action="/teams/update/1" method="POST">
-
-                <div class="level mb-2">
-                    <div class="level-left">
-                        <h2 class="title is-4">Team Details</h2>
-                    </div>
-                </div>
-
-                <div class="field">
-                    <label class="label">Team Name</label>
-                    <div class="control">
-                        <input class="input is-medium" type="text" name="teamName" value="Ositos" required>
-                    </div>
-                </div>
-
-                <hr>
-
-                <h3 class="title is-5 mb-3">Current Members</h3>
-
-                <div class="box" style="background-color: #fafafa; border: 1px solid #dbdbdb;">
-
-                    <div class="level is-mobile"
-                        style="border-bottom: 1px solid #eaeaea; padding-bottom: 10px; margin-bottom: 10px;">
-                        <div class="level-left">
-                            <div class="level-item">
-                                <p>
-                                    <strong>Joel Garcia</strong>
-                                    <span class="tag is-warning is-light ml-2">Lead</span>
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="level-right">
-                            <div class="level-item">
-                                <div class="dropdown is-right is-hoverable">
-                                    <div class="dropdown-trigger">
-                                        <button type="button" class="button is-small is-ghost" aria-haspopup="true">
-                                            <span style="font-size: 1.2rem; font-weight: bold;">&#8942;</span>
-                                        </button>
-                                    </div>
-                                    <div class="dropdown-menu" role="menu">
-                                        <div class="dropdown-content">
-                                            <a href="#dummy-make-lead" class="dropdown-item">
-                                                Make lead member
-                                            </a>
-                                            <hr class="dropdown-divider">
-                                            <a href="#dummy-remove" class="dropdown-item has-text-danger">
-                                                Remove member
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="level is-mobile"
-                        style="border-bottom: 1px solid #eaeaea; padding-bottom: 10px; margin-bottom: 10px;">
-                        <div class="level-left">
-                            <div class="level-item">
-                                <p>
-                                    <strong>Alice Smith</strong>
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="level-right">
-                            <div class="level-item">
-                                <div class="dropdown is-right is-hoverable">
-                                    <div class="dropdown-trigger">
-                                        <button type="button" class="button is-small is-ghost" aria-haspopup="true">
-                                            <span style="font-size: 1.2rem; font-weight: bold;">&#8942;</span>
-                                        </button>
-                                    </div>
-                                    <div class="dropdown-menu" role="menu">
-                                        <div class="dropdown-content">
-                                            <a href="#dummy-make-lead" class="dropdown-item">
-                                                Make lead member
-                                            </a>
-                                            <hr class="dropdown-divider">
-                                            <a href="#dummy-remove" class="dropdown-item has-text-danger">
-                                                Remove member
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mt-4">
-                        <button type="button" class="button is-small is-info is-light">
-                            + Add more members
-                        </button>
-                    </div>
-
-                </div>
-
-                <div class="field mt-5">
-                    <div class="control">
-                        <button type="submit" class="button is-warning is-fullwidth is-medium">
-                            <strong>Save changes</strong>
-                        </button>
-                    </div>
-                </div>
-
-            </form>
+    <div class="container">
+        <div class="level mb-4">
+            <div class="level-left">
+                <h1 class="title">Edit Team</h1>
+            </div>
+            <div class="level-right">
+                <a href="/teams/list" class="button is-light"><strong>← Back</strong></a>
+            </div>
         </div>
 
+        <% if (typeof error !== 'undefined' && error) { %>
+            <div class="notification is-danger is-light mb-4" id="errorNotification">
+                <button class="delete"></button>
+                <strong><%= error %></strong>
+            </div>
+        <% } %>
+
+        <div class="columns">
+            <!-- LEFT: TEAM INFO -->
+            <div class="column is-5">
+                <div class="box">
+                    <h2 class="subtitle has-text-centered mb-5">Team Information</h2>
+
+                    <div class="field">
+                        <label class="label">Team Name</label>
+                        <div class="control">
+                            <input class="input" type="text" value="<%= teamName %>" disabled>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label class="label">Team ID</label>
+                        <div class="control">
+                            <input class="input" type="text" value="<%= teamId %>" disabled>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="field">
+                        <label class="label has-text-weight-bold">Current Members: <span class="tag is-info"><%= members.length %></span></label>
+                    </div>
+
+                    <div class="box" style="background-color: #fafafa; border: 1px solid #dbdbdb; max-height: 250px; overflow-y: auto;">
+                        <% if (members && members.length > 0) { %>
+                            <% members.forEach(member => { %>
+                                <div style="padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid #eaeaea;">
+                                    <p><strong><%= member.full_name %></strong></p>
+                                    <p class="has-text-grey is-size-7"><%= member.email %></p>
+                                </div>
+                            <% }) %>
+                        <% } else { %>
+                            <p class="has-text-grey has-text-centered">No members in this team</p>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT: MEMBER SELECTOR -->
+            <div class="column is-7">
+                <div class="box">
+                    <h2 class="subtitle mb-4">Quick Assign Members</h2>
+
+                    <form action="/teams/edit/<%= teamId %>" method="POST" id="teamEditForm">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                        
+                        <!-- SEARCH -->
+                        <div class="field mb-4">
+                            <div class="control">
+                                <input id="searchInput" class="input" type="text" placeholder="Search user by name or email...">
+                            </div>
+                        </div>
+
+                        <!-- TABLE with CHECKBOXES -->
+                        <div style="max-height: 400px; overflow-y: auto; border: 1px solid #dbdbdb; border-radius: 4px;">
+                            <table class="table is-fullwidth is-striped" style="margin-bottom: 0;">
+                                <thead style="position: sticky; top: 0; background-color: #f5f5f5;">
+                                    <tr>
+                                        <th style="width: 50px;">Select</th>
+                                        <th>User</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="userTable">
+                                    <% if (typeof allUsers !== 'undefined' && allUsers.length > 0) { %>
+                                        <% allUsers.forEach(user => {
+                                            const userId = String(user.user_id);
+                                            const isMember = members && members.some(m => String(m.user_id) === userId);
+                                            console.log(`User ${userId}: isMember=${isMember}`);
+                                        %>
+                                            <tr class="user-row" data-search="<%= (user.full_name + ' ' + user.email).toLowerCase() %>">
+                                                <td>
+                                                    <input 
+                                                        type="checkbox" 
+                                                        class="user-checkbox" 
+                                                        value="<%= user.user_id %>"
+                                                        <%= isMember ? 'checked' : '' %>
+                                                    >
+                                                </td>
+                                                <td>
+                                                    <div>
+                                                        <strong><%= user.full_name %></strong>
+                                                    </div>
+                                                    <p class="has-text-grey is-size-7"><%= user.email %></p>
+                                                </td>
+                                            </tr>
+                                        <% }) %>
+                                    <% } else { %>
+                                        <tr>
+                                            <td colspan="2" class="has-text-centered has-text-grey py-5">
+                                                No users available.
+                                            </td>
+                                        </tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- HIDDEN INPUT FOR USER IDS -->
+                        <input type="hidden" id="userIdsInput" name="userIds" value="">
+
+                        <div class="field mt-5">
+                            <div class="control">
+                                <button type="submit" class="button is-warning is-fullwidth is-medium">
+                                    <strong>Save Team Changes</strong>
+                                </button>
+                            </div>
+                        </div>
+
+                    </form>
+
+                    <p class="has-text-grey mt-3 is-size-7">
+                        ✓ Check members to include them in the team
+                    </p>
+                </div>
+            </div>
+        </div>
     </div>
 </section>
+
+<!-- JS -->
+<script>
+    // ERROR NOTIFICATION AUTO-CLOSE
+    document.addEventListener('DOMContentLoaded', () => {
+        const closeButtons = document.querySelectorAll('.notification .delete');
+        closeButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                button.parentElement.remove();
+            });
+        });
+    });
+
+    // SEARCH FILTER
+    const searchInput = document.getElementById('searchInput');
+    const rows = document.querySelectorAll('.user-row');
+
+    searchInput.addEventListener('keyup', function() {
+        const searchTerm = this.value.toLowerCase();
+        rows.forEach(row => {
+            const searchData = row.getAttribute('data-search');
+            if (searchData.includes(searchTerm)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+
+    // HANDLE FORM SUBMISSION - COLLECT CHECKED USER IDS
+    document.getElementById('teamEditForm').addEventListener('submit', function(e) {
+        const checkboxes = document.querySelectorAll('.user-checkbox:checked');
+        const userIds = Array.from(checkboxes).map(cb => cb.value).join(',');
+        document.getElementById('userIdsInput').value = userIds;
+        console.log('Selected User IDs:', userIds);
+    });
+</script>
