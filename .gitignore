@@ -1,8 +1,5 @@
 .DS_Store
 node_modules
-<<<<<<< HEAD
-database.js
-=======
 .database.js
->>>>>>> cesar/ind
 .env
+secuence_diagrams
