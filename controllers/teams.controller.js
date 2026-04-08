@@ -223,40 +223,86 @@ exports.post_add = (request, response, next) => {
         });
     }
 
-    const team = new Team(teamName.trim());
-
-    team.save()
-        .then(([result]) => {
-            const teamId = result.insertId;
-            
-            // Ensure members is an array (it comes as array from hidden inputs)
-            const memberArray = Array.isArray(members) ? members : (members ? [members] : []);
-            
-            console.log(`[POST /teams/add] Created team ${teamId} with members:`, memberArray);
-            
-            if (memberArray.length === 0) {
-                console.log(`[POST /teams/add] No members added to team ${teamId}`);
-                return response.redirect('/teams/list');
+    // Check if team name already exists
+    Team.findByName(teamName)
+        .then(([rows]) => {
+            if (rows.length > 0) {
+                console.log('[POST /teams/add] Team name already exists:', teamName);
+                return User.getAll()
+                    .then(([userRows]) => {
+                        response.status(400).render('teamAdd', {
+                            csrfToken: request.csrfToken(),
+                            email: request.session.email || '',
+                            error: `A team with the name "${teamName.trim()}" already exists.`,
+                            users: userRows,
+                        });
+                    })
+                    .catch(() => {
+                        response.status(400).render('teamAdd', {
+                            csrfToken: request.csrfToken(),
+                            email: request.session.email || '',
+                            error: `A team with the name "${teamName.trim()}" already exists.`,
+                            users: [],
+                        });
+                    });
             }
 
-            return Team.addMembersToTeam(teamId, memberArray)
-                .then(() => {
-                    console.log(`[POST /teams/add] Successfully added ${memberArray.length} members to team ${teamId}`);
-                    return response.redirect('/teams/list');
+            // Team name doesn't exist, proceed with creation
+            const team = new Team(teamName.trim());
+
+            return team.save()
+                .then(([result]) => {
+                    const teamId = result.insertId;
+                    
+                    // Ensure members is an array (it comes as array from hidden inputs)
+                    const memberArray = Array.isArray(members) ? members : (members ? [members] : []);
+                    
+                    console.log(`[POST /teams/add] Created team ${teamId} with members:`, memberArray);
+                    
+                    if (memberArray.length === 0) {
+                        console.log(`[POST /teams/add] No members added to team ${teamId}`);
+                        return response.redirect('/teams/list');
+                    }
+
+                    return Team.addMembersToTeam(teamId, memberArray)
+                        .then(() => {
+                            console.log(`[POST /teams/add] Successfully added ${memberArray.length} members to team ${teamId}`);
+                            return response.redirect('/teams/list');
+                        })
+                        .catch((error) => {
+                            console.error('[POST /teams/add] Failed to add members:', error.sqlMessage || error.message);
+                            throw error;
+                        });
                 })
                 .catch((error) => {
-                    console.error('[POST /teams/add] Failed to add members:', error.sqlMessage || error.message);
-                    throw error;
+                    console.error('[POST /teams/add] Failed to save team:', error.sqlMessage || error.message);
+                    return User.getAll()
+                        .then(([rows]) => {
+                            response.status(400).render('teamAdd', {
+                                csrfToken: request.csrfToken(),
+                                email: request.session.email || '',
+                                error: 'Error creating team: ' + (error.sqlMessage || error.message || 'Unknown error'),
+                                users: rows,
+                            });
+                        })
+                        .catch(() => {
+                            response.status(400).render('teamAdd', {
+                                csrfToken: request.csrfToken(),
+                                email: request.session.email || '',
+                                error: 'Error creating team: ' + (error.sqlMessage || error.message || 'Unknown error'),
+                                users: [],
+                            });
+                        });
                 });
         })
         .catch((error) => {
-            console.error('[POST /teams/add] Failed to save team:', error.sqlMessage || error.message);
+            console.error('[POST /teams/add] Failed to check team name:', error.message);
             User.getAll()
                 .then(([rows]) => {
                     response.status(400).render('teamAdd', {
                         csrfToken: request.csrfToken(),
                         email: request.session.email || '',
-                        error: 'Error creating team: ' + (error.sqlMessage || error.message || 'Unknown error'),
+                        error: 'Error verifying team name: ' + (error.message || 'Unknown error'),
                         users: rows,
                     });
                 })
@@ -264,7 +310,7 @@ exports.post_add = (request, response, next) => {
                     response.status(400).render('teamAdd', {
                         csrfToken: request.csrfToken(),
                         email: request.session.email || '',
-                        error: 'Error creating team: ' + (error.sqlMessage || error.message || 'Unknown error'),
+                        error: 'Error creating team. Please try again.',
                         users: [],
                     });
                 });

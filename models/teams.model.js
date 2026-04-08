@@ -97,4 +97,11 @@ module.exports = class Team {
         );
     }
 
+    static findByName(teamName) {
+        return db.execute(
+            `SELECT team_id, team_name FROM Team WHERE team_name = ? AND deleted_at IS NULL`,
+            [teamName.trim()]
+        );
+    }
+
 }
