@@ -17,6 +17,8 @@ bcrypt.hash(plainPassword, 12)
     });
 
 /**
+ * npm run hash:password -- 'password'
+ * 
  * INSERT INTO User (email, password, full_name, slack_handle, slack_id)
 VALUES ('admin@mail.com', 'HASH', 'admin', '@admin', '1234');
  * 
