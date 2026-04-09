@@ -21,34 +21,32 @@ deactivate browser
 routes -> controller: 3. get_add(request, response)
 deactivate routes
 activate controller
-controller -> usersModel: 4. async User.getAll()
+controller ->> usersModel: 4. async User.getAll()
 activate usersModel
 
 usersModel -> db: 5. SELECT * FROM User
 activate db
-db --> usersModel: 6. User rows
+db -> usersModel: 6. User rows
 deactivate db
 
-usersModel --> controller: 7. [rows, fieldData]
+usersModel ->> controller: 7. [rows, fieldData]
 deactivate usersModel
 
 controller -> view: 8. render("teamAdd", {users, csrfToken})
 activate view
 
-view --> browser: 9. HTML form with user list
+view -> browser: 9. HTML form with user list
 deactivate view
 deactivate controller
 deactivate routes
 activate browser
 
-browser --> user: 10. Form displayed
+browser -> user: 10. Form displayed
 deactivate browser
 activate user
 
 == Submit New Team ==
-
-user -> browser: 11. Fill team name, select members
-user -> browser: 12. Click "Create Team"
+user -> browser: 12. Fill team name, select members, Click "Create Team"
 activate browser
 deactivate user
 browser -> routes: 13. POST /teams/add\n(teamName, members[], _csrf)
@@ -62,72 +60,88 @@ alt teamName is empty
     controller -> view: 16a. render("teamAdd",\n{error: "Team name is required."})
     deactivate controller
     activate view
-    view --> browser: 17a. Display error
+    view -> browser: 17a. Display error
     activate browser
     deactivate view
-    browser --> user: 18a. Show validation error
+    browser -> user: 18a. Show validation error
     deactivate browser
     activate user
     
 else teamName is valid
 
-    controller -> model: 16b. Team.findByName(teamName)
+    controller ->> model: 16b. Team.findByName(teamName)
     deactivate user
     activate controller
     activate model
-    deactivate controller
     model -> db: 17b. SELECT team_id, team_name\nFROM Team\nWHERE team_name = ? AND deleted_at IS NULL
-    deactivate controller
     activate db
-    db --> model: 18b. [rows]
-    activate controller
+    db -> model: 18b. [rows]
     deactivate db
-    deactivate model
-    model --> controller: 19b. [rows]
+    model ->> controller: 19b. [rows]
     deactivate controller
     deactivate model
 
     alt Team name already exists
-        controller -> usersModel: 20a. User.getAll()
+        controller ->> usersModel: 20a. async User.getAll()
         activate controller
         activate usersModel
         usersModel -> db: 21a. SELECT * FROM User
         activate db
-        db --> usersModel: 22a. User rows
+        db -> usersModel: 22a. User rows
         deactivate db
-        usersModel --> controller: 23a. [userRows]
-        deactivate controller
+        usersModel ->> controller: 23a. [userRows]
         deactivate usersModel
+        
         controller -> view: 24a. render("teamAdd",\n{error: 'A team with the name "X" already exists.'})
+        deactivate controller
         activate view
-        view --> browser: 25a. Display duplicate name error
+        view -> browser: 25a. Display duplicate name error
+        activate browser
         deactivate view
-        browser --> user: 26a. Show error
+        browser -> user: 26a. Show error
+        activate user
+        deactivate browser
+        deactivate user
     else Team name is unique
 
-        controller -> model: 20b. new Team(teamName).save()
-        activate model
-        model -> db: 21b. INSERT INTO Team(team_name) VALUES (?)
-        activate db
-        db --> model: 22b. {insertId: teamId}
-        deactivate db
-        model --> controller: 23b. [result]
-        deactivate model
+    controller ->> model: 20b. async new Team(teamName).save()
+    activate controller
+    activate model
+
+    model -> db: 21b. INSERT INTO Team(team_name) VALUES (?)
+    activate db
+
+    db --> model: 22b. {insertId: teamId}
+    deactivate db
+
+    model -> controller: 23b. result
+    deactivate model
+    deactivate controller
 
         alt No members selected
             controller -> browser: 24b-i. redirect('/teams/list')
+            activate controller
+            activate browser
+            deactivate browser
+            deactivate controller
         else Members selected
-            controller -> model: 24b-ii. Team.addMembersToTeam(teamId, members[])
+            controller ->> model: 24b-ii. Team.addMembersToTeam(teamId, members[])
+            activate controller
             activate model
             loop For each memberId
                 model -> db: 25b. INSERT INTO User_Team\n(user_id, team_id, date_start)
                 activate db
-                db --> model: 26b. OK
+                db -> model: 26b. OK
                 deactivate db
             end
-            model --> controller: 27b. Success
+            model ->> controller: 27b. Success
             deactivate model
+            deactivate controller
             controller -> browser: 28b. redirect('/teams/list')
+            activate controller
+            activate browser
+            deactivate browser
+            deactivate controller
         end
 
     end
@@ -138,24 +152,29 @@ deactivate routes
 == Redirect to Team List ==
 
 browser -> routes: 29. GET /teams/list
+activate browser
 activate routes
+deactivate browser
 routes -> controller: 30. get_list(req, res)
+deactivate routes
 activate controller
-controller -> model: 31. Team.getAllWithMemberCount()
+controller ->> model: 31. Team.getAllWithMemberCount()
 activate model
 model -> db: 32. SELECT t.*, COUNT(ut.user_id)\nFROM Team t LEFT JOIN User_Team ut ...
 activate db
-db --> model: 33. Teams with member count
+db -> model: 33. Teams with member count
 deactivate db
-model --> controller: 34. [rows]
+model ->> controller: 34. [rows]
 deactivate model
 controller -> view: 35. render("teamList", {teams, success})
 activate view
-view --> browser: 36. HTML team list
+view -> browser: 36. HTML team list
 deactivate view
 deactivate controller
 deactivate routes
-browser --> user: 37. Team list displayed
+activate browser
+browser -> user: 37. Team list displayed
 deactivate browser
+activate user
 
 @enduml
