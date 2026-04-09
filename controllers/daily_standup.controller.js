@@ -13,6 +13,7 @@ exports.get_standup_form = (request, response, next) => {
         success: success,
         title: 'Register activity - Daily Standup+',
         email: request.session.email || '',
+        showHistorialBtn: true,
     });
 };
 
