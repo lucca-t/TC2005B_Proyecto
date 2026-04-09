@@ -9,4 +9,5 @@ router.post('/edit/:teamId', isAuth, teamsController.post_edit);
 router.get('/add', isAuth, teamsController.get_add);
 router.post('/add', isAuth, teamsController.post_add);
 router.post('/delete/:id', isAuth, teamsController.post_delete);
+router.post('/details/:id', isAuth, teamsController.get_details);
 module.exports = router;

@@ -67,30 +67,3 @@ deactivate C
 activate VE
 VE -> U : html
 deactivate VE
-
-' Section about posting the changes of users '
-activate U
-U -> RO : POST /teams/edit/:teamID
-deactivate U
-
-activate RO
-RO -> C : post_edit(request, response, teamID)
-deactivate RO
-
-activate C
-C -->> TM : postEdit(list[newUsers])
-
-activate TM
-TM -->> BD : STORED PROCEDURE OF INSERT TEAM
-activate BD
-BD -->> TM :
-deactivate BD
-TM -->> C :
-deactivate TM
-C -> VL : response.render('teamList', teams)
-deactivate C
-
-activate VL
-VL -> U : html
-deactivate VL
-activate U
