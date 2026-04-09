@@ -9,21 +9,21 @@ module.exports = class Team {
 
     save() {
         return db.execute(
-            `INSERT INTO Team(team_name) VALUES (?)`,
+            `INSERT INTO team(team_name) VALUES (?)`,
             [this.teamName]
         );
     }
 
     static fetchOne(team_idSearch) {
         return db.execute(
-            `SELECT * FROM Team WHERE team_id = ?`, [team_idSearch]
+            `SELECT * FROM team WHERE team_id = ?`, [team_idSearch]
         );
     }
     
     static getAll() {
         return db.execute(`
             SELECT team_id, team_name, team_start_date, deleted_at 
-            FROM Team
+            FROM team
             WHERE deleted_at IS NULL`
         );
     }
@@ -35,8 +35,8 @@ module.exports = class Team {
                 t.team_name,
                 t.team_start_date,
                 COUNT(ut.user_id) as memberCount
-            FROM Team t
-            LEFT JOIN User_Team ut ON t.team_id = ut.team_id AND ut.date_end IS NULL
+            FROM team t
+            LEFT JOIN user_team ut ON t.team_id = ut.team_id AND ut.date_end IS NULL
             WHERE t.deleted_at IS NULL
             GROUP BY t.team_id, t.team_name, t.team_start_date
             ORDER BY t.team_name ASC`
@@ -54,7 +54,7 @@ module.exports = class Team {
         return memberIds.reduce((promise, memberId) => {
             return promise.then(() => {
                 return db.execute(
-                    `INSERT INTO User_Team(user_id, team_id, date_start) VALUES (?, ?, ?)`,
+                    `INSERT INTO user_team(user_id, team_id, date_start) VALUES (?, ?, ?)`,
                     [parseInt(memberId), teamId, dateStart]
                 ).catch(error => {
                     console.error(`Failed to add member ${memberId} to team ${teamId}:`, error.message);
@@ -66,7 +66,7 @@ module.exports = class Team {
 
     static delete(teamId) {
         return db.execute(
-            `UPDATE Team SET deleted_at = NOW() WHERE team_id = ?`,
+            `UPDATE team SET deleted_at = NOW() WHERE team_id = ?`,
             [teamId]
         );
     }
@@ -99,7 +99,7 @@ module.exports = class Team {
 
     static findByName(teamName) {
         return db.execute(
-            `SELECT team_id, team_name FROM Team WHERE team_name = ? AND deleted_at IS NULL`,
+            `SELECT team_id, team_name FROM team WHERE team_name = ? AND deleted_at IS NULL`,
             [teamName.trim()]
         );
     }

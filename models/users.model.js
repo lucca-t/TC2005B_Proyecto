@@ -14,7 +14,7 @@ module.exports = class User {
     save() {
         return bcrypt.hash(this.password, 12).then((password_hash) => {
             return db.execute(
-            `INSERT INTO User(email, password, full_name, slack_handle, slack_id) VALUES (?, ?, ?, ?, ?)`,
+            `INSERT INTO user(email, password, full_name, slack_handle, slack_id) VALUES (?, ?, ?, ?, ?)`,
             [this.email, password_hash, this.fullName, this.slackHandle, this.slackId]
             );
         }).catch((error) => {
@@ -25,19 +25,19 @@ module.exports = class User {
     
     static fetchOne(email) {
         return db.execute(
-            `SELECT * FROM User WHERE email = ?`, [email]
+            `SELECT * FROM user WHERE email = ?`, [email]
         );
     }
 
     static getAll() {
         return db.execute(
-            `SELECT user_id, email, password, full_name, slack_handle, slack_id FROM User WHERE deleted_at IS NULL`
+            `SELECT user_id, email, password, full_name, slack_handle, slack_id FROM user WHERE deleted_at IS NULL`
         );
     }
 
     static updateWithoutPassword(originalEmail, email, fullName, slackHandle, slackId) {
         return db.execute(
-            `UPDATE User
+            `UPDATE user
             SET email = ?, full_name = ?, slack_handle = ?, slack_id = ?
             WHERE email = ?`,
             [email, fullName, slackHandle, slackId, originalEmail]
@@ -47,7 +47,7 @@ module.exports = class User {
     static updateWithPassword(originalEmail, email, password, fullName, slackHandle, slackId) {
         return bcrypt.hash(password, 12).then((passwordHash) => {
             return db.execute(
-                `UPDATE User
+                `UPDATE user
                 SET email = ?, password = ?, full_name = ?, slack_handle = ?, slack_id = ?
                 WHERE email = ?`,
                 [email, passwordHash, fullName, slackHandle, slackId, originalEmail]

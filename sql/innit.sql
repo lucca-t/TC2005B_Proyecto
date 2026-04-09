@@ -1,37 +1,37 @@
 SET
     FOREIGN_KEY_CHECKS = 0;
 
-DROP TABLE IF EXISTS `Project_Report`;
+DROP TABLE IF EXISTS `project_report`;
 
-DROP TABLE IF EXISTS `Team_Report`;
+DROP TABLE IF EXISTS `team_report`;
 
-DROP TABLE IF EXISTS `User_Report`;
+DROP TABLE IF EXISTS `user_report`;
 
-DROP TABLE IF EXISTS `Report_Standup`;
+DROP TABLE IF EXISTS `report_standup`;
 
-DROP TABLE IF EXISTS `Standup_Project`;
+DROP TABLE IF EXISTS `standup_project`;
 
-DROP TABLE IF EXISTS `Report`;
+DROP TABLE IF EXISTS `report`;
 
-DROP TABLE IF EXISTS `Standup`;
+DROP TABLE IF EXISTS `standup`;
 
-DROP TABLE IF EXISTS `Highlights`;
+DROP TABLE IF EXISTS `highlights`;
 
-DROP TABLE IF EXISTS `Project`;
+DROP TABLE IF EXISTS `project`;
 
-DROP TABLE IF EXISTS `User_Team`;
+DROP TABLE IF EXISTS `user_team`;
 
-DROP TABLE IF EXISTS `User_Role`;
+DROP TABLE IF EXISTS `user_role`;
 
-DROP TABLE IF EXISTS `Role_Privilege`;
+DROP TABLE IF EXISTS `role_privilege`;
 
-DROP TABLE IF EXISTS `Team`;
+DROP TABLE IF EXISTS `team`;
 
-DROP TABLE IF EXISTS `User`;
+DROP TABLE IF EXISTS `user`;
 
-DROP TABLE IF EXISTS `Role`;
+DROP TABLE IF EXISTS `role`;
 
-DROP TABLE IF EXISTS `Privilege`;
+DROP TABLE IF EXISTS `privilege`;
 
 DROP PROCEDURE IF EXISTS `getTeamDetails`;
 

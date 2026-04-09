@@ -12,21 +12,21 @@ module.exports = class Standup {
 
     save() {
         return db.execute(
-            'INSERT INTO Standup (date, did_today, do_tomorrow, blockers, user_id) VALUES (?, ?, ?, ?, ?)',
+            'INSERT INTO standup (date, did_today, do_tomorrow, blockers, user_id) VALUES (?, ?, ?, ?, ?)',
             [this.date, this.did_today, this.do_tomorrow, this.blockers, this.user_id]
         );
     }
 
     static getUserId(email) {
         return db.execute(
-            'SELECT user_id FROM User WHERE email = ?',
+            'SELECT user_id FROM user WHERE email = ?',
             [email]
         );
     }
 
     static checkDuplicate(user_id, date) {
         return db.execute(
-            'SELECT standup_id FROM Standup WHERE user_id = ? AND date = ?',
+            'SELECT standup_id FROM standup WHERE user_id = ? AND date = ?',
             [user_id, date]
         );
     }
@@ -34,8 +34,8 @@ module.exports = class Standup {
     static getHistory(email) {
         return db.execute(
             `SELECT s.standup_id, s.date, s.did_today, s.do_tomorrow, s.blockers
-             FROM Standup s
-             INNER JOIN User u ON s.user_id = u.user_id
+             FROM standup s
+             INNER JOIN user u ON s.user_id = u.user_id
              WHERE u.email = ?
              ORDER BY s.date DESC`,
             [email]
@@ -44,7 +44,7 @@ module.exports = class Standup {
 
     static deleteRegister(standupId) {
         return db.execute(
-            'DELETE FROM Standup WHERE standup_id = ?',
+            'DELETE FROM standup WHERE standup_id = ?',
             [standupId]
         );
     }
