@@ -7,13 +7,14 @@ exports.get_standup_form = (request, response, next) => {
   request.session.error = '';
   request.session.success = '';
 
-  response.render('daily_standup', {
-    csrfToken: request.csrfToken(),
-    error: error,
-    success: success,
-    title: 'Register activity - Daily Standup+',
-    email: request.session.email || '',
-  });
+    response.render('daily_standup', {
+        csrfToken: request.csrfToken(),
+        error: error,
+        success: success,
+        title: 'Register activity - Daily Standup+',
+        email: request.session.email || '',
+        showHistorialBtn: true,
+    });
 };
 
 exports.post_standup = (request, response, next) => {
