@@ -1,49 +1,49 @@
 const db = require('../util/database');
 
 module.exports = class Project {
-    static getTeams() {
-        return db.execute(
-            `SELECT team_id, team_name
+  static getTeams() {
+    return db.execute(
+        `SELECT team_id, team_name
              FROM team
              WHERE deleted_at IS NULL
-             ORDER BY team_name ASC`
-        );
-    }
+             ORDER BY team_name ASC`,
+    );
+  }
 
-    static findByNameAndTeam(name, teamId) {
-        return db.execute(
-            `SELECT project_id
+  static findByNameAndTeam(name, teamId) {
+    return db.execute(
+        `SELECT project_id
                          FROM project
              WHERE LOWER(name) = LOWER(?)
                AND team_id = ?
              LIMIT 1`,
-            [name, teamId]
-        );
-    }
+        [name, teamId],
+    );
+  }
 
-    static async insert(projectData) {
-        const {
-            name,
-            description,
-            team_id,
-            status,
-            created_at,
-        } = projectData;
+  static async insert(projectData) {
+    const {
+      name,
+      description,
+      team_id,
+      status,
+      created_at,
+    } = projectData;
 
-        const [insertResult] = await db.execute(
-            `INSERT INTO project(name, description, team_id, status, created_at, project_state)
+    const [insertResult] = await db.execute(
+        `INSERT INTO project(name, description, team_id, status, created_at, project_state)
              VALUES (?, ?, ?, ?, ?, ?)`,
-            [name, description, team_id, status, created_at, status]
-        );
+        [name, description, team_id, status, created_at, status],
+    );
 
-        const [rows] = await db.execute(
-            `SELECT project_id, name, description, team_id, status, created_at, project_state
+    const [rows] = await db.execute(
+        `SELECT project_id, name, description, team_id, status, created_at, project_state
              FROM project
              WHERE project_id = ?
              LIMIT 1`,
-            [insertResult.insertId]
-        );
+        [insertResult.insertId],
+    );
 
-        return rows[0];
-    }
+    return rows[0];
+  }
 };

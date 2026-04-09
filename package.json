@@ -17,6 +17,8 @@
   "scripts": {
     "start": "node --watch app.js",
     "hash:password": "node util/generate-password-hash.js",
+    "lint": "eslint . --ext .js",
+    "lint:fix": "eslint . --ext .js --fix",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
@@ -28,5 +30,9 @@
     "express": "^5.2.1",
     "express-session": "^1.19.0",
     "mysql2": "^3.20.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.1",
+    "eslint-config-google": "^0.14.0"
   }
 }

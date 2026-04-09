@@ -8,4 +8,4 @@ router.get('/team', isAuth, reportsController.get_team_report);
 router.get('/project', isAuth, reportsController.get_project_report);
 router.get('/', isAuth, reportsController.get_reports);
 
-module.exports = router;  
+module.exports = router;

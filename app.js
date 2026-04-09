@@ -1,10 +1,10 @@
-//Requires
+// Requires
 
 const express = require('express');
 const app = express();
 
 const bodyParser = require('body-parser');
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.urlencoded({extended: false}));
 
 const path = require('path');
 app.use(express.static(path.join(__dirname, 'public')));
@@ -14,9 +14,9 @@ app.set('views', 'views');
 
 const session = require('express-session');
 app.use(session({
-    secret: 'mysecretkey',
-    resave: false,
-    saveUninitialized: false,
+  secret: 'mysecretkey',
+  resave: false,
+  saveUninitialized: false,
 }));
 
 const csrf = require('csurf');
@@ -24,10 +24,10 @@ app.use(csrf());
 
 // Expose session data to all views
 app.use((req, res, next) => {
-    res.locals.urlActual = req.path;
-    res.locals.isLoggedIn = req.session.isLoggedIn || false;
-    res.locals.email = req.session.email || '';
-    next();
+  res.locals.urlActual = req.path;
+  res.locals.isLoggedIn = req.session.isLoggedIn || false;
+  res.locals.email = req.session.email || '';
+  next();
 });
 
 // Routes
@@ -52,16 +52,16 @@ app.use('/daily_standup', route_standup);
 
 
 app.use((request, response, next) => {
-    response.status(404).send('404 Not Found');
+  response.status(404).send('404 Not Found');
 });
 
 // Global error handler
 app.use((err, req, res, next) => {
-    console.error('[ERROR]', err.code || err.status, err.message);
-    if (err.code === 'EBADCSRFTOKEN') {
-        return res.status(403).send('Invalid or expired CSRF token. Please reload the page and try again.');
-    }
-    res.status(err.status || 500).send('Internal server error: ' + err.message);
+  console.error('[ERROR]', err.code || err.status, err.message);
+  if (err.code === 'EBADCSRFTOKEN') {
+    return res.status(403).send('Invalid or expired CSRF token. Please reload the page and try again.');
+  }
+  res.status(err.status || 500).send('Internal server error: ' + err.message);
 });
 
 app.listen(3000);
