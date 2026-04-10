@@ -1,0 +1,138 @@
+@startuml DeleteTeamSequence
+skinparam style strictuml
+
+actor "User" as user
+boundary "Browser" as browser
+boundary "teamList.ejs" as view
+control "teams.routes.js" as routes
+control "teams.controller.js" as controller
+entity "teams.model.js" as model
+database "MySQL" as db
+
+== Display Team List ==
+activate user
+user -> browser: 1. Navigate to Team List
+activate browser
+deactivate user
+browser -> routes: 2. GET /teams/list
+activate routes
+deactivate browser
+routes -> controller: 3. get_list(request, response)
+deactivate routes
+activate controller
+controller ->> model: 4. async Team.getAllWithMemberCount()
+activate model
+
+model -> db: 5. SELECT t.*, COUNT(ut.user_id)\nFROM Team t LEFT JOIN User_Team ut ...
+activate db
+db -> model: 6. Teams with member count
+deactivate db
+
+model ->> controller: 7. [rows, fieldData]
+deactivate model
+
+controller -> view: 8. render("teamList", {teams, csrfToken})
+activate view
+
+view -> browser: 9. HTML team list with delete buttons
+deactivate view
+deactivate controller
+deactivate routes
+activate browser
+
+browser -> user: 10. Team list displayed
+deactivate browser
+activate user
+
+== Delete Team ==
+user -> browser: 11. Click "Delete" button on a team
+activate browser
+deactivate user
+
+browser -> browser: 12. confirm('Are you sure you\nwant to delete this team?')
+
+alt User cancels confirmation
+    browser -> user: 13a. Action cancelled
+    activate user
+    deactivate browser
+    deactivate user
+
+else User confirms deletion
+    browser -> routes: 13b. POST /teams/delete/:id\n(_csrf)
+    activate browser
+    activate routes
+    deactivate browser
+    routes -> controller: 14. post_delete(request, response)
+    activate controller
+    deactivate routes
+
+    controller -> controller: 15. Validate teamId
+
+    alt teamId is empty
+        controller -> browser: 16a. redirect('/teams/list')\n(session.error = "Team ID is required.")
+        activate browser
+        deactivate browser
+        deactivate controller
+
+    else teamId is valid
+        controller ->> model: 16b. async Team.delete(teamId)
+        activate controller
+        activate model
+
+        model -> db: 17b. UPDATE Team\nSET deleted_at = NOW()\nWHERE team_id = ?
+        activate db
+        db -> model: 18b. OK (soft delete applied)
+        deactivate db
+
+        model ->> controller: 19b. result
+        deactivate model
+        deactivate controller
+
+        alt Delete succeeds
+            controller -> browser: 20b-i. redirect('/teams/list')\n(session.success = "Team deleted successfully!")
+            activate controller
+            activate browser
+            deactivate browser
+            deactivate controller
+
+        else Delete fails (DB error)
+            controller -> browser: 20b-ii. redirect('/teams/list')\n(session.error = "Error deleting team: ...")
+            activate controller
+            deactivate controller
+            activate browser
+            deactivate browser
+        end
+    end
+end
+deactivate controller
+deactivate routes
+
+== Redirect to Team List ==
+
+browser -> routes: 21. GET /teams/list
+activate browser
+activate routes
+deactivate browser
+routes -> controller: 22. get_list(req, res)
+deactivate routes
+activate controller
+controller ->> model: 23. async Team.getAllWithMemberCount()
+activate model
+model -> db: 24. SELECT t.*, COUNT(ut.user_id)\nFROM Team t LEFT JOIN User_Team ut ...
+activate db
+db -> model: 25. Teams with member count
+deactivate db
+model ->> controller: 26. [rows]
+deactivate model
+controller -> view: 27. render("teamList", {teams, success})
+activate view
+view -> browser: 28. HTML team list (without deleted team)
+deactivate view
+deactivate controller
+deactivate routes
+activate browser
+browser -> user: 29. Updated team list displayed\nwith success message
+deactivate browser
+activate user
+
+@enduml
