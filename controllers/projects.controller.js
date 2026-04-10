@@ -1,47 +1,15 @@
 const Project = require('../models/projects.model');
 const User = require('../models/users.model');
 
-<<<<<<< HEAD
+// Helper to get current user ID from session email
 const getCurrentUserId = async (request) => {
-  const email = request.session.email || '';
-  if (!email) {
-    return null;
-  }
-
-  const [rows] = await User.fetchOne(email);
-  if (rows.length === 0) {
-    return null;
-  }
-
-  return rows[0].user_id;
+  const email = request.session.email;
+  if (!email) return null;
+  const [users] = await User.fetchOne(email);
+  if (!users || users.length === 0) return null;
+  return users[0].user_id;
 };
 
-exports.get_add = async (request, response, next) => {
-  try {
-    const userId = await getCurrentUserId(request);
-    if (!userId) {
-      return next(new Error('User not found.'));
-    }
-
-    const [rows] = await Project.getTeams(userId);
-    response.render('projectsAdd', {
-      csrfToken: request.csrfToken(),
-      email: request.session.email || '',
-      teams: rows,
-      formData: {
-        name: '',
-        description: '',
-        team_id: '',
-        status: 'active',
-      },
-      errors: '',
-      error: '',
-      msg: '',
-    });
-  } catch (error) {
-    next(error);
-  }
-=======
 exports.get_list = (request, response, next) => {
   const error = request.session.error || '';
   const success = request.session.success || '';
@@ -91,7 +59,6 @@ exports.get_add = (request, response, next) => {
       .catch((error) => {
         next(error);
       });
->>>>>>> cesar/ind
 };
 
 exports.post_add = async (request, response, next) => {
@@ -109,12 +76,7 @@ exports.post_add = async (request, response, next) => {
   };
 
   const renderForm = async (payload) => {
-    const userId = await getCurrentUserId(request);
-    if (!userId) {
-      throw new Error('User not found.');
-    }
-
-    const [teams] = await Project.getTeams(userId);
+    const [teams] = await Project.getTeams();
     response.status(payload.statusCode || 400).render('projectsAdd', {
       csrfToken: request.csrfToken(),
       email: request.session.email || '',
@@ -169,48 +131,6 @@ exports.post_add = async (request, response, next) => {
   }
 };
 
-<<<<<<< HEAD
-exports.get_list = (request, response, next) => {
-  getCurrentUserId(request)
-      .then((userId) => {
-        if (!userId) {
-          throw new Error('User not found.');
-        }
-
-        return Project.getProjects(userId);
-      })
-      .then(([rows]) => {
-        const projects = rows.map((row) => ({
-          id: row.project_id,
-          name: row.name,
-          description: row.description,
-          status: row.status,
-          createdAt: row.created_at,
-          projectState: row.project_state,
-          endDate: row.end_date,
-        }));
-
-        response.render('projectsList', {
-          csrfToken: request.csrfToken(),
-          email: request.session.email || '',
-          projects,
-          emptyState: projects.length === 0 ?
-              'There are no active projects at this time.' : '',
-        });
-      })
-      .catch((error) => {
-        console.error(
-            '[GET /projects/list] Failed to load active projects:',
-            error.message,
-        );
-        response.status(500).render('projectsList', {
-          csrfToken: request.csrfToken(),
-          email: request.session.email || '',
-          projects: [],
-          emptyState: 'Please try again later.',
-          msg: 'Could not load active projects.',
-        });
-=======
 exports.post_delete = (request, response, next) => {
   const projectId = request.params.id;
 
@@ -301,6 +221,5 @@ exports.post_link = (request, response, next) => {
         console.error('[POST /projects/link] Failed to link project:', error.sqlMessage || error.message);
         request.session.error = 'Error linking project to team: ' + (error.sqlMessage || error.message || 'Unknown error');
         return response.redirect(`/projects/link/${projectId}`);
->>>>>>> cesar/ind
       });
 };

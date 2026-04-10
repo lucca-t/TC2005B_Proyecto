@@ -2,7 +2,16 @@
 const db = require('../util/database');
 
 module.exports = class Project {
-  static getTeams(userId) {
+  static getTeams() {
+    return db.execute(
+        `SELECT t.team_id, t.team_name
+             FROM team t
+             WHERE t.deleted_at IS NULL
+             ORDER BY t.team_name ASC`,
+    );
+  }
+
+  static getTeamsByUser(userId) {
     return db.execute(
         `SELECT t.team_id, t.team_name
              FROM team t
