@@ -1,0 +1,51 @@
+@startuml
+skinparam style strictuml
+skinparam maxmessagesize 150
+
+actor Member as U
+boundary "Routes" as RO
+boundary "View: projectsList.ejs" as VL
+control "projects.controller" as C
+entity "Project.model" as PM
+database "MySQL" as BD
+
+activate U
+U -> RO: GET /projects/list
+deactivate U
+
+activate RO
+RO -> C: get_list(request, response, next)
+deactivate RO
+
+activate C
+C ->> PM: getActiveProjects()
+activate PM
+
+PM ->> BD: SELECT project_id, name, description, team_id, status, created_at, project_state, end_date\nFROM project\nWHERE status = 'active'\nORDER BY created_at DESC
+activate BD
+
+BD -->> PM: rows
+deactivate BD
+
+PM -->> C: rows
+deactivate PM
+
+C -> C: check whether rows is empty
+
+alt Active projects found
+    C -> VL: render('projectsList', {projects: rows, msg: '', emptyState: ''})
+    deactivate C
+
+    activate VL
+    VL -> U: HTML + active projects list
+    deactivate VL
+else No active projects
+    C -> VL: render('projectsList', {projects: [], msg: 'No active projects found.', emptyState: 'There are no active projects at this time.'})
+    deactivate C
+
+    activate VL
+    VL -> U: HTML + empty-state message
+    deactivate VL
+end
+
+@enduml
