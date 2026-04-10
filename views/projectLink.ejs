@@ -1,0 +1,54 @@
+<%- include('includes/_header') %>
+
+<section class="section">
+    <div class="container" style="max-width: 900px;">
+        <div class="level mb-5">
+            <div class="level-left">
+                <h1 class="title">Link Project to Team</h1>
+            </div>
+            <div class="level-right">
+                <a href="/projects/list" class="button is-light"><strong>Back to projects</strong></a>
+            </div>
+        </div>
+
+        <% if (error) { %>
+            <div class="notification is-danger is-light"><%= error %></div>
+        <% } %>
+
+        <div class="box">
+            <div class="content mb-4">
+                <p><strong>Project:</strong> <%= project.name %></p>
+                <p><strong>Current Team:</strong> <%= project.team_name ? project.team_name : 'No team assigned' %></p>
+            </div>
+
+            <form action="/projects/link/<%= project.project_id %>" method="POST">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+                <div class="field">
+                    <label class="label">Select Team</label>
+                    <div class="control">
+                        <div class="select is-fullwidth">
+                            <select name="team_id" required>
+                                <option value="">-- Select a team --</option>
+                                <% teams.forEach(team => { %>
+                                    <option value="<%= team.team_id %>" <%= (project.team_id == team.team_id) ? 'selected' : '' %>>
+                                        <%= team.team_name %>
+                                    </option>
+                                <% }) %>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field mt-5">
+                    <div class="control">
+                        <button type="submit" class="button is-primary">Link to Team</button>
+                        <a href="/projects/list" class="button is-light">Cancel</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+
+<%- include('includes/_footer') %>

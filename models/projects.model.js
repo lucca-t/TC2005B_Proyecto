@@ -10,6 +10,44 @@ module.exports = class Project {
     );
   }
 
+  static getAll() {
+    return db.execute(
+        `SELECT p.project_id, p.name, p.description, p.start_date, p.end_date,
+                p.status, p.created_at, p.project_state, p.team_id,
+                t.team_name
+         FROM project p
+         LEFT JOIN team t ON p.team_id = t.team_id
+         WHERE p.status != 'deleted'
+         ORDER BY p.name ASC`,
+    );
+  }
+
+  static fetchOne(projectId) {
+    return db.execute(
+        `SELECT p.project_id, p.name, p.description, p.start_date, p.end_date,
+                p.status, p.created_at, p.project_state, p.team_id,
+                t.team_name
+         FROM project p
+         LEFT JOIN team t ON p.team_id = t.team_id
+         WHERE p.project_id = ?`,
+        [projectId],
+    );
+  }
+
+  static delete(projectId) {
+    return db.execute(
+        `UPDATE project SET status = 'deleted' WHERE project_id = ?`,
+        [projectId],
+    );
+  }
+
+  static updateTeam(projectId, teamId) {
+    return db.execute(
+        `UPDATE project SET team_id = ? WHERE project_id = ?`,
+        [teamId, projectId],
+    );
+  }
+
   static findByNameAndTeam(name, teamId) {
     return db.execute(
         `SELECT project_id
