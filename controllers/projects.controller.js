@@ -1,6 +1,7 @@
 const Project = require('../models/projects.model');
 const User = require('../models/users.model');
 
+<<<<<<< HEAD
 const getCurrentUserId = async (request) => {
   const email = request.session.email || '';
   if (!email) {
@@ -40,6 +41,57 @@ exports.get_add = async (request, response, next) => {
   } catch (error) {
     next(error);
   }
+=======
+exports.get_list = (request, response, next) => {
+  const error = request.session.error || '';
+  const success = request.session.success || '';
+  request.session.error = '';
+  request.session.success = '';
+
+  Project.getAll()
+      .then(([rows, fieldData]) => {
+        response.render('projectShow', {
+          csrfToken: request.csrfToken(),
+          error: error,
+          success: success,
+          email: request.session.email || '',
+          projects: rows,
+        });
+      })
+      .catch((error) => {
+        console.error('[GET /projects/list] Failed to fetch projects:', error.message);
+        response.render('projectShow', {
+          csrfToken: request.csrfToken(),
+          error: 'Error loading projects.',
+          success: '',
+          email: request.session.email || '',
+          projects: [],
+        });
+      });
+};
+
+exports.get_add = (request, response, next) => {
+  Project.getTeams()
+      .then(([rows, fieldData]) => {
+        response.render('projectsAdd', {
+          csrfToken: request.csrfToken(),
+          email: request.session.email || '',
+          teams: rows,
+          formData: {
+            name: '',
+            description: '',
+            team_id: '',
+            status: 'active',
+          },
+          errors: '',
+          error: '',
+          msg: '',
+        });
+      })
+      .catch((error) => {
+        next(error);
+      });
+>>>>>>> cesar/ind
 };
 
 exports.post_add = async (request, response, next) => {
@@ -100,12 +152,8 @@ exports.post_add = async (request, response, next) => {
       created_at: createdAt,
     });
 
-    return response.render('projectShow', {
-      csrfToken: request.csrfToken(),
-      email: request.session.email || '',
-      project: insertedProject,
-      success: 'Project created successfully.',
-    });
+    request.session.success = 'Project created successfully.';
+    return response.redirect('/projects/list');
   } catch (error) {
     console.error(
         '[POST /projects/add] Failed to save project:',
@@ -121,6 +169,7 @@ exports.post_add = async (request, response, next) => {
   }
 };
 
+<<<<<<< HEAD
 exports.get_list = (request, response, next) => {
   getCurrentUserId(request)
       .then((userId) => {
@@ -161,5 +210,97 @@ exports.get_list = (request, response, next) => {
           emptyState: 'Please try again later.',
           msg: 'Could not load active projects.',
         });
+=======
+exports.post_delete = (request, response, next) => {
+  const projectId = request.params.id;
+
+  if (!projectId) {
+    request.session.error = 'Project ID is required.';
+    return response.redirect('/projects/list');
+  }
+
+  Project.delete(projectId)
+      .then(() => {
+        console.log(`[POST /projects/delete] Project ${projectId} deleted successfully`);
+        request.session.success = 'Project deleted successfully!';
+        return response.redirect('/projects/list');
+      })
+      .catch((error) => {
+        console.error('[POST /projects/delete] Failed to delete project:', error.sqlMessage || error.message);
+        request.session.error = 'Error deleting project: ' + (error.sqlMessage || error.message || 'Unknown error');
+        return response.redirect('/projects/list');
+      });
+};
+
+exports.get_edit = (request, response, next) => {
+  // TODO: Implement edit project
+  const projectId = request.params.id;
+  request.session.error = 'Edit project is not yet implemented.';
+  return response.redirect('/projects/list');
+};
+
+exports.post_edit = (request, response, next) => {
+  // TODO: Implement edit project
+  const projectId = request.params.id;
+  request.session.error = 'Edit project is not yet implemented.';
+  return response.redirect('/projects/list');
+};
+
+exports.get_link = (request, response, next) => {
+  const projectId = request.params.id;
+
+  if (!projectId) {
+    request.session.error = 'Project ID is required.';
+    return response.redirect('/projects/list');
+  }
+
+  Promise.all([Project.fetchOne(projectId), Project.getTeams()])
+      .then(([[projectRows], [teamRows]]) => {
+        if (!projectRows || projectRows.length === 0) {
+          request.session.error = 'Project not found.';
+          return response.redirect('/projects/list');
+        }
+
+        response.render('projectLink', {
+          csrfToken: request.csrfToken(),
+          error: request.session.error || '',
+          email: request.session.email || '',
+          project: projectRows[0],
+          teams: teamRows,
+        });
+        request.session.error = '';
+      })
+      .catch((error) => {
+        console.error('[GET /projects/link] Failed to load link form:', error.message);
+        request.session.error = 'Error loading link form.';
+        return response.redirect('/projects/list');
+      });
+};
+
+exports.post_link = (request, response, next) => {
+  const projectId = request.params.id;
+  const {team_id} = request.body;
+
+  if (!projectId) {
+    request.session.error = 'Project ID is required.';
+    return response.redirect('/projects/list');
+  }
+
+  if (!team_id) {
+    request.session.error = 'Please select a team.';
+    return response.redirect(`/projects/link/${projectId}`);
+  }
+
+  Project.updateTeam(projectId, team_id)
+      .then(() => {
+        console.log(`[POST /projects/link] Project ${projectId} linked to team ${team_id}`);
+        request.session.success = 'Project linked to team successfully!';
+        return response.redirect('/projects/list');
+      })
+      .catch((error) => {
+        console.error('[POST /projects/link] Failed to link project:', error.sqlMessage || error.message);
+        request.session.error = 'Error linking project to team: ' + (error.sqlMessage || error.message || 'Unknown error');
+        return response.redirect(`/projects/link/${projectId}`);
+>>>>>>> cesar/ind
       });
 };
