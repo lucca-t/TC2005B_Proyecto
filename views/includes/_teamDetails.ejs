@@ -1,0 +1,75 @@
+<section class="section">
+    <div class="container">
+        <div class="level mb-4">
+            <div class="level-left">
+                <h1 class="title">Team Details</h1>
+            </div>
+            <div class="level-right">
+                <a href="/teams/list" class="button is-light"><strong>← Back to Teams</strong></a>
+                <a href="/teams/edit/<%= teamId %>" class="button is-warning"><strong>Edit Team</strong></a>
+            </div>
+        </div>
+
+        <% if (typeof error !== 'undefined' && error) { %>
+            <div class="notification is-danger is-light mb-4" id="errorNotification">
+                <button class="delete"></button>
+                <strong><%= error %></strong>
+            </div>
+        <% } %>
+
+        <div class="box">
+            <h2 class="subtitle has-text-centered mb-5">Team Information</h2>
+
+            <div class="field">
+                <label class="label">Team Name</label>
+                <div class="control">
+                    <input class="input" type="text" value="<%= teamName || 'N/A' %>" disabled>
+                </div>
+            </div>
+
+            <div class="field">
+                <label class="label">Team ID</label>
+                <div class="control">
+                    <input class="input" type="text" value="<%= teamId %>" disabled>
+                </div>
+            </div>
+
+            <hr>
+
+            <div class="field">
+                <label class="label has-text-weight-bold">Current Members: <span class="tag is-primary"><%= members.length %></span></label>
+            </div>
+
+            <div class="box" style="background-color: #fafafa; border: 1px solid #dbdbdb; max-height: 400px; overflow-y: auto;">
+                <% if (members && members.length > 0) { %>
+                    <% members.forEach(member => { %>
+                        <div class="media mb-3" style="border-bottom: 1px solid #eaeaea; padding-bottom: 10px;">
+                            <div class="media-content">
+                                <p class="title is-6"><%= member.full_name %></p>
+                                <p class="subtitle is-7 has-text-grey"><%= member.email %></p>
+                                <% if (member.slack_handle) { %>
+                                    <p class="is-size-7"><strong> <%= member.slack_handle %></strong></p>
+                                <% } %>
+                            </div>
+                        </div>
+                    <% }) %>
+                <% } else { %>
+                    <p class="has-text-grey has-text-centered py-4">No members in this team</p>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- JS -->
+<script>
+    // ERROR NOTIFICATION AUTO-CLOSE
+    document.addEventListener('DOMContentLoaded', () => {
+        const closeButtons = document.querySelectorAll('.notification .delete');
+        closeButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                button.parentElement.remove();
+            });
+        });
+    });
+</script>
