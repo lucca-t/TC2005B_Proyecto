@@ -397,31 +397,23 @@ exports.get_details = (request, response, next) => {
         console.log(`[GET /teams/details] Final Members array:`, members);
         console.log(`[GET /teams/details] Members count: ${members.length}`);
 
-        // Get all available users to allow adding new members
-        return User.getAll().then(([allUsers]) => {
-          console.log(`[GET /teams/details] All users count: ${allUsers.length}`);
-          console.log(`[GET /teams/details] All users sample:`, allUsers.slice(0, 2));
+        const viewData = {
+          csrfToken: request.csrfToken(),
+          error: error,
+          email: request.session.email || '',
+          teamId: teamId,
+          teamName: teamName,
+          members: members,
+        };
 
-          const viewData = {
-            csrfToken: request.csrfToken(),
-            error: error,
-            email: request.session.email || '',
-            teamId: teamId,
-            teamName: teamName,
-            members: members,
-            allUsers: allUsers,
-          };
+        console.log(`[GET /teams/details] ========== RENDERING VIEW WITH DATA =========`);
+        console.log(`[GET /teams/details] teamName: "${viewData.teamName}"`);
+        console.log(`[GET /teams/details] teamId: ${viewData.teamId}`);
+        console.log(`[GET /teams/details] members array:`, viewData.members);
+        console.log(`[GET /teams/details] members IDs:`, viewData.members.map((m) => m.user_id));
+        console.log(`[GET /teams/details] =========================================`);
 
-          console.log(`[GET /teams/details] ========== RENDERING VIEW WITH DATA =========`);
-          console.log(`[GET /teams/details] teamName: "${viewData.teamName}"`);
-          console.log(`[GET /teams/details] teamId: ${viewData.teamId}`);
-          console.log(`[GET /teams/details] members array:`, viewData.members);
-          console.log(`[GET /teams/details] members IDs:`, viewData.members.map((m) => m.user_id));
-          console.log(`[GET /teams/details] allUsers IDs:`, viewData.allUsers.map((u) => u.user_id));
-          console.log(`[GET /teams/details] =========================================`);
-
-          response.render('teamDetails', viewData);
-        });
+        response.render('teamDetails', viewData);
       })
       .catch((error) => {
         console.error('[GET /teams/details] Failed to fetch team details:', error);
