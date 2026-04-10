@@ -144,3 +144,16 @@ exports.post_edit = (request, response, next) => {
         });
       });
 };
+
+exports.post_delete = (request, response, next) => {
+  const userId = request.params.userId;
+
+  User.softDelete(userId)
+      .then(() => {
+        return response.redirect('/users/list');
+      })
+      .catch((error) => {
+        console.error('[POST /users/delete] Failed to delete user:', error.sqlMessage || error.message);
+        next(error);
+      });
+};
