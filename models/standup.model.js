@@ -18,7 +18,7 @@ module.exports = class Standup {
 
   static getUserId(email) {
     return db.execute(
-        'SELECT user_id FROM user WHERE email = ?',
+        'SELECT user_id FROM user WHERE email = ? AND deleted_at IS NULL',
         [email],
     );
   }
@@ -35,7 +35,7 @@ module.exports = class Standup {
         `SELECT s.standup_id, s.date, s.did_today, s.do_tomorrow, s.blockers
              FROM standup s
              INNER JOIN user u ON s.user_id = u.user_id
-             WHERE u.email = ?
+             WHERE u.email = ? AND u.deleted_at IS NULL
              ORDER BY s.date DESC`,
         [email],
     );

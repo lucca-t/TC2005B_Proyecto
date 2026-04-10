@@ -24,7 +24,7 @@ module.exports = class User {
 
   static fetchOne(email) {
     return db.execute(
-        `SELECT * FROM user WHERE email = ?`, [email],
+        `SELECT * FROM user WHERE email = ? AND deleted_at IS NULL`, [email],
     );
   }
 
@@ -34,11 +34,18 @@ module.exports = class User {
     );
   }
 
+  static softDelete(userId) {
+    return db.execute(
+        `UPDATE user SET deleted_at = NOW() WHERE user_id = ? AND deleted_at IS NULL`,
+        [userId],
+    );
+  }
+
   static updateWithoutPassword(originalEmail, email, fullName, slackHandle, slackId) {
     return db.execute(
         `UPDATE user
             SET email = ?, full_name = ?, slack_handle = ?, slack_id = ?
-            WHERE email = ?`,
+            WHERE email = ? AND deleted_at IS NULL`,
         [email, fullName, slackHandle, slackId, originalEmail],
     );
   }
@@ -48,7 +55,7 @@ module.exports = class User {
       return db.execute(
           `UPDATE user
                 SET email = ?, password = ?, full_name = ?, slack_handle = ?, slack_id = ?
-                WHERE email = ?`,
+                WHERE email = ? AND deleted_at IS NULL`,
           [email, passwordHash, fullName, slackHandle, slackId, originalEmail],
       );
     });
