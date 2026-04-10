@@ -90,3 +90,19 @@ exports.post_add = async (request, response, next) => {
     }
   }
 };
+
+
+/*
+exports.get_list = (request, response, next) => {
+  Project.getProjects()
+      .then(([rows, fieldData]) => {
+        response.render('projectsList', {
+          csrfToken: request.csrfToken(),
+          
+        });
+      })
+      .catch((error) => {
+        next(error);
+      });
+};
+*/

@@ -5,5 +5,6 @@ const projectsController = require('../controllers/projects.controller');
 
 router.get('/add', isAuth, projectsController.get_add);
 router.post('/add', isAuth, projectsController.post_add);
+//router.get('/list', isAuth, projectsController.get_list);
 
 module.exports = router;
