@@ -69,7 +69,7 @@ alt teamName is empty
     
 else teamName is valid
 
-    controller ->> model: 16b. Team.findByName(teamName)
+    controller ->> model: 16b. async Team.findByName(teamName)
     deactivate user
     activate controller
     activate model
@@ -125,7 +125,7 @@ else teamName is valid
             deactivate browser
             deactivate controller
         else Members selected
-            controller ->> model: 24b-ii. Team.addMembersToTeam(teamId, members[])
+            controller ->> model: 24b-ii. async Team.addMembersToTeam(teamId, members[])
             activate controller
             activate model
             loop For each memberId
@@ -158,7 +158,7 @@ deactivate browser
 routes -> controller: 30. get_list(req, res)
 deactivate routes
 activate controller
-controller ->> model: 31. Team.getAllWithMemberCount()
+controller ->> model: 31. async Team.getAllWithMemberCount()
 activate model
 model -> db: 32. SELECT t.*, COUNT(ut.user_id)\nFROM Team t LEFT JOIN User_Team ut ...
 activate db
