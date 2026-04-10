@@ -154,6 +154,12 @@ exports.get_list = (request, response, next) => {
             '[GET /projects/list] Failed to load active projects:',
             error.message,
         );
-        next(error);
+        response.status(500).render('projectsList', {
+          csrfToken: request.csrfToken(),
+          email: request.session.email || '',
+          projects: [],
+          emptyState: 'Please try again later.',
+          msg: 'Could not load active projects.',
+        });
       });
 };

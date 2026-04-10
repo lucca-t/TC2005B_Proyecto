@@ -11,6 +11,10 @@
 			</div>
 		</div>
 
+		<% if (msg) { %>
+			<div class="notification is-warning is-light"><%= msg %></div>
+		<% } %>
+
 		<div class="box">
 			<table class="table is-fullwidth is-striped is-hoverable">
 				<thead>
