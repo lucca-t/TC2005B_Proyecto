@@ -89,6 +89,7 @@
                 <thead>
                     <tr>
                         <th>Project Name</th>
+                        <th>Description</th>
                         <th>Status</th>
                         <th>Team</th>
                         <th>Start Date</th>
@@ -102,8 +103,12 @@
                             <tr>
                                 <td class="is-vcentered">
                                     <strong><%= project.name %></strong>
+                                </td>
+                                <td class="is-vcentered">
                                     <% if (project.description) { %>
-                                        <br><small class="has-text-grey"><%= project.description.substring(0, 60) %><%= project.description.length > 60 ? '...' : '' %></small>
+                                        <span class="has-text-grey"><%= project.description.substring(0, 60) %><%= project.description.length > 60 ? '...' : '' %></span>
+                                    <% } else { %>
+                                        <span class="has-text-grey-light">—</span>
                                     <% } %>
                                 </td>
                                 <td class="is-vcentered">
@@ -146,7 +151,7 @@
                         <% }) %>
                     <% } else { %>
                         <tr>
-                            <td colspan="6" class="has-text-centered has-text-grey py-5">
+                            <td colspan="7" class="has-text-centered has-text-grey py-5">
                                 No projects registered yet.
                             </td>
                         </tr>

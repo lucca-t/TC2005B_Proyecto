@@ -67,7 +67,9 @@ module.exports = class Project {
 
   static delete(projectId) {
     return db.execute(
-        `UPDATE project SET status = 'deleted' WHERE project_id = ?`,
+        `UPDATE project
+         SET status = 'deleted', end_date = CURDATE()
+         WHERE project_id = ?`,
         [projectId],
     );
   }

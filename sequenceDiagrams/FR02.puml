@@ -1,0 +1,86 @@
+@startuml FR02_Delete_Project
+skinparam style strictuml
+skinparam maxmessagesize 150
+
+actor Lead as U
+boundary "Routes" as RO
+boundary "View: projectsList.ejs" as VL
+control "projects.controller" as C
+entity "Project.model" as PM
+database "MySQL" as BD
+
+activate U
+U -> VL: Click Delete on a project
+deactivate U
+
+activate VL
+VL -> U: Browser confirm("Are you sure you want to delete this project?")
+deactivate VL
+
+alt Confirm deletion
+    activate U
+    U -> RO: POST /projects/delete/:id
+    deactivate U
+
+    activate RO
+    RO -> C: post_delete(request, response, next)
+    deactivate RO
+
+    activate C
+    C -> C: validate projectId param
+
+    alt Missing projectId
+        C -> RO: redirect('/projects/list') + session.error
+        deactivate C
+
+        activate RO
+        RO -> VL: render projects list with error message
+        deactivate RO
+
+        activate VL
+        VL -> U: HTML + error notification
+        deactivate VL
+    else Valid projectId
+        C ->> PM: delete(projectId)
+        activate PM
+
+        PM ->> BD: UPDATE project\nSET status = 'deleted', end_date = CURDATE()\nWHERE project_id = ?
+        activate BD
+
+        BD -->> PM: result
+        deactivate BD
+
+        PM -->> C: result
+        deactivate PM
+
+        alt Delete successful
+            C -> RO: redirect('/projects/list') + session.success
+            deactivate C
+
+            activate RO
+            RO -> VL: render projects list with success message
+            deactivate RO
+
+            activate VL
+            VL -> U: HTML + success notification
+            deactivate VL
+        else Database error while deleting
+            C -> RO: redirect('/projects/list') + session.error
+            deactivate C
+
+            activate RO
+            RO -> VL: render projects list with error message
+            deactivate RO
+
+            activate VL
+            VL -> U: HTML + error notification
+            deactivate VL
+        end
+    end
+else Cancel deletion
+    activate VL
+    VL -> U: No request sent, list remains unchanged
+    deactivate VL
+end
+
+@enduml
