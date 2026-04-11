@@ -1,5 +1,39 @@
 <section class="section">
     <div class="container">
+        <%
+            const statusCounter = {};
+            if (typeof projects !== 'undefined' && projects.length > 0) {
+                projects.forEach((project) => {
+                    const statusKey = (project.status || 'unknown').toLowerCase();
+                    statusCounter[statusKey] = (statusCounter[statusKey] || 0) + 1;
+                });
+            }
+
+            const statusEntries = Object.entries(statusCounter);
+            const totalProjects = statusEntries.reduce((sum, [, count]) => sum + count, 0);
+            const colors = ['#48c78e', '#ffdd57', '#f14668', '#3e8ed0', '#b86bff', '#7a7a7a'];
+
+            let cumulative = 0;
+            const chartSegments = statusEntries.map(([status, count], index) => {
+                const startDeg = totalProjects ? (cumulative / totalProjects) * 360 : 0;
+                cumulative += count;
+                const endDeg = totalProjects ? (cumulative / totalProjects) * 360 : 0;
+
+                return {
+                    status,
+                    count,
+                    color: colors[index % colors.length],
+                    startDeg,
+                    endDeg,
+                    percentage: totalProjects ? Math.round((count / totalProjects) * 100) : 0,
+                };
+            });
+
+            const pieGradient = chartSegments.length > 0
+                ? `conic-gradient(${chartSegments.map((segment) => `${segment.color} ${segment.startDeg}deg ${segment.endDeg}deg`).join(', ')})`
+                : 'conic-gradient(#dbdbdb 0deg 360deg)';
+        %>
+
         <% if (typeof success !== 'undefined' && success) { %>
             <div class="notification is-success is-light" id="successNotification">
                 <button class="delete"></button>
@@ -119,6 +153,34 @@
                     <% } %>
                 </tbody>
             </table>
+        </div>
+
+        <div class="box">
+            <h2 class="subtitle mb-4">Project Status Summary</h2>
+
+            <% if (chartSegments.length > 0) { %>
+                <div style="display:flex; flex-wrap:wrap; gap:1.5rem; align-items:center;">
+                    <div
+                        style="width:180px; height:180px; border-radius:50%; background:<%= pieGradient %>; border:1px solid #e5e5e5;"
+                        aria-label="Pie chart with project statuses"
+                        role="img">
+                    </div>
+
+                    <div>
+                        <% chartSegments.forEach((segment) => { %>
+                            <div style="display:flex; align-items:center; margin-bottom:0.5rem;">
+                                <span style="display:inline-block; width:12px; height:12px; border-radius:50%; margin-right:0.5rem; background:<%= segment.color %>;"></span>
+                                <span>
+                                    <strong><%= segment.status.charAt(0).toUpperCase() + segment.status.slice(1) %></strong>:
+                                    <%= segment.count %> (<%= segment.percentage %>%)
+                                </span>
+                            </div>
+                        <% }) %>
+                    </div>
+                </div>
+            <% } else { %>
+                <p class="has-text-grey">No projects available to display status chart.</p>
+            <% } %>
         </div>
     </div>
 </section>

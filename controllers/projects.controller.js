@@ -1,3 +1,6 @@
+/* eslint-disable no-unused-vars */
+/* eslint-disable max-len */
+
 const Project = require('../models/projects.model');
 const User = require('../models/users.model');
 
