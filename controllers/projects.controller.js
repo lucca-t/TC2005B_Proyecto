@@ -53,6 +53,7 @@ exports.get_add = (request, response, next) => {
             description: '',
             team_id: '',
             status: 'active',
+            start_date: '',
           },
           errors: '',
           error: '',
@@ -65,17 +66,19 @@ exports.get_add = (request, response, next) => {
 };
 
 exports.post_add = async (request, response, next) => {
-  const {name, description, team_id, status} = request.body;
+  const {name, description, team_id, status, start_date} = request.body;
   const normalizedName = (name || '').trim();
   const normalizedDescription = (description || '').trim();
   const normalizedTeamId = (team_id || '').trim();
   const normalizedStatus = (status || 'active').trim();
+  const normalizedStartDate = (start_date || '').trim();
 
   const formData = {
     name: normalizedName,
     description: normalizedDescription,
     team_id: normalizedTeamId,
     status: normalizedStatus,
+    start_date: normalizedStartDate,
   };
 
   const renderForm = async (payload) => {
@@ -92,7 +95,7 @@ exports.post_add = async (request, response, next) => {
   };
 
   try {
-    if (!normalizedName || !normalizedDescription || !normalizedTeamId) {
+    if (!normalizedName || !normalizedDescription || !normalizedTeamId || !normalizedStartDate) {
       return await renderForm({
         errors: 'Missing required fields.',
       });
@@ -112,6 +115,7 @@ exports.post_add = async (request, response, next) => {
     const insertedProject = await Project.insert({
       name: normalizedName,
       description: normalizedDescription,
+      start_date: normalizedStartDate,
       team_id: normalizedTeamId,
       status: normalizedStatus,
       created_at: createdAt,

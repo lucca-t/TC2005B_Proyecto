@@ -96,6 +96,7 @@ module.exports = class Project {
     const {
       name,
       description,
+      start_date,
       team_id,
       status,
       created_at,
@@ -103,15 +104,15 @@ module.exports = class Project {
 
     const [insertResult] = await db.execute(
         `INSERT INTO project(
-            name, description, team_id, status, created_at,
+            name, description, start_date, team_id, status, created_at,
             project_state)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [name, description, team_id, status, created_at, status],
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [name, description, start_date, team_id, status, created_at, status],
     );
 
     const [rows] = await db.execute(
-        `SELECT project_id, name, description, team_id, status, created_at,
-            project_state
+        `SELECT project_id, name, description, start_date, team_id, status,
+            created_at, project_state
          FROM project
          WHERE project_id = ?
          LIMIT 1`,
