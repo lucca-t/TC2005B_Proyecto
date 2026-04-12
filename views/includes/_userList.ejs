@@ -64,6 +64,7 @@
                                         Edit
                                         </a>
 
+                                        <% if (user.email !== email) { %>
                                         <form action="/users/delete/<%= user.user_id %>" 
                                             method="POST" 
                                             style="display:inline;">
@@ -74,6 +75,9 @@
                                                 Delete
                                             </button>
                                         </form>
+                                        <% } else { %>
+                                        <span class="has-text-grey">Cannot delete yourself</span>
+                                        <% } %>
 
                                     </div>
                                 </td>
