@@ -12,3 +12,15 @@
     --bulma-danger-h: 360deg;
     --bulma-danger-l: 54%;
 }
+
+input[type="checkbox"],
+.checkbox input[type="checkbox"]{
+    height: 22px;
+    width: 22px;
+    border-radius: 4px;
+    vertical-align: middle;
+    margin-top: -2px;
+    margin-right: 8px;
+    cursor: pointer;
+    accent-color: #ffdd57;
+}
