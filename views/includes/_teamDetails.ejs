@@ -50,7 +50,13 @@
         </div>
 
         <div class="box">
-            <h2 class="subtitle has-text-centered mb-5">Last 3 Generated Reports</h2>
+            <h2 class="subtitle has-text-centered mb-5">Recent reports from <%= teamName %> </h2>
+
+            <% const formatDate = (value) => {
+                if (!value) return 'N/A';
+                const parsed = new Date(value);
+                return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleDateString('en-GB');
+            } %>
 
             <% if (reports && reports.length > 0) { %>
                 <% reports.forEach(report => { %>
@@ -65,13 +71,14 @@
                                 </div>
                             </div>
                             <div class="level-right">
-                                <span class="tag is-info">Recent</span>
+                                <span class="button is-small is-primary">View report</span>
                             </div>
+                            <!-- TO-DO Here is missing a link to take to the report view page -->
                         </div>
                         <div class="content">
-                            <p><strong>Period:</strong>
-                                <%= report.date_beginning ? report.date_beginning : 'N/A' %>
-                                - <%= report.date_end ? report.date_end : 'N/A' %>
+                            <p><strong>From</strong>
+                                <%= formatDate(report.date_beginning) %>
+                                <b>to</b> <%= formatDate(report.date_end) %>
                             </p>
                             <p><strong>Summary:</strong></p>
                             <p class="has-text-grey">

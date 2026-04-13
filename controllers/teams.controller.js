@@ -431,7 +431,3 @@ exports.get_details = (request, response, next) => {
         return response.redirect('/teams/list');
       });
 };
-
-exports.getLast3Reports = (request, response, next) => {
-  
-};
