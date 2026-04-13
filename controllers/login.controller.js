@@ -26,7 +26,7 @@ exports.post_login = (request, response, next) => {
       request.session.isLoggedIn = true;
       request.session.email = request.body.email;
       return request.session.save(() => {
-        return response.redirect('/homepage');
+        return response.redirect('/users/list');
       });
     }).catch((error) => {
       console.error('[POST /login] bcrypt error:', error.message);

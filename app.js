@@ -33,7 +33,6 @@ app.use((req, res, next) => {
 });
 
 // Routes
-const route_homepage = require('./routes/homepage.routes');
 const route_login = require('./routes/login.routes');
 const loginController = require('./controllers/login.controller');
 const route_reports = require('./routes/reports.routes');
@@ -45,7 +44,6 @@ const route_standup = require('./routes/daily_standup.routes');
 app.use('/', (req, res, next) => {
   return req.path === '/' ? res.redirect('/login') : next();
 });
-app.use('/homepage', route_homepage);
 app.use('/login', route_login);
 app.get('/logout', loginController.get_logout);
 app.use('/reports', route_reports);
