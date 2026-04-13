@@ -102,4 +102,18 @@ module.exports = class Team {
         [teamName.trim()],
     );
   }
+
+  static selectLast3reports(teamId) {
+    return db.execute(
+        ` SELECT *
+          FROM report r
+          WHERE r.report_id IN
+          (SELECT tr.report_id
+          FROM team_report tr
+          WHERE tr.team_about = ?)
+          ORDER BY r.date_generated DESC
+          LIMIT 3`,
+        [teamId],
+    );
+  }
 };
