@@ -1,5 +1,7 @@
 // Requires
 
+require('dotenv').config();
+
 const express = require('express');
 const app = express();
 
@@ -14,7 +16,7 @@ app.set('views', 'views');
 
 const session = require('express-session');
 app.use(session({
-  secret: 'mysecretkey',
+  secret: process.env.SESSION_SECRET || 'mysecretkey',
   resave: false,
   saveUninitialized: false,
 }));
@@ -40,7 +42,9 @@ const route_users = require('./routes/users.routes');
 const route_projects = require('./routes/projects.routes');
 const route_standup = require('./routes/daily_standup.routes');
 
-app.use('/', (req, res, next) => req.path === '/' ? res.redirect('/login') : next());
+app.use('/', (req, res, next) => {
+  return req.path === '/' ? res.redirect('/login') : next();
+});
 app.use('/homepage', route_homepage);
 app.use('/login', route_login);
 app.get('/logout', loginController.get_logout);
@@ -59,9 +63,12 @@ app.use((request, response, next) => {
 app.use((err, req, res, next) => {
   console.error('[ERROR]', err.code || err.status, err.message);
   if (err.code === 'EBADCSRFTOKEN') {
-    return res.status(403).send('Invalid or expired CSRF token. Please reload the page and try again.');
+    return res.status(403).send(
+        'Invalid or expired CSRF token. Please reload the page and try again.',
+    );
   }
   res.status(err.status || 500).send('Internal server error: ' + err.message);
 });
 
-app.listen(3000);
+const PORT = Number(process.env.PORT) || 3000;
+app.listen(PORT);
