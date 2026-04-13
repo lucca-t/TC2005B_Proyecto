@@ -44,32 +44,37 @@
             <!-- RIGHT: MEMBER SELECTOR -->
             <div class="column is-7">
                 <div class="box">
-                    <h2 class="subtitle mb-4">Select Members</h2>
+                    <h2 class="subtitle mb-4">Quick Assign Members</h2>
 
                     <!-- SEARCH -->
                     <div class="field mb-4">
                         <div class="control">
-                            <input id="searchInput" class="input" type="text" placeholder="Search user by name...">
+                            <input id="searchInput" class="input" type="text" placeholder="Search user by name or email...">
                         </div>
                     </div>
 
                     <!-- TABLE -->
-                    <div style="max-height: 400px; overflow-y: auto;">
-                        <table class="table is-fullwidth is-striped is-hoverable">
-                            <thead>
+                    <div style="max-height: 400px; overflow-y: auto; border: 1px solid #dbdbdb; border-radius: 4px;">
+                        <table class="table is-fullwidth is-striped" style="margin-bottom: 0;">
+                            <thead style="position: sticky; top: 0; background-color: #f5f5f5;">
                                 <tr>
-                                    <th>Select</th>
+                                    <th style="width: 50px;">Select</th>
                                     <th>User</th>
                                 </tr>
                             </thead>
                             <tbody id="userTable">
                                 <% if (typeof users !== 'undefined' && users.length > 0) { %>
                                     <% users.forEach(user => { %>
-                                        <tr>
-                                            <td>
+                                        <tr class="user-row" data-search="<%= (user.full_name + ' ' + user.email).toLowerCase() %>">
+                                            <td style="text-align: center; vertical-align: middle;">
                                                 <input type="checkbox" class="user-checkbox" value="<%= user.user_id %>">
                                             </td>
-                                            <td class="email"><strong><%= user.email %></strong></td>
+                                            <td>
+                                                <div>
+                                                    <strong><%= user.full_name %></strong>
+                                                </div>
+                                                <p class="has-text-grey is-size-7"><%= user.email %></p>
+                                            </td>
                                         </tr>
                                     <% }) %>
                                 <% } else { %>
@@ -79,12 +84,17 @@
                                         </td>
                                     </tr>
                                 <% } %>
+                                <tr id="noResultsRow" style="display: none;">
+                                    <td colspan="2" class="has-text-centered has-text-grey py-5">
+                                        Users not found.
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
 
-                    <p class="has-text-grey mt-3">
-                        Check to add members to team
+                    <p class="has-text-grey mt-3 is-size-7">
+                        ✓ Check members to include them in the team
                     </p>
                 </div>
             </div>
@@ -96,16 +106,28 @@
 <script>
     // SEARCH FILTER
     const searchInput = document.getElementById("searchInput");
-    const rows = document.querySelectorAll("#userTable tr");
+    const rows = document.querySelectorAll("#userTable tr.user-row");
+    const noResultsRow = document.getElementById("noResultsRow");
 
-    searchInput.addEventListener("keyup", function () {
-        const value = this.value.toLowerCase();
+    function updateSearchResults() {
+        const value = searchInput.value.toLowerCase();
+        let visibleCount = 0;
 
         rows.forEach(row => {
-            const email = row.querySelector(".email")?.innerText.toLowerCase() || "";
-            row.style.display = email.includes(value) ? "" : "none";
+            const searchData = row.getAttribute("data-search") || "";
+            const show = searchData.includes(value);
+            row.style.display = show ? "" : "none";
+            if (show) visibleCount += 1;
         });
-    });
+
+        if (visibleCount === 0 && rows.length > 0) {
+            noResultsRow.style.display = "";
+        } else {
+            noResultsRow.style.display = "none";
+        }
+    }
+
+    searchInput.addEventListener("keyup", updateSearchResults);
 
     // CREATE HIDDEN INPUTS FOR SELECTED MEMBERS
     function updateMemberInputs() {
