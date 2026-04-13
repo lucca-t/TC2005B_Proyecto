@@ -6,7 +6,7 @@
             </div>
             <div class="level-right">
                 <a href="/teams/list" class="button is-light"><strong>← Back to Teams</strong></a>
-                <a href="/teams/edit/<%= teamId %>" class="button is-warning"><strong>Edit Team</strong></a>
+                    <a href="/teams/edit/<%= teamId %>" class="button is-primary"><strong>Edit Team</strong></a>
             </div>
         </div>
 
@@ -27,13 +27,6 @@
                 </div>
             </div>
 
-            <div class="field">
-                <label class="label">Team ID</label>
-                <div class="control">
-                    <input class="input" type="text" value="<%= teamId %>" disabled>
-                </div>
-            </div>
-
             <hr>
 
             <div class="field">
@@ -43,13 +36,10 @@
             <div class="box" style="background-color: #fafafa; border: 1px solid #dbdbdb; max-height: 400px; overflow-y: auto;">
                 <% if (members && members.length > 0) { %>
                     <% members.forEach(member => { %>
-                        <div class="media mb-3" style="border-bottom: 1px solid #eaeaea; padding-bottom: 10px;">
+                        <div class="media mb-3" style="padding-bottom: 10px;">
                             <div class="media-content">
-                                <p class="title is-6"><%= member.full_name %></p>
+                                <p class="title is-6"><%= member.slack_handle %></p>
                                 <p class="subtitle is-7 has-text-grey"><%= member.email %></p>
-                                <% if (member.slack_handle) { %>
-                                    <p class="is-size-7"><strong> <%= member.slack_handle %></strong></p>
-                                <% } %>
                             </div>
                         </div>
                     <% }) %>
