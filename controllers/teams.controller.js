@@ -36,7 +36,6 @@ exports.get_list = (request, response, next) => {
       });
 };
 
-// Modify to allow get edit of a specific team
 exports.get_edit = (request, response, next) => {
   const teamId = request.params.teamId;
   const error = request.session.error || '';
@@ -350,37 +349,43 @@ exports.get_details = (request, response, next) => {
 
   console.log(`[GET /teams/details] Loading team ${teamId}`);
 
-  Team.getTeamsDetails(teamId)
-      .then((result) => {
-        console.log(`[GET /teams/details] Query result structure:`, result);
+  Promise.all([
+    Team.getTeamsDetails(teamId),
+    Team.selectLast3reports(teamId),
+  ])
+      .then(([teamResult, reportsResult]) => {
+        console.log(`[GET /teams/details] Team query result structure:`, teamResult);
+        console.log(`[GET /teams/details] Reports query result structure:`, reportsResult);
 
-        // New stored procedure returns multiple rows (one per member, or one row with NULLs if no members)
-        // The structure is nested: result[0][0] contains the actual rows array
         let rows = [];
+        if (Array.isArray(teamResult) && Array.isArray(teamResult[0]) && Array.isArray(teamResult[0][0])) {
+          rows = teamResult[0][0];
+        } else if (Array.isArray(teamResult) && Array.isArray(teamResult[0])) {
+          rows = teamResult[0];
+        }
 
-        if (Array.isArray(result) && Array.isArray(result[0]) && Array.isArray(result[0][0])) {
-          rows = result[0][0];
-        } else if (Array.isArray(result) && Array.isArray(result[0])) {
-          rows = result[0];
+        let reports = [];
+        if (Array.isArray(reportsResult) && Array.isArray(reportsResult[0])) {
+          reports = reportsResult[0];
+        } else if (Array.isArray(reportsResult)) {
+          reports = reportsResult;
         }
 
         console.log(`[GET /teams/details] Extracted rows:`, rows);
+        console.log(`[GET /teams/details] Extracted reports:`, reports);
 
         if (!rows || rows.length === 0) {
-          console.log(`[GET /teams/edit] No data found for team ${teamId}`);
+          console.log(`[GET /teams/details] No data found for team ${teamId}`);
           request.session.error = 'Team not found.';
           return response.redirect('/teams/list');
         }
 
-        // Get team name from first row (all rows have the same team_name)
         const firstRow = rows[0];
         const teamName = firstRow.team_name ? String(firstRow.team_name).trim() : '';
 
         console.log(`[GET /teams/details] First row object:`, firstRow);
         console.log(`[GET /teams/details] Team Name extracted: "${teamName}"`);
 
-        // Filter rows where user_id is NOT null to get only actual members
-        // If a team has 0 members, there will be 1 row with user_id=null
         const members = rows
             .filter((row) => row.user_id !== null && row.user_id !== undefined)
             .map((row) => {
@@ -396,6 +401,7 @@ exports.get_details = (request, response, next) => {
 
         console.log(`[GET /teams/details] Final Members array:`, members);
         console.log(`[GET /teams/details] Members count: ${members.length}`);
+        console.log(`[GET /teams/details] Reports count: ${reports.length}`);
 
         const viewData = {
           csrfToken: request.csrfToken(),
@@ -404,6 +410,7 @@ exports.get_details = (request, response, next) => {
           teamId: teamId,
           teamName: teamName,
           members: members,
+          reports: reports,
         };
 
         console.log(`[GET /teams/details] ========== RENDERING VIEW WITH DATA =========`);
@@ -411,6 +418,7 @@ exports.get_details = (request, response, next) => {
         console.log(`[GET /teams/details] teamId: ${viewData.teamId}`);
         console.log(`[GET /teams/details] members array:`, viewData.members);
         console.log(`[GET /teams/details] members IDs:`, viewData.members.map((m) => m.user_id));
+        console.log(`[GET /teams/details] reports IDs:`, viewData.reports.map((report) => report.report_id));
         console.log(`[GET /teams/details] =========================================`);
 
         response.render('teamDetails', viewData);
@@ -422,4 +430,8 @@ exports.get_details = (request, response, next) => {
         request.session.error = 'Error loading team details: ' + (error.message || 'Unknown error');
         return response.redirect('/teams/list');
       });
+};
+
+exports.getLast3Reports = (request, response, next) => {
+  
 };

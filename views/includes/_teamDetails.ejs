@@ -48,6 +48,42 @@
                 <% } %>
             </div>
         </div>
+
+        <div class="box">
+            <h2 class="subtitle has-text-centered mb-5">Last 3 Generated Reports</h2>
+
+            <% if (reports && reports.length > 0) { %>
+                <% reports.forEach(report => { %>
+                    <div class="box mb-4" style="background-color: #f8f9fa; border: 1px solid #dbdbdb;">
+                        <div class="level">
+                            <div class="level-left">
+                                <div>
+                                    <p class="title is-6">Report #<%= report.report_id %></p>
+                                    <p class="subtitle is-7 has-text-grey">
+                                        Generated on <strong><%= report.date_generated ? report.date_generated : 'Unknown' %></strong>
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="level-right">
+                                <span class="tag is-info">Recent</span>
+                            </div>
+                        </div>
+                        <div class="content">
+                            <p><strong>Period:</strong>
+                                <%= report.date_beginning ? report.date_beginning : 'N/A' %>
+                                - <%= report.date_end ? report.date_end : 'N/A' %>
+                            </p>
+                            <p><strong>Summary:</strong></p>
+                            <p class="has-text-grey">
+                                <%= report.ai_content ? (report.ai_content.length > 220 ? report.ai_content.substring(0, 220) + '...' : report.ai_content) : 'No summary available.' %>
+                            </p>
+                        </div>
+                    </div>
+                <% }) %>
+            <% } else { %>
+                <p class="has-text-grey has-text-centered py-4">No recent reports for this team.</p>
+            <% } %>
+        </div>
     </div>
 </section>
 
