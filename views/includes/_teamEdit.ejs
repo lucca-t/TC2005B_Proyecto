@@ -125,10 +125,20 @@
                                             </tr>
                                         <% }) %>
                                         <% console.log('[DEBUG _teamEdit.ejs] ====== RENDER LOOP END ======'); %>
+                                        <tr id="noResultsRow" style="display: none;">
+                                            <td colspan="2" class="has-text-centered has-text-grey py-5">
+                                                Users not found.
+                                            </td>
+                                        </tr>
                                     <% } else { %>
                                         <tr>
                                             <td colspan="2" class="has-text-centered has-text-grey py-5">
                                                 No users available.
+                                            </td>
+                                        </tr>
+                                        <tr id="noResultsRow" style="display: none;">
+                                            <td colspan="2" class="has-text-centered has-text-grey py-5">
+                                                Users not found.
                                             </td>
                                         </tr>
                                     <% } %>
@@ -181,18 +191,27 @@
     // SEARCH FILTER
     const searchInput = document.getElementById('searchInput');
     const rows = document.querySelectorAll('.user-row');
+    const noResultsRow = document.getElementById('noResultsRow');
 
-    searchInput.addEventListener('keyup', function() {
-        const searchTerm = this.value.toLowerCase();
+    function updateSearchResults() {
+        const searchTerm = searchInput.value.toLowerCase();
+        let visibleCount = 0;
+
         rows.forEach(row => {
             const searchData = row.getAttribute('data-search');
-            if (searchData.includes(searchTerm)) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
+            const show = searchData.includes(searchTerm);
+            row.style.display = show ? '' : 'none';
+            if (show) visibleCount += 1;
         });
-    });
+
+        if (visibleCount === 0 && rows.length > 0) {
+            noResultsRow.style.display = '';
+        } else {
+            noResultsRow.style.display = 'none';
+        }
+    }
+
+    searchInput.addEventListener('keyup', updateSearchResults);
 
     // HANDLE FORM SUBMISSION - COLLECT CHECKED USER IDS
     document.getElementById('teamEditForm').addEventListener('submit', function(e) {
