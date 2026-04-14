@@ -31,7 +31,11 @@
 					<% if (projects && projects.length > 0) { %>
 						<% projects.forEach((project) => { %>
 							<tr>
-								<td class="is-vcentered"><strong><%= project.name %></strong></td>
+								<td class="is-vcentered">
+									<a href="/projects/details/<%= project.project_id %>" class="button is-small is-link is-light">
+										<strong><%= project.name %></strong>
+									</a>
+								</td>
 								<td class="is-vcentered"><%= project.description || '—' %></td>
 								<td class="is-vcentered">
 									<span class="tag is-success is-light"><%= project.status %></span>

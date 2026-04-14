@@ -12,5 +12,6 @@ router.post('/edit/:id', isAuth, projectsController.post_edit);
 router.post('/delete/:id', isAuth, projectsController.post_delete);
 router.get('/link/:id', isAuth, projectsController.get_link);
 router.post('/link/:id', isAuth, projectsController.post_link);
+router.get('/details/:projectId', isAuth, projectsController.get_details);
 
 module.exports = router;

@@ -108,8 +108,10 @@
                         <% projects.forEach(project => { %>
                             <tr>
                                 <td class="is-vcentered">
-                                    <strong><%= project.name %></strong>
-                                </td>
+									<a href="/projects/details/<%= project.project_id %>" class=" is-small is-link">
+										<strong><%= project.name %></strong>
+									</a>
+								</td>
                                 <td class="is-vcentered">
                                     <% if (project.description) { %>
                                         <span class="has-text-grey"><%= project.description.substring(0, 60) %><%= project.description.length > 60 ? '...' : '' %></span>
