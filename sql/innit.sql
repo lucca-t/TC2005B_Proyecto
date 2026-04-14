@@ -59,6 +59,22 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `getTeamDetails` (IN `p_team_id` INT
     WHERE t.team_id = p_team_id AND t.deleted_at IS NULL;
 END$$
 
+DELIMITER $$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `getProjectDetails` (IN `p_project_id` INT)   BEGIN
+    SELECT 
+        p.project_id,
+        p.name,
+        p.description,
+        p.start_date,
+        p.end_date,
+        p.status,
+        p.team_id,
+        t.team_name
+    FROM project p
+      INNER JOIN team t ON p.team_id = t.team_id
+    WHERE p.project_id = p_project_id AND t.deleted_at IS NULL;
+END$$
+
 CREATE DEFINER=`root`@`localhost` PROCEDURE `updateTeamMembers` (IN `p_team_id` INT, IN `p_user_ids_json` JSON)   BEGIN
     DECLARE i INT DEFAULT 0;
     DECLARE v_user_id INT;

@@ -457,6 +457,94 @@ exports.get_link = async (request, response, next) => {
   }
 };
 
+exports.get_details = (request, response, next) => {
+  const projectId = request.params.projectId;
+  const error = request.session.error || '';
+  request.session.error = '';
+
+  if (!projectId) {
+    request.session.error = 'Project ID is required.';
+    return response.redirect('/projects/list');
+  }
+
+  console.log(`[GET /projects/details] Loading project ${projectId}`);
+
+  Promise.all([
+    Project.getProjectDetails(projectId),
+    Project.selectLast3reports(projectId),
+  ])
+      .then(([projectResult, reportsResult]) => {
+        console.log(`[GET /projects/details] Project query result structure:`, projectResult);
+        console.log(`[GET /projects/details] Reports query result structure:`, reportsResult);
+
+        let rows = [];
+        if (Array.isArray(projectResult) && Array.isArray(projectResult[0]) && Array.isArray(projectResult[0][0])) {
+          rows = projectResult[0][0];
+        } else if (Array.isArray(projectResult) && Array.isArray(projectResult[0])) {
+          rows = projectResult[0];
+        }
+
+        let reports = [];
+        if (Array.isArray(reportsResult) && Array.isArray(reportsResult[0])) {
+          reports = reportsResult[0];
+        } else if (Array.isArray(reportsResult)) {
+          reports = reportsResult;
+        }
+
+        console.log(`[GET /projects/details] Extracted rows:`, rows);
+        console.log(`[GET /projects/details] Extracted reports:`, reports);
+
+        if (!rows || rows.length === 0) {
+          console.log(`[GET /projects/details] No data found for project ${projectId}`);
+          request.session.error = 'Project not found.';
+          return response.redirect('/projects/list');
+        }
+
+        const firstRow = rows[0];
+        const projectName = (firstRow.name || firstRow.project_name || '').trim();
+        const members = rows
+            .filter((row) => row.user_id !== null && row.user_id !== undefined)
+            .map((row) => ({
+              user_id: parseInt(row.user_id),
+              full_name: row.full_name,
+              email: row.email,
+              slack_handle: row.slack_handle,
+            }));
+
+        console.log(`[GET /projects/details] First row object:`, firstRow);
+        console.log(`[GET /projects/details] Project Name extracted: "${projectName}"`);
+        console.log(`[GET /projects/details] Reports count: ${reports.length}`);
+
+        const viewData = {
+          csrfToken: request.csrfToken(),
+          error: error,
+          email: request.session.email || '',
+          projectId: projectId,
+          projectName: projectName,
+          project: {
+            project_id: firstRow.project_id || projectId,
+            name: projectName,
+            description: firstRow.description || '',
+            status: firstRow.status || '',
+            start_date: firstRow.start_date || null,
+            end_date: firstRow.end_date || null,
+            team_name: firstRow.team_name || '',
+          },
+          members: members,
+          reports: reports,
+        };
+
+        response.render('projectDetails', viewData);
+      })
+      .catch((error) => {
+        console.error('[GET /projects/details] Failed to fetch project details:', error);
+        console.error('[GET /projects/details] Error message:', error.message);
+        console.error('[GET /projects/details] Error code:', error.code);
+        request.session.error = 'Error loading project details: ' + (error.message || 'Unknown error');
+        return response.redirect('/projects/list');
+      });
+};
+
 exports.post_link = async (request, response, next) => {
   const projectId = request.params.id;
   const teamId = (request.body.team_id || '').trim();

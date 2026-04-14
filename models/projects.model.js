@@ -188,6 +188,20 @@ module.exports = class Project {
     );
   }
 
+  static selectLast3reports(projectId) {
+    return db.execute(
+        ` SELECT *
+          FROM report r
+          WHERE r.report_id IN
+          (SELECT pr.report_id
+          FROM project_report pr
+          WHERE pr.project_about = ?)
+          ORDER BY r.date_generated DESC
+          LIMIT 3`,
+        [projectId],
+    );
+  }
+
   static async insert(projectData) {
     const {
       name,
