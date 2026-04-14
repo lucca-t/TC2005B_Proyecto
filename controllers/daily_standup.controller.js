@@ -14,6 +14,8 @@ exports.get_standup_form = (request, response, next) => {
         title: 'Register activity - Daily Standup+',
         email: request.session.email || '',
         showHistorialBtn: true,
+        editMode: false,
+        standup: null,
     });
 };
 
@@ -77,6 +79,7 @@ exports.get_standup_history = (request, response, next) => {
           title: 'Activity History - Daily Standup+',
           email: email,
           standups: rows,
+          
         });
       })
       .catch((err) => {
@@ -108,4 +111,64 @@ exports.post_deleteRegister = (request, response, next) => {
         request.session.error = 'Error deleting record. Please try again.';
         return response.redirect('/daily_standup/history');
       });
+};
+
+exports.get_standup_edit = (request, response, next) => {
+  if (!request.session.email) {
+      return response.redirect('/users/login');
+  }
+
+  const standupId = request.params.id;
+  const error = request.session.error || '';
+  const success = request.session.success || '';
+  request.session.error = '';
+  request.session.success = '';
+
+  Standup.findById(standupId).then(([rows]) => {
+    if (rows.length === 0) {
+      request.session.error = 'Record not found';
+      return response.redirect('/daily_standup/history');
+    }
+
+    response.render('daily_standup', {
+        csrfToken: request.csrfToken(),
+        error: error,
+        success: success,
+        title: 'Edit activity - Daily Standup+',
+        email: request.session.email || '',
+        showHistorialBtn: true,
+        editMode: true,
+        standup: rows[0],
+    });
+  })
+  .catch((err) => {
+    console.error('Error fetching standup:', err);
+    request.session.error = 'Error loading standup. Please try again.';
+    return response.redirect('/daily_standup/history');
+  });
+};
+
+exports.post_standup_edit = (request, response, next) => {
+  if (!request.session.email) {
+    return response.redirect('/users/login');
+  }
+
+  const standupId = request.params.id;
+  const { did_today, do_tomorrow, blockers, date } = request.body;
+
+  if (!did_today || !did_today.trim() || !do_tomorrow || !do_tomorrow.trim()) {
+    request.session.error = 'Please fill in the required fields.';
+    return response.redirect(`/daily_standup/edit/${standupId}`);
+  }
+
+  Standup.update(standupId, date, did_today.trim(), do_tomorrow.trim(), (blockers || '').trim())
+    .then(() => {
+      request.session.success = 'Record updated successfully';
+      return response.redirect('/daily_standup/history');
+    })
+    .catch((err) => {
+      console.error('Error updating standup:', err);
+      request.session.error = 'Error updating record. Please try again.';
+      return response.redirect(`/daily_standup/edit/${standupId}`);
+    });
 };
