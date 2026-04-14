@@ -14,6 +14,25 @@ const formatDateForInput = (value) => {
   return date.toISOString().split('T')[0];
 };
 
+const getTodayForInput = () => formatDateForInput(new Date());
+
+const resolveEndDateForStatus = (status, endDate) => {
+  if (status === 'completed') {
+    return getTodayForInput();
+  }
+
+  const normalizedEndDate = (endDate || '').trim();
+  return normalizedEndDate || null;
+};
+
+const isEndDateBeforeStartDate = (startDate, endDate) => {
+  if (!startDate || !endDate) {
+    return false;
+  }
+
+  return endDate < startDate;
+};
+
 // Helper to get current user ID from session email
 const getCurrentUserId = async (request) => {
   const email = request.session.email;
@@ -79,6 +98,7 @@ exports.get_add = async (request, response, next) => {
         team_id: '',
         status: 'active',
         start_date: '',
+        end_date: '',
       },
       errors: '',
       error: '',
@@ -90,12 +110,13 @@ exports.get_add = async (request, response, next) => {
 };
 
 exports.post_add = async (request, response, next) => {
-  const {name, description, team_id, status, start_date} = request.body;
+  const {name, description, team_id, status, start_date, end_date} = request.body;
   const normalizedName = (name || '').trim();
   const normalizedDescription = (description || '').trim();
   const normalizedTeamId = (team_id || '').trim();
   const normalizedStatus = (status || 'active').trim();
   const normalizedStartDate = (start_date || '').trim();
+  const normalizedEndDate = (end_date || '').trim();
 
   const formData = {
     name: normalizedName,
@@ -103,6 +124,7 @@ exports.post_add = async (request, response, next) => {
     team_id: normalizedTeamId,
     status: normalizedStatus,
     start_date: normalizedStartDate,
+    end_date: normalizedEndDate,
   };
 
   const userId = await getCurrentUserId(request);
@@ -153,11 +175,23 @@ exports.post_add = async (request, response, next) => {
       });
     }
 
+    const resolvedEndDate = resolveEndDateForStatus(
+        normalizedStatus,
+        normalizedEndDate,
+    );
+
+    if (isEndDateBeforeStartDate(normalizedStartDate, resolvedEndDate)) {
+      return await renderForm({
+        error: 'End date cannot be before start date.',
+      });
+    }
+
     const createdAt = new Date();
     const insertedProject = await Project.insert({
       name: normalizedName,
       description: normalizedDescription,
       start_date: normalizedStartDate,
+      end_date: resolvedEndDate,
       team_id: normalizedTeamId,
       status: normalizedStatus,
       created_at: createdAt,
@@ -241,6 +275,7 @@ exports.get_edit = (request, response, next) => {
             team_id: project.team_id ? String(project.team_id) : '',
             status: project.status || 'active',
             start_date: formatDateForInput(project.start_date),
+            end_date: formatDateForInput(project.end_date),
           },
           errors: '',
           error: request.session.error || '',
@@ -256,12 +291,13 @@ exports.get_edit = (request, response, next) => {
 
 exports.post_edit = async (request, response, next) => {
   const projectId = request.params.id;
-  const {name, description, team_id, status, start_date} = request.body;
+  const {name, description, team_id, status, start_date, end_date} = request.body;
   const normalizedName = (name || '').trim();
   const normalizedDescription = (description || '').trim();
   const normalizedTeamId = (team_id || '').trim();
   const normalizedStatus = (status || 'active').trim();
   const normalizedStartDate = (start_date || '').trim();
+  const normalizedEndDate = (end_date || '').trim();
 
   if (!projectId) {
     request.session.error = 'Project ID is required.';
@@ -281,6 +317,7 @@ exports.post_edit = async (request, response, next) => {
     team_id: normalizedTeamId,
     status: normalizedStatus,
     start_date: normalizedStartDate,
+    end_date: normalizedEndDate,
   };
 
   const renderForm = async (payload) => {
@@ -345,10 +382,22 @@ exports.post_edit = async (request, response, next) => {
       });
     }
 
+    const resolvedEndDate = resolveEndDateForStatus(
+        normalizedStatus,
+        normalizedEndDate,
+    );
+
+    if (isEndDateBeforeStartDate(normalizedStartDate, resolvedEndDate)) {
+      return await renderForm({
+        error: 'End date cannot be before start date.',
+      });
+    }
+
     await Project.update(projectId, {
       name: normalizedName,
       description: normalizedDescription,
       start_date: normalizedStartDate,
+      end_date: resolvedEndDate,
       team_id: normalizedTeamId,
       status: normalizedStatus,
     });

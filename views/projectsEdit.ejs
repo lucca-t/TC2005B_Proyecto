@@ -66,6 +66,19 @@
 					</div>
 				</div>
 
+				<div class="field">
+					<label class="label">End date</label>
+					<div class="control">
+						<input
+							class="input"
+							type="date"
+							name="end_date"
+							value="<%= formData && formData.end_date ? formData.end_date : '' %>"
+						>
+					</div>
+					<p class="help">If the status is completed, the end date is set automatically to today.</p>
+				</div>
+
 				<div class="columns">
 					<div class="column is-6">
 						<div class="field">
@@ -121,6 +134,24 @@
 <script>
 	document.addEventListener('DOMContentLoaded', () => {
 		const startDateInput = document.querySelector('input[name="start_date"]');
+		const endDateInput = document.querySelector('input[name="end_date"]');
+		const statusSelect = document.querySelector('select[name="status"]');
+
+		const setTodayOnCompleted = () => {
+			if (!endDateInput || !statusSelect || statusSelect.value !== 'completed') {
+				return;
+			}
+
+			const today = new Date();
+			today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
+			endDateInput.value = today.toISOString().split('T')[0];
+		};
+
+		if (statusSelect) {
+			statusSelect.addEventListener('change', setTodayOnCompleted);
+		}
+
+		setTodayOnCompleted();
 		if (!startDateInput || startDateInput.value) {
 			return;
 		}

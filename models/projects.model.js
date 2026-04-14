@@ -160,6 +160,7 @@ module.exports = class Project {
       name,
       description,
       start_date,
+      end_date,
       team_id,
       status,
     } = projectData;
@@ -169,11 +170,21 @@ module.exports = class Project {
          SET name = ?,
              description = ?,
              start_date = ?,
+             end_date = ?,
              team_id = ?,
              status = ?,
              project_state = ?
          WHERE project_id = ?`,
-        [name, description, start_date, team_id, status, status, projectId],
+        [
+          name,
+          description,
+          start_date,
+          end_date,
+          team_id,
+          status,
+          status,
+          projectId,
+        ],
     );
   }
 
@@ -182,6 +193,7 @@ module.exports = class Project {
       name,
       description,
       start_date,
+      end_date,
       team_id,
       status,
       created_at,
@@ -189,15 +201,24 @@ module.exports = class Project {
 
     const [insertResult] = await db.execute(
         `INSERT INTO project(
-            name, description, start_date, team_id, status, created_at,
-            project_state)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [name, description, start_date, team_id, status, created_at, status],
+          name, description, start_date, end_date, team_id, status, created_at,
+          project_state)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          name,
+          description,
+          start_date,
+          end_date,
+          team_id,
+          status,
+          created_at,
+          status,
+        ],
     );
 
     const [rows] = await db.execute(
         `SELECT project_id, name, description, start_date, team_id, status,
-            created_at, project_state
+          end_date, created_at, project_state
          FROM project
          WHERE project_id = ?
          LIMIT 1`,
