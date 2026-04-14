@@ -4,6 +4,16 @@
 const Project = require('../models/projects.model');
 const User = require('../models/users.model');
 
+const formatDateForInput = (value) => {
+  if (!value) return '';
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+
+  date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+  return date.toISOString().split('T')[0];
+};
+
 // Helper to get current user ID from session email
 const getCurrentUserId = async (request) => {
   const email = request.session.email;
@@ -192,17 +202,169 @@ exports.post_delete = (request, response, next) => {
 };
 
 exports.get_edit = (request, response, next) => {
-  // TODO: Implement edit project
   const projectId = request.params.id;
-  request.session.error = 'Edit project is not yet implemented.';
-  return response.redirect('/projects/list');
+
+  if (!projectId) {
+    request.session.error = 'Project ID is required.';
+    return response.redirect('/projects/list');
+  }
+
+  Promise.all([
+    getCurrentUserId(request),
+  ])
+      .then(async ([userId]) => {
+        if (!userId) {
+          request.session.error = 'Session user not found. Please log in again.';
+          return response.redirect('/login');
+        }
+
+        const [[projectRows], [teamRows]] = await Promise.all([
+          Project.fetchOneByUserTeams(projectId, userId),
+          Project.getTeamsByUser(userId),
+        ]);
+
+        if (!projectRows || projectRows.length === 0) {
+          request.session.error = 'Project not found or access denied.';
+          return response.redirect('/projects/list');
+        }
+
+        const project = projectRows[0];
+
+        return response.render('projectsEdit', {
+          csrfToken: request.csrfToken(),
+          email: request.session.email || '',
+          teams: teamRows,
+          project,
+          formData: {
+            name: project.name || '',
+            description: project.description || '',
+            team_id: project.team_id ? String(project.team_id) : '',
+            status: project.status || 'active',
+            start_date: formatDateForInput(project.start_date),
+          },
+          errors: '',
+          error: request.session.error || '',
+          msg: '',
+        });
+      })
+      .catch((error) => {
+        console.error('[GET /projects/edit] Failed to load edit form:', error.message);
+        request.session.error = 'Error loading edit form.';
+        return response.redirect('/projects/list');
+      });
 };
 
-exports.post_edit = (request, response, next) => {
-  // TODO: Implement edit project
+exports.post_edit = async (request, response, next) => {
   const projectId = request.params.id;
-  request.session.error = 'Edit project is not yet implemented.';
-  return response.redirect('/projects/list');
+  const {name, description, team_id, status, start_date} = request.body;
+  const normalizedName = (name || '').trim();
+  const normalizedDescription = (description || '').trim();
+  const normalizedTeamId = (team_id || '').trim();
+  const normalizedStatus = (status || 'active').trim();
+  const normalizedStartDate = (start_date || '').trim();
+
+  if (!projectId) {
+    request.session.error = 'Project ID is required.';
+    return response.redirect('/projects/list');
+  }
+
+  const userId = await getCurrentUserId(request);
+
+  if (!userId) {
+    request.session.error = 'Session user not found. Please log in again.';
+    return response.redirect('/login');
+  }
+
+  const formData = {
+    name: normalizedName,
+    description: normalizedDescription,
+    team_id: normalizedTeamId,
+    status: normalizedStatus,
+    start_date: normalizedStartDate,
+  };
+
+  const renderForm = async (payload) => {
+    const [[projectRows], [teams]] = await Promise.all([
+      Project.fetchOneByUserTeams(projectId, userId),
+      Project.getTeamsByUser(userId),
+    ]);
+
+    if (!projectRows || projectRows.length === 0) {
+      request.session.error = 'Project not found or access denied.';
+      return response.redirect('/projects/list');
+    }
+
+    return response.status(payload.statusCode || 400).render('projectsEdit', {
+      csrfToken: request.csrfToken(),
+      email: request.session.email || '',
+      teams,
+      project: projectRows[0],
+      formData,
+      errors: payload.errors || '',
+      error: payload.error || '',
+      msg: payload.msg || '',
+    });
+  };
+
+  try {
+    if (!normalizedName || !normalizedDescription || !normalizedTeamId || !normalizedStartDate) {
+      return await renderForm({
+        errors: 'Missing required fields.',
+      });
+    }
+
+    const [[projectRows], [allowedTeams]] = await Promise.all([
+      Project.fetchOneByUserTeams(projectId, userId),
+      Project.getTeamsByUser(userId),
+    ]);
+
+    if (!projectRows || projectRows.length === 0) {
+      request.session.error = 'Project not found or access denied.';
+      return response.redirect('/projects/list');
+    }
+
+    const canUseTeam = allowedTeams.some(
+        (team) => String(team.team_id) === String(normalizedTeamId),
+    );
+
+    if (!canUseTeam) {
+      return await renderForm({
+        error: 'Invalid team selection for your account.',
+      });
+    }
+
+    const [existingRows] = await Project.findByNameAndTeamExcludingId(
+        normalizedName,
+        normalizedTeamId,
+        projectId,
+    );
+
+    if (existingRows.length > 0) {
+      return await renderForm({
+        error: 'A project with this name already exists for the selected team.',
+      });
+    }
+
+    await Project.update(projectId, {
+      name: normalizedName,
+      description: normalizedDescription,
+      start_date: normalizedStartDate,
+      team_id: normalizedTeamId,
+      status: normalizedStatus,
+    });
+
+    request.session.success = 'Project updated successfully.';
+    return response.redirect('/projects/list');
+  } catch (error) {
+    console.error('[POST /projects/edit] Failed to update project:', error.sqlMessage || error.message);
+    try {
+      return await renderForm({
+        msg: 'Could not update the project.',
+      });
+    } catch (renderError) {
+      return next(renderError);
+    }
+  }
 };
 
 exports.get_link = async (request, response, next) => {

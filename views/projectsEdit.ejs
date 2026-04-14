@@ -1,0 +1,134 @@
+<%- include('includes/_header') %>
+
+<section class="section">
+	<div class="container" style="max-width: 900px;">
+		<div class="level mb-5">
+			<div class="level-left">
+				<h1 class="title">Edit Project</h1>
+			</div>
+			<div class="level-right">
+				<a href="/projects/list" class="button is-light"><strong>Back to projects</strong></a>
+			</div>
+		</div>
+
+		<% if (errors) { %>
+			<div class="notification is-danger is-light"><%= errors %></div>
+		<% } %>
+
+		<% if (error) { %>
+			<div class="notification is-danger is-light"><%= error %></div>
+		<% } %>
+
+		<% if (msg) { %>
+			<div class="notification is-warning is-light"><%= msg %></div>
+		<% } %>
+
+		<div class="box">
+			<form action="/projects/edit/<%= project.project_id %>" method="POST">
+				<input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+				<div class="field">
+					<label class="label">Project name</label>
+					<div class="control">
+						<input
+							class="input"
+							type="text"
+							name="name"
+							placeholder="Enter project name"
+							required
+							value="<%= formData && formData.name ? formData.name : (project && project.name ? project.name : '') %>"
+						>
+					</div>
+				</div>
+
+				<div class="field">
+					<label class="label">Description</label>
+					<div class="control">
+						<textarea
+							class="textarea"
+							name="description"
+							placeholder="Describe project scope"
+							required
+						><%= formData && formData.description ? formData.description : (project && project.description ? project.description : '') %></textarea>
+					</div>
+				</div>
+
+				<div class="field">
+					<label class="label">Start date</label>
+					<div class="control">
+						<input
+							class="input"
+							type="date"
+							name="start_date"
+							value="<%= formData && formData.start_date ? formData.start_date : '' %>"
+							required
+						>
+					</div>
+				</div>
+
+				<div class="columns">
+					<div class="column is-6">
+						<div class="field">
+							<label class="label">Team</label>
+							<div class="control">
+								<div class="select is-fullwidth">
+									<select name="team_id" required>
+										<option value="">Select a team</option>
+										<% if (teams && teams.length > 0) { %>
+											<% teams.forEach((team) => { %>
+												<option
+													value="<%= team.team_id %>"
+													<%= String(formData && formData.team_id ? formData.team_id : (project && project.team_id ? project.team_id : '')) === String(team.team_id) ? 'selected' : '' %>
+											>
+													<%= team.team_name %>
+												</option>
+											<% }) %>
+										<% } %>
+									</select>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="column is-6">
+						<div class="field">
+							<label class="label">Status</label>
+							<div class="control">
+								<div class="select is-fullwidth">
+									<select name="status">
+										<option value="active" <%= (formData && formData.status === 'active') ? 'selected' : '' %>>Active</option>
+										<option value="paused" <%= (formData && formData.status === 'paused') ? 'selected' : '' %>>Paused</option>
+										<option value="completed" <%= (formData && formData.status === 'completed') ? 'selected' : '' %>>Completed</option>
+									</select>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="field mt-5">
+					<div class="control">
+						<button type="submit" class="button is-primary is-fullwidth">
+							<strong>Update project</strong>
+						</button>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+</section>
+
+<script>
+	document.addEventListener('DOMContentLoaded', () => {
+		const startDateInput = document.querySelector('input[name="start_date"]');
+		if (!startDateInput || startDateInput.value) {
+			return;
+		}
+
+		const today = new Date();
+		today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
+		startDateInput.value = today.toISOString().split('T')[0];
+	});
+</script>
+
+<%- include('includes/_footer') %>
