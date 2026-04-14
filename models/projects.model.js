@@ -90,6 +90,32 @@ module.exports = class Project {
     );
   }
 
+  static fetchOneByUserTeams(projectId, userId) {
+    return db.execute(
+        `SELECT DISTINCT
+                p.project_id,
+                p.name,
+                p.description,
+                p.start_date,
+                p.end_date,
+                p.status,
+                p.created_at,
+                p.project_state,
+                p.team_id,
+                t.team_name
+         FROM project p
+         INNER JOIN user_team ut ON p.team_id = ut.team_id
+         LEFT JOIN team t ON p.team_id = t.team_id
+         WHERE p.project_id = ?
+           AND p.status != 'deleted'
+           AND ut.user_id = ?
+           AND ut.date_end IS NULL
+           AND t.deleted_at IS NULL
+         LIMIT 1`,
+        [projectId, userId],
+    );
+  }
+
   static delete(projectId) {
     return db.execute(
         `UPDATE project

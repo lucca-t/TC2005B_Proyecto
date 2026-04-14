@@ -205,7 +205,7 @@ exports.post_edit = (request, response, next) => {
   return response.redirect('/projects/list');
 };
 
-exports.get_link = (request, response, next) => {
+exports.get_link = async (request, response, next) => {
   const projectId = request.params.id;
 
   if (!projectId) {
@@ -213,52 +213,87 @@ exports.get_link = (request, response, next) => {
     return response.redirect('/projects/list');
   }
 
-  Promise.all([Project.fetchOne(projectId), Project.getTeams()])
-      .then(([[projectRows], [teamRows]]) => {
-        if (!projectRows || projectRows.length === 0) {
-          request.session.error = 'Project not found.';
-          return response.redirect('/projects/list');
-        }
+  try {
+    const userId = await getCurrentUserId(request);
 
-        response.render('projectLink', {
-          csrfToken: request.csrfToken(),
-          error: request.session.error || '',
-          email: request.session.email || '',
-          project: projectRows[0],
-          teams: teamRows,
-        });
-        request.session.error = '';
-      })
-      .catch((error) => {
-        console.error('[GET /projects/link] Failed to load link form:', error.message);
-        request.session.error = 'Error loading link form.';
-        return response.redirect('/projects/list');
-      });
+    if (!userId) {
+      request.session.error = 'Session user not found. Please log in again.';
+      return response.redirect('/login');
+    }
+
+    const [[projectRows], [teamRows]] = await Promise.all([
+      Project.fetchOneByUserTeams(projectId, userId),
+      Project.getTeamsByUser(userId),
+    ]);
+
+    if (!projectRows || projectRows.length === 0) {
+      request.session.error = 'Project not found or access denied.';
+      return response.redirect('/projects/list');
+    }
+
+    response.render('projectLink', {
+      csrfToken: request.csrfToken(),
+      error: request.session.error || '',
+      email: request.session.email || '',
+      project: projectRows[0],
+      teams: teamRows,
+    });
+    request.session.error = '';
+  } catch (error) {
+    console.error('[GET /projects/link] Failed to load link form:', error.message);
+    request.session.error = 'Error loading link form.';
+    return response.redirect('/projects/list');
+  }
 };
 
-exports.post_link = (request, response, next) => {
+exports.post_link = async (request, response, next) => {
   const projectId = request.params.id;
-  const {team_id} = request.body;
+  const teamId = (request.body.team_id || '').trim();
 
   if (!projectId) {
     request.session.error = 'Project ID is required.';
     return response.redirect('/projects/list');
   }
 
-  if (!team_id) {
+  if (!teamId) {
     request.session.error = 'Please select a team.';
     return response.redirect(`/projects/link/${projectId}`);
   }
 
-  Project.updateTeam(projectId, team_id)
-      .then(() => {
-        console.log(`[POST /projects/link] Project ${projectId} linked to team ${team_id}`);
-        request.session.success = 'Project linked to team successfully!';
-        return response.redirect('/projects/list');
-      })
-      .catch((error) => {
-        console.error('[POST /projects/link] Failed to link project:', error.sqlMessage || error.message);
-        request.session.error = 'Error linking project to team: ' + (error.sqlMessage || error.message || 'Unknown error');
-        return response.redirect(`/projects/link/${projectId}`);
-      });
+  try {
+    const userId = await getCurrentUserId(request);
+
+    if (!userId) {
+      request.session.error = 'Session user not found. Please log in again.';
+      return response.redirect('/login');
+    }
+
+    const [[projectRows], [allowedTeams]] = await Promise.all([
+      Project.fetchOneByUserTeams(projectId, userId),
+      Project.getTeamsByUser(userId),
+    ]);
+
+    if (!projectRows || projectRows.length === 0) {
+      request.session.error = 'Project not found or access denied.';
+      return response.redirect('/projects/list');
+    }
+
+    const canUseTeam = allowedTeams.some(
+        (team) => String(team.team_id) === String(teamId),
+    );
+
+    if (!canUseTeam) {
+      request.session.error = 'Invalid team selection for your account.';
+      return response.redirect(`/projects/link/${projectId}`);
+    }
+
+    await Project.updateTeam(projectId, teamId);
+    console.log(`[POST /projects/link] Project ${projectId} linked to team ${teamId}`);
+    request.session.success = 'Project linked to team successfully!';
+    return response.redirect('/projects/list');
+  } catch (error) {
+    console.error('[POST /projects/link] Failed to link project:', error.sqlMessage || error.message);
+    request.session.error = 'Error linking project to team: ' + (error.sqlMessage || error.message || 'Unknown error');
+    return response.redirect(`/projects/link/${projectId}`);
+  }
 };
