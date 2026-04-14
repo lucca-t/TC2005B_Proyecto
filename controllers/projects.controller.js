@@ -13,56 +13,70 @@ const getCurrentUserId = async (request) => {
   return users[0].user_id;
 };
 
-exports.get_list = (request, response, next) => {
+exports.get_list = async (request, response, next) => {
   const error = request.session.error || '';
   const success = request.session.success || '';
   request.session.error = '';
   request.session.success = '';
 
-  Project.getAll()
-      .then(([rows, fieldData]) => {
-        response.render('projectShow', {
-          csrfToken: request.csrfToken(),
-          error: error,
-          success: success,
-          email: request.session.email || '',
-          projects: rows,
-        });
-      })
-      .catch((error) => {
-        console.error('[GET /projects/list] Failed to fetch projects:', error.message);
-        response.render('projectShow', {
-          csrfToken: request.csrfToken(),
-          error: 'Error loading projects.',
-          success: '',
-          email: request.session.email || '',
-          projects: [],
-        });
-      });
+  try {
+    const userId = await getCurrentUserId(request);
+
+    if (!userId) {
+      request.session.error = 'Session user not found. Please log in again.';
+      return response.redirect('/login');
+    }
+
+    const [rows] = await Project.getAllByUserTeams(userId);
+
+    return response.render('projectShow', {
+      csrfToken: request.csrfToken(),
+      error: error,
+      success: success,
+      email: request.session.email || '',
+      projects: rows,
+    });
+  } catch (error) {
+    console.error('[GET /projects/list] Failed to fetch projects:', error.message);
+    return response.render('projectShow', {
+      csrfToken: request.csrfToken(),
+      error: 'Error loading projects.',
+      success: '',
+      email: request.session.email || '',
+      projects: [],
+    });
+  }
 };
 
-exports.get_add = (request, response, next) => {
-  Project.getTeams()
-      .then(([rows, fieldData]) => {
-        response.render('projectsAdd', {
-          csrfToken: request.csrfToken(),
-          email: request.session.email || '',
-          teams: rows,
-          formData: {
-            name: '',
-            description: '',
-            team_id: '',
-            status: 'active',
-            start_date: '',
-          },
-          errors: '',
-          error: '',
-          msg: '',
-        });
-      })
-      .catch((error) => {
-        next(error);
-      });
+exports.get_add = async (request, response, next) => {
+  try {
+    const userId = await getCurrentUserId(request);
+
+    if (!userId) {
+      request.session.error = 'Session user not found. Please log in again.';
+      return response.redirect('/login');
+    }
+
+    const [rows] = await Project.getTeamsByUser(userId);
+
+    return response.render('projectsAdd', {
+      csrfToken: request.csrfToken(),
+      email: request.session.email || '',
+      teams: rows,
+      formData: {
+        name: '',
+        description: '',
+        team_id: '',
+        status: 'active',
+        start_date: '',
+      },
+      errors: '',
+      error: '',
+      msg: '',
+    });
+  } catch (error) {
+    return next(error);
+  }
 };
 
 exports.post_add = async (request, response, next) => {
@@ -81,8 +95,15 @@ exports.post_add = async (request, response, next) => {
     start_date: normalizedStartDate,
   };
 
+  const userId = await getCurrentUserId(request);
+
+  if (!userId) {
+    request.session.error = 'Session user not found. Please log in again.';
+    return response.redirect('/login');
+  }
+
   const renderForm = async (payload) => {
-    const [teams] = await Project.getTeams();
+    const [teams] = await Project.getTeamsByUser(userId);
     response.status(payload.statusCode || 400).render('projectsAdd', {
       csrfToken: request.csrfToken(),
       email: request.session.email || '',
@@ -98,6 +119,17 @@ exports.post_add = async (request, response, next) => {
     if (!normalizedName || !normalizedDescription || !normalizedTeamId || !normalizedStartDate) {
       return await renderForm({
         errors: 'Missing required fields.',
+      });
+    }
+
+    const [allowedTeams] = await Project.getTeamsByUser(userId);
+    const canUseTeam = allowedTeams.some(
+        (team) => String(team.team_id) === String(normalizedTeamId),
+    );
+
+    if (!canUseTeam) {
+      return await renderForm({
+        error: 'Invalid team selection for your account.',
       });
     }
 
