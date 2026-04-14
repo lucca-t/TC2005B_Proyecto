@@ -53,6 +53,31 @@ module.exports = class Project {
     );
   }
 
+  static getAllByUserTeams(userId) {
+    return db.execute(
+        `SELECT DISTINCT
+                p.project_id,
+                p.name,
+                p.description,
+                p.start_date,
+                p.end_date,
+                p.status,
+                p.created_at,
+                p.project_state,
+                p.team_id,
+                t.team_name
+         FROM project p
+         INNER JOIN user_team ut ON p.team_id = ut.team_id
+         LEFT JOIN team t ON p.team_id = t.team_id
+         WHERE p.status != 'deleted'
+           AND ut.user_id = ?
+           AND ut.date_end IS NULL
+           AND t.deleted_at IS NULL
+         ORDER BY p.name ASC`,
+        [userId],
+    );
+  }
+
   static fetchOne(projectId) {
     return db.execute(
         `SELECT p.project_id, p.name, p.description, p.start_date, p.end_date,
@@ -62,6 +87,32 @@ module.exports = class Project {
          LEFT JOIN team t ON p.team_id = t.team_id
          WHERE p.project_id = ?`,
         [projectId],
+    );
+  }
+
+  static fetchOneByUserTeams(projectId, userId) {
+    return db.execute(
+        `SELECT DISTINCT
+                p.project_id,
+                p.name,
+                p.description,
+                p.start_date,
+                p.end_date,
+                p.status,
+                p.created_at,
+                p.project_state,
+                p.team_id,
+                t.team_name
+         FROM project p
+         INNER JOIN user_team ut ON p.team_id = ut.team_id
+         LEFT JOIN team t ON p.team_id = t.team_id
+         WHERE p.project_id = ?
+           AND p.status != 'deleted'
+           AND ut.user_id = ?
+           AND ut.date_end IS NULL
+           AND t.deleted_at IS NULL
+         LIMIT 1`,
+        [projectId, userId],
     );
   }
 
@@ -92,11 +143,57 @@ module.exports = class Project {
     );
   }
 
+  static findByNameAndTeamExcludingId(name, teamId, projectId) {
+    return db.execute(
+        `SELECT project_id
+         FROM project
+         WHERE LOWER(name) = LOWER(?)
+           AND team_id = ?
+           AND project_id != ?
+         LIMIT 1`,
+        [name, teamId, projectId],
+    );
+  }
+
+  static update(projectId, projectData) {
+    const {
+      name,
+      description,
+      start_date,
+      end_date,
+      team_id,
+      status,
+    } = projectData;
+
+    return db.execute(
+        `UPDATE project
+         SET name = ?,
+             description = ?,
+             start_date = ?,
+             end_date = ?,
+             team_id = ?,
+             status = ?,
+             project_state = ?
+         WHERE project_id = ?`,
+        [
+          name,
+          description,
+          start_date,
+          end_date,
+          team_id,
+          status,
+          status,
+          projectId,
+        ],
+    );
+  }
+
   static async insert(projectData) {
     const {
       name,
       description,
       start_date,
+      end_date,
       team_id,
       status,
       created_at,
@@ -104,15 +201,24 @@ module.exports = class Project {
 
     const [insertResult] = await db.execute(
         `INSERT INTO project(
-            name, description, start_date, team_id, status, created_at,
-            project_state)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [name, description, start_date, team_id, status, created_at, status],
+          name, description, start_date, end_date, team_id, status, created_at,
+          project_state)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          name,
+          description,
+          start_date,
+          end_date,
+          team_id,
+          status,
+          created_at,
+          status,
+        ],
     );
 
     const [rows] = await db.execute(
         `SELECT project_id, name, description, start_date, team_id, status,
-            created_at, project_state
+          end_date, created_at, project_state
          FROM project
          WHERE project_id = ?
          LIMIT 1`,

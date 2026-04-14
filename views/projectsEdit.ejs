@@ -4,7 +4,7 @@
 	<div class="container" style="max-width: 900px;">
 		<div class="level mb-5">
 			<div class="level-left">
-				<h1 class="title">Create Project</h1>
+				<h1 class="title">Edit Project</h1>
 			</div>
 			<div class="level-right">
 				<a href="/projects/list" class="button is-light"><strong>Back to projects</strong></a>
@@ -24,7 +24,7 @@
 		<% } %>
 
 		<div class="box">
-			<form action="/projects/add" method="POST">
+			<form action="/projects/edit/<%= project.project_id %>" method="POST">
 				<input type="hidden" name="_csrf" value="<%= csrfToken %>">
 
 				<div class="field">
@@ -36,7 +36,7 @@
 							name="name"
 							placeholder="Enter project name"
 							required
-							value="<%= formData && formData.name ? formData.name : '' %>"
+							value="<%= formData && formData.name ? formData.name : (project && project.name ? project.name : '') %>"
 						>
 					</div>
 				</div>
@@ -49,7 +49,7 @@
 							name="description"
 							placeholder="Describe project scope"
 							required
-						><%= formData && formData.description ? formData.description : '' %></textarea>
+						><%= formData && formData.description ? formData.description : (project && project.description ? project.description : '') %></textarea>
 					</div>
 				</div>
 
@@ -60,11 +60,23 @@
 							class="input"
 							type="date"
 							name="start_date"
-							id="start_date"
 							value="<%= formData && formData.start_date ? formData.start_date : '' %>"
 							required
 						>
 					</div>
+				</div>
+
+				<div class="field">
+					<label class="label">End date</label>
+					<div class="control">
+						<input
+							class="input"
+							type="date"
+							name="end_date"
+							value="<%= formData && formData.end_date ? formData.end_date : '' %>"
+						>
+					</div>
+					<p class="help">If the status is completed, the end date is set automatically to today.</p>
 				</div>
 
 				<div class="columns">
@@ -79,8 +91,8 @@
 											<% teams.forEach((team) => { %>
 												<option
 													value="<%= team.team_id %>"
-													<%= String(formData && formData.team_id ? formData.team_id : '') === String(team.team_id) ? 'selected' : '' %>
-												>
+													<%= String(formData && formData.team_id ? formData.team_id : (project && project.team_id ? project.team_id : '')) === String(team.team_id) ? 'selected' : '' %>
+											>
 													<%= team.team_name %>
 												</option>
 											<% }) %>
@@ -103,7 +115,6 @@
 									</select>
 								</div>
 							</div>
-							<p class="help">If you set the project to Completed, the end date will be saved as today automatically.</p>
 						</div>
 					</div>
 				</div>
@@ -111,7 +122,7 @@
 				<div class="field mt-5">
 					<div class="control">
 						<button type="submit" class="button is-primary is-fullwidth">
-							<strong>Create project</strong>
+							<strong>Update project</strong>
 						</button>
 					</div>
 				</div>
@@ -122,7 +133,25 @@
 
 <script>
 	document.addEventListener('DOMContentLoaded', () => {
-		const startDateInput = document.getElementById('start_date');
+		const startDateInput = document.querySelector('input[name="start_date"]');
+		const endDateInput = document.querySelector('input[name="end_date"]');
+		const statusSelect = document.querySelector('select[name="status"]');
+
+		const setTodayOnCompleted = () => {
+			if (!endDateInput || !statusSelect || statusSelect.value !== 'completed') {
+				return;
+			}
+
+			const today = new Date();
+			today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
+			endDateInput.value = today.toISOString().split('T')[0];
+		};
+
+		if (statusSelect) {
+			statusSelect.addEventListener('change', setTodayOnCompleted);
+		}
+
+		setTodayOnCompleted();
 		if (!startDateInput || startDateInput.value) {
 			return;
 		}
