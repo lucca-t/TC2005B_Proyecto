@@ -53,9 +53,9 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `getTeamDetails` (IN `p_team_id` INT
         u.full_name,
         u.email,
         u.slack_handle
-    FROM Team t
-    LEFT JOIN User_Team ut ON t.team_id = ut.team_id AND ut.date_end IS NULL
-    LEFT JOIN User u ON ut.user_id = u.user_id
+    FROM team t
+      LEFT JOIN user_team ut ON t.team_id = ut.team_id AND ut.date_end IS NULL
+      LEFT JOIN user u ON ut.user_id = u.user_id
     WHERE t.team_id = p_team_id AND t.deleted_at IS NULL;
 END$$
 
@@ -67,7 +67,7 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `updateTeamMembers` (IN `p_team_id` 
     START TRANSACTION;
 
     -- 1. Marcar como "finalizados" a los miembros activos actuales de este equipo
-    UPDATE User_Team 
+    UPDATE user_team 
     SET date_end = CURRENT_DATE() 
     WHERE team_id = p_team_id AND date_end IS NULL;
 
@@ -80,7 +80,7 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `updateTeamMembers` (IN `p_team_id` 
 
         -- 3. Insertar el nuevo miembro. Si el registro ya existía (por la Primary Key compuesta user_id + team_id), 
         -- se actualiza su fecha de inicio y se borra su fecha de fin para reactivarlo.
-        INSERT INTO User_Team (user_id, team_id, date_start, date_end)
+        INSERT INTO user_team (user_id, team_id, date_start, date_end)
         VALUES (v_user_id, p_team_id, CURRENT_DATE(), NULL)
         ON DUPLICATE KEY UPDATE 
             date_start = CURRENT_DATE(),
