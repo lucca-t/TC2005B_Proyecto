@@ -8,6 +8,8 @@ router.get('/edit/:email', isAuth, usersController.get_edit);
 router.post('/edit/:email', isAuth, usersController.post_edit);
 router.get('/add', isAuth, usersController.get_add);
 router.post('/add', isAuth, usersController.post_add);
+router.get('/role/:userId', isAuth, usersController.get_role);
+router.post('/role/:userId', isAuth, usersController.post_role);
 router.post('/delete/:userId', isAuth, usersController.post_delete);
 
 module.exports = router;

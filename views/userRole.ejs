@@ -1,0 +1,59 @@
+<%- include('includes/_header') %>
+
+<section class="section">
+    <div class="container">
+        <div class="level mb-5">
+            <div class="level-left">
+                <h1 class="title">Assign Role</h1>
+            </div>
+            <div class="level-right">
+                <a href="/users/list" class="button is-light"><strong>Back to Users</strong></a>
+            </div>
+        </div>
+
+        <div class="box">
+            <h2 class="subtitle">
+                User: <strong><%= user.full_name || user.email %></strong>
+            </h2>
+
+            <% if (currentRole) { %>
+                <p class="mb-4">
+                    Current role: <span class="tag is-info is-medium"><%= currentRole.role_name %></span>
+                </p>
+            <% } else { %>
+                <p class="mb-4 has-text-grey">No role assigned yet.</p>
+            <% } %>
+
+            <form action="/users/role/<%= user.user_id %>" method="POST">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+                <div class="field">
+                    <label class="label">Select Role</label>
+                    <div class="control">
+                        <div class="select is-fullwidth">
+                            <select name="role_id" required>
+                                <option value="">-- Select a role --</option>
+                                <% roles.forEach(role => { %>
+                                    <option value="<%= role.role_id %>"
+                                        <%= (currentRole && currentRole.role_id === role.role_id) ? 'selected' : '' %>>
+                                        <%= role.role_name %>
+                                    </option>
+                                <% }) %>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field mt-4">
+                    <div class="control">
+                        <button type="submit" class="button is-warning">
+                            <strong>Assign Role</strong>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+
+<%- include('includes/_footer') %>

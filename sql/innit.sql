@@ -202,6 +202,16 @@ CREATE TABLE `role` (
   `role_name` varchar(100) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
 
+--
+-- Dumping data for table `role`
+--
+
+INSERT INTO `role` (`role_id`, `role_name`) VALUES
+(1, 'Admin'),
+(2, 'Manager'),
+(3, 'Developer'),
+(4, 'Viewer');
+
 -- --------------------------------------------------------
 
 --
@@ -471,7 +481,7 @@ ALTER TABLE `report`
 -- AUTO_INCREMENT for table `role`
 --
 ALTER TABLE `role`
-  MODIFY `role_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `role_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `standup`

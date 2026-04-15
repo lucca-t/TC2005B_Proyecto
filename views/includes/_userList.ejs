@@ -17,6 +17,7 @@
                     <tr>
                         <th>Email</th>
                         <th>Full Name</th>
+                        <th>Role</th>
                         <th>Slack Handle</th>
                         <th>Slack ID</th>
                         <th class="has-text-right">Actions</th>
@@ -34,6 +35,14 @@
 
                                 <td class="is-vcentered">
                                     <%= user.full_name || '—' %>
+                                </td>
+
+                                <td class="is-vcentered">
+                                    <% if (user.role_name) { %>
+                                        <span class="tag is-info is-light"><%= user.role_name %></span>
+                                    <% } else { %>
+                                        <span class="tag is-light">No role</span>
+                                    <% } %>
                                 </td>
 
                                 <td class="is-vcentered">
@@ -58,6 +67,11 @@
 
                                 <td class="has-text-right is-vcentered">
                                     <div class="buttons is-right">
+
+                                        <a href="/users/role/<%= user.user_id %>"
+                                        class="button is-small is-info is-outlined">
+                                        Assign Role
+                                        </a>
 
                                         <a href="/users/edit/<%= user.email %>" 
                                         class="button is-small is-light">
@@ -87,7 +101,7 @@
                     <% } else { %>
 
                         <tr>
-                            <td colspan="5" class="has-text-centered has-text-grey py-5">
+                            <td colspan="6" class="has-text-centered has-text-grey py-5">
                                 No users registered yet.
                             </td>
                         </tr>
