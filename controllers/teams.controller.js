@@ -30,6 +30,7 @@ exports.get_list = (request, response, next) => {
         response.render('teamList', {
           csrfToken: request.csrfToken(),
           error: 'Error loading teams.',
+          success: '',
           email: request.session.email || '',
           teams: [],
         });
@@ -102,6 +103,9 @@ exports.get_edit = (request, response, next) => {
         });
       })
       .catch((error) => {
+        console.error('[GET /teams/edit] Failed to fetch team details:', error);
+        console.error('[GET /teams/edit] Error message:', error.message);
+        console.error('[GET /teams/edit] Error code:', error.code);
         request.session.error = 'Error loading team details: ' + (error.message || 'Unknown error');
         return response.redirect('/teams/list');
       });
@@ -166,32 +170,26 @@ exports.post_edit = (request, response, next) => {
                 requestedUserIds = userIdString.split(',').map((id) => parseInt(id.trim())).filter((id) => !isNaN(id));
               }
 
-              // Check if any requested user IDs don't exist
-              const invalidUserIds = requestedUserIds.filter((id) => !validUserIds.includes(id));
-              if (invalidUserIds.length > 0) {
-                console.error(`[POST /teams/edit] Invalid user IDs detected:`, invalidUserIds);
-                request.session.error = `Error: Invalid user IDs - ${invalidUserIds.join(', ')} do not exist.`;
-                response.redirect(`/teams/edit/${teamId}`);
-                return Promise.reject(new Error('INVALID_USER_IDS'));
-              }
+        // Check if any requested user IDs don't exist
+        const invalidUserIds = requestedUserIds.filter((id) => !validUserIds.includes(id));
+        if (invalidUserIds.length > 0) {
+          console.error(`[POST /teams/edit] Invalid user IDs detected:`, invalidUserIds);
+          request.session.error = `Error: Invalid user IDs - ${invalidUserIds.join(', ')} do not exist.`;
+          return response.redirect(`/teams/edit/${teamId}`);
+        }
 
-              // Update both team name and members
-              return Promise.all([
-                Team.updateTeamName(teamId, newTeamName),
-                Team.updateTeamMembers(teamId, userIdString),
-              ]);
-            });
+        console.log(`[POST /teams/edit] All user IDs are valid. Updating team members`);
+
+        return Team.updateTeamMembers(teamId, userIdString);
       })
       .then(() => {
         request.session.success = 'Team updated successfully!';
         return response.redirect('/teams/list');
       })
       .catch((error) => {
-        // Don't log error if it's our custom rejection
-        if (error.message === 'DUPLICATE_NAME' || error.message === 'INVALID_USER_IDS') {
-          return; // Error already handled and redirect already sent
-        }
-        request.session.error = 'Error updating team: ' + (error.sqlMessage || error.message || 'Unknown error');
+        console.error('[POST /teams/edit] Failed to update team members:', error.sqlMessage || error.message);
+        console.error('[POST /teams/edit] Full error:', error);
+        request.session.error = 'Error updating team members: ' + (error.sqlMessage || error.message || 'Unknown error');
         return response.redirect(`/teams/edit/${teamId}`);
       });
 };
@@ -224,12 +222,43 @@ exports.post_add = (request, response, next) => {
   const {teamName, members, leads} = request.body;
 
   if (!teamName || teamName.trim() === '') {
-    return response.status(400).render('teamAdd', {
-      csrfToken: request.csrfToken(),
-      email: request.session.email || '',
-      error: 'Team name is required.',
-      users: [],
-    });
+    return User.getAll()
+        .then(([userRows]) => {
+          response.status(400).render('teamAdd', {
+            csrfToken: request.csrfToken(),
+            email: request.session.email || '',
+            error: 'Team name is required.',
+            users: userRows,
+          });
+        })
+        .catch(() => {
+          response.status(400).render('teamAdd', {
+            csrfToken: request.csrfToken(),
+            email: request.session.email || '',
+            error: 'Team name is required.',
+            users: [],
+          });
+        });
+  }
+
+  if (teamName.trim().length > 100) {
+    return User.getAll()
+        .then(([userRows]) => {
+          response.status(400).render('teamAdd', {
+            csrfToken: request.csrfToken(),
+            email: request.session.email || '',
+            error: 'Team name cannot exceed 100 characters.',
+            users: userRows,
+          });
+        })
+        .catch(() => {
+          response.status(400).render('teamAdd', {
+            csrfToken: request.csrfToken(),
+            email: request.session.email || '',
+            error: 'Team name cannot exceed 100 characters.',
+            users: [],
+          });
+        });
   }
 
   // Check if team name already exists
@@ -266,11 +295,13 @@ exports.post_add = (request, response, next) => {
               const memberArray = Array.isArray(members) ? members : (members ? [members] : []);
 
               if (memberArray.length === 0) {
+                console.log(`[POST /teams/add] No members added to team ${teamId}`);
                 return response.redirect('/teams/list');
               }
 
               return Team.addMembersToTeam(teamId, memberArray)
                   .then(() => {
+                    console.log(`[POST /teams/add] Successfully added ${memberArray.length} members to team ${teamId}`);
                     return response.redirect('/teams/list');
                   })
                   .catch((error) => {
@@ -285,7 +316,7 @@ exports.post_add = (request, response, next) => {
                     response.status(400).render('teamAdd', {
                       csrfToken: request.csrfToken(),
                       email: request.session.email || '',
-                      error: 'Error creating team: ' + (error.sqlMessage || error.message || 'Unknown error'),
+                      error: 'Could not create the team. Please try again.',
                       users: rows,
                     });
                   })
@@ -293,7 +324,7 @@ exports.post_add = (request, response, next) => {
                     response.status(400).render('teamAdd', {
                       csrfToken: request.csrfToken(),
                       email: request.session.email || '',
-                      error: 'Error creating team: ' + (error.sqlMessage || error.message || 'Unknown error'),
+                      error: 'Could not create the team. Please try again.',
                       users: [],
                     });
                   });
@@ -306,7 +337,7 @@ exports.post_add = (request, response, next) => {
               response.status(400).render('teamAdd', {
                 csrfToken: request.csrfToken(),
                 email: request.session.email || '',
-                error: 'Error verifying team name: ' + (error.message || 'Unknown error'),
+                error: 'Could not verify team name. Please try again.',
                 users: rows,
               });
             })
@@ -336,7 +367,7 @@ exports.post_delete = (request, response, next) => {
       })
       .catch((error) => {
         console.error('[POST /teams/delete] Failed to delete team:', error.sqlMessage || error.message);
-        request.session.error = 'Error deleting team: ' + (error.sqlMessage || error.message || 'Unknown error');
+        request.session.error = 'Could not delete the team. It may be linked to active projects.';
         return response.redirect('/teams/list');
       });
 };
@@ -409,7 +440,7 @@ exports.get_details = (request, response, next) => {
         console.error('[GET /teams/details] Failed to fetch team details:', error);
         console.error('[GET /teams/details] Error message:', error.message);
         console.error('[GET /teams/details] Error code:', error.code);
-        request.session.error = 'Error loading team details: ' + (error.message || 'Unknown error');
+        request.session.error = 'Could not load team details. Please try again.';
         return response.redirect('/teams/list');
       });
 };

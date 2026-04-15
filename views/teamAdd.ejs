@@ -11,6 +11,13 @@
             </div>
         </div>
 
+        <% if (typeof error !== 'undefined' && error) { %>
+            <div class="notification is-danger is-light mb-4">
+                <button class="delete" onclick="this.parentElement.remove()"></button>
+                <strong><%= error %></strong>
+            </div>
+        <% } %>
+
         <div class="columns">
             <!-- LEFT: TEAM INFO -->
             <div class="column is-5">
@@ -23,8 +30,9 @@
                         <div class="field">
                             <label class="label">Team Name</label>
                             <div class="control">
-                                <input class="input" type="text" name="teamName" placeholder="Enter team name" required>
+                                <input class="input" type="text" name="teamName" id="teamNameInput" placeholder="Enter team name" maxlength="100" required>
                             </div>
+                            <p class="help" id="charCounter">0/100</p>
                         </div>
 
                         <!-- MEMBER SELECTION (hidden inputs) -->
@@ -158,6 +166,18 @@
         const selected = Array.from(document.querySelectorAll(".user-checkbox:checked")).map(c => c.value);
         console.log("[TeamAdd] Final members list:", selected);
     });
+
+    // CHARACTER COUNTER FOR TEAM NAME
+    const teamNameInput = document.getElementById("teamNameInput");
+    const charCounter = document.getElementById("charCounter");
+
+    function updateCharCounter() {
+        const current = teamNameInput.value.length;
+        charCounter.textContent = current + "/100";
+    }
+
+    teamNameInput.addEventListener("input", updateCharCounter);
+    updateCharCounter();
 </script>
 
 <%- include('includes/_footer') %>

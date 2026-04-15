@@ -3,7 +3,7 @@ const User = require('../models/users.model');
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 exports.get_list = (request, response, next) => {
-  User.getAllWithRoles().then(([rows, fieldData]) => {
+  User.getAll().then(([rows, fieldData]) => {
     response.render('userList', {
       csrfToken: request.csrfToken(),
       email: request.session.email || '',
@@ -142,51 +142,6 @@ exports.post_edit = (request, response, next) => {
           email: request.session.email || '',
           error: 'Error updating user: ' + (error.sqlMessage || error.message || 'Unknown error'),
         });
-      });
-};
-
-exports.get_role = (request, response, next) => {
-  const userId = request.params.userId;
-
-  Promise.all([User.getAllRoles(), User.getUserRole(userId)])
-      .then(([[roles], [currentRole]]) => {
-        return User.getAll().then(([users]) => {
-          const user = users.find((u) => u.user_id == userId);
-          if (!user) {
-            return response.redirect('/users/list');
-          }
-          response.render('userRole', {
-            csrfToken: request.csrfToken(),
-            email: request.session.email || '',
-            user: user,
-            roles: roles,
-            currentRole: currentRole.length > 0 ? currentRole[0] : null,
-            error: '',
-            success: '',
-          });
-        });
-      })
-      .catch((error) => {
-        console.error('[GET /users/role] Failed:', error.message);
-        next(error);
-      });
-};
-
-exports.post_role = (request, response, next) => {
-  const userId = request.params.userId;
-  const {role_id} = request.body;
-
-  if (!role_id) {
-    return response.redirect('/users/role/' + userId);
-  }
-
-  User.assignRole(userId, role_id)
-      .then(() => {
-        return response.redirect('/users/list');
-      })
-      .catch((error) => {
-        console.error('[POST /users/role] Failed:', error.sqlMessage || error.message);
-        next(error);
       });
 };
 

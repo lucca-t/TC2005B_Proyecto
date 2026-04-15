@@ -26,6 +26,30 @@
                 });
             </script>
         <% } %>
+
+        <% if (typeof error !== 'undefined' && error) { %>
+            <div class="notification is-danger is-light" id="errorNotification">
+                <button class="delete"></button>
+                <strong><%= error %></strong>
+            </div>
+            <script>
+                setTimeout(() => {
+                    const notification = document.getElementById('errorNotification');
+                    if (notification) {
+                        notification.remove();
+                    }
+                }, 3000);
+
+                document.addEventListener('DOMContentLoaded', () => {
+                    const closeButtons = document.querySelectorAll('.notification .delete');
+                    closeButtons.forEach(button => {
+                        button.addEventListener('click', () => {
+                            button.parentElement.remove();
+                        });
+                    });
+                });
+            </script>
+        <% } %>
         <div class="level mb-4">
             <div class="level-left">
                 <h1 class="title">Team Management</h1>
