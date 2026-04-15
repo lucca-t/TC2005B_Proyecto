@@ -1,5 +1,4 @@
 @startuml AddTeamSequence
-skinparam style strictuml
 
 actor "User" as user
 boundary "Browser" as browser
@@ -71,24 +70,33 @@ alt teamName is valid
     db -->> model: 18b. [rows]
     deactivate db
     model -->> controller: 19b. [rows]
-    deactivate controller
     deactivate model
-
+    deactivate controller
     alt Team name is unique
 
+/'
     controller ->> model: 20b. new Team(teamName).save()
     activate controller
     activate model
+'/
 
-    model ->> db: 21b. INSERT INTO Team(team_name) VALUES (?)
-    activate db
+create entity "ModelObject" as the_model
 
-    db -->> model: 22b. {insertId: teamId}
-    deactivate db
+controller -> the_model: 20b. new Team(teamName)
+activate controller 
+controller ->> model: 20c. save()
+activate model
 
-    model -->> controller: 23b. result
-    deactivate model
-    deactivate controller
+model ->> db: 21b. INSERT INTO Team(team_name) VALUES (?)
+activate db
+
+db -->> model: 22b. {insertId: teamId}
+deactivate db
+
+model -->> controller: 23b. result
+deactivate model
+
+deactivate controller
 
         alt Members selected
             controller ->> model: 24b-ii. async Team.addMembersToTeam(teamId, members[])
