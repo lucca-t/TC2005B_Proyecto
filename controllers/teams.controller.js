@@ -414,6 +414,7 @@ exports.get_details = (request, response, next) => {
           teamId: teamId,
           teamName: teamName,
           members: members,
+          reports: [],
         };
 
         response.render('teamDetails', viewData);
