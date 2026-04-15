@@ -78,6 +78,13 @@ module.exports = class Team {
     );
   }
 
+  static updateTeamName(teamId, newTeamName) {
+    return db.execute(
+        `UPDATE team SET team_name = ? WHERE team_id = ?`,
+        [newTeamName, teamId],
+    );
+  }
+
   static updateTeamMembers(teamId, newUsers) {
     // newUsers is a comma-separated string of user IDs (e.g., "1,2,5,9" or empty string "")
     // We need to convert it to a JSON array format for the stored procedure

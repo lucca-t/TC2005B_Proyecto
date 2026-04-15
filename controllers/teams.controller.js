@@ -132,53 +132,95 @@ exports.get_edit = (request, response, next) => {
 
 exports.post_edit = (request, response, next) => {
   const teamId = request.params.teamId;
-  const {userIds} = request.body;
+  const {userIds, teamName} = request.body;
 
   if (!teamId) {
     request.session.error = 'Team ID is required.';
     return response.redirect('/teams/list');
   }
 
-  // userIds is a comma-separated string from the form (e.g., "1,2,5" or empty string "")
+  // Validate team name
+  if (!teamName || teamName.trim() === '') {
+    request.session.error = 'Team name is required.';
+    return response.redirect(`/teams/edit/${teamId}`);
+  }
+
+  const newTeamName = teamName.trim();
   const userIdString = userIds || '';
 
+  console.log(`[POST /teams/edit/:${teamId}] Received teamName:`, newTeamName);
   console.log(`[POST /teams/edit/:${teamId}] Received userIds:`, userIdString);
 
-  // First, validate that all user IDs exist in the database
-  User.getAll()
-      .then(([allUsers]) => {
-        const validUserIds = allUsers.map((u) => u.user_id);
-
-        // Parse the userIds string and validate each one
-        let requestedUserIds = [];
-        if (userIdString && userIdString.trim() !== '') {
-          requestedUserIds = userIdString.split(',').map((id) => parseInt(id.trim())).filter((id) => !isNaN(id));
+  // First, check if the new team name already exists (and is different from current name)
+  Team.getTeamsDetails(teamId)
+      .then((result) => {
+        let rows = [];
+        if (Array.isArray(result) && Array.isArray(result[0]) && Array.isArray(result[0][0])) {
+          rows = result[0][0];
+        } else if (Array.isArray(result) && Array.isArray(result[0])) {
+          rows = result[0];
         }
 
-        console.log(`[POST /teams/edit] Valid user IDs in database:`, validUserIds);
-        console.log(`[POST /teams/edit] Requested user IDs:`, requestedUserIds);
-
-        // Check if any requested user IDs don't exist
-        const invalidUserIds = requestedUserIds.filter((id) => !validUserIds.includes(id));
-        if (invalidUserIds.length > 0) {
-          console.error(`[POST /teams/edit] Invalid user IDs detected:`, invalidUserIds);
-          request.session.error = `Error: Invalid user IDs - ${invalidUserIds.join(', ')} do not exist.`;
-          return response.redirect(`/teams/edit/${teamId}`);
+        if (!rows || rows.length === 0) {
+          request.session.error = 'Team not found.';
+          return response.redirect('/teams/list');
         }
 
-        console.log(`[POST /teams/edit] All user IDs are valid. Updating team members`);
+        const currentTeamName = String(rows[0].team_name).trim();
 
-        return Team.updateTeamMembers(teamId, userIdString);
+        // Only check for duplicate name if the name has changed
+        if (newTeamName !== currentTeamName) {
+          return Team.findByName(newTeamName)
+              .then(([existingTeams]) => {
+                if (existingTeams.length > 0) {
+                  console.log('[POST /teams/edit] Team name already exists:', newTeamName);
+                  request.session.error = `A team with the name "${newTeamName}" already exists.`;
+                  return response.redirect(`/teams/edit/${teamId}`);
+                }
+              });
+        }
       })
       .then(() => {
-        console.log(`[POST /teams/edit] Team ${teamId} members updated successfully`);
-        request.session.success = 'Team members updated successfully!';
+        // Validate that all user IDs exist in the database
+        return User.getAll()
+            .then(([allUsers]) => {
+              const validUserIds = allUsers.map((u) => u.user_id);
+
+              // Parse the userIds string and validate each one
+              let requestedUserIds = [];
+              if (userIdString && userIdString.trim() !== '') {
+                requestedUserIds = userIdString.split(',').map((id) => parseInt(id.trim())).filter((id) => !isNaN(id));
+              }
+
+              console.log(`[POST /teams/edit] Valid user IDs in database:`, validUserIds);
+              console.log(`[POST /teams/edit] Requested user IDs:`, requestedUserIds);
+
+              // Check if any requested user IDs don't exist
+              const invalidUserIds = requestedUserIds.filter((id) => !validUserIds.includes(id));
+              if (invalidUserIds.length > 0) {
+                console.error(`[POST /teams/edit] Invalid user IDs detected:`, invalidUserIds);
+                request.session.error = `Error: Invalid user IDs - ${invalidUserIds.join(', ')} do not exist.`;
+                return response.redirect(`/teams/edit/${teamId}`);
+              }
+
+              console.log(`[POST /teams/edit] All user IDs are valid. Updating team name and members`);
+
+              // Update both team name and members
+              return Promise.all([
+                Team.updateTeamName(teamId, newTeamName),
+                Team.updateTeamMembers(teamId, userIdString),
+              ]);
+            });
+      })
+      .then(() => {
+        console.log(`[POST /teams/edit] Team ${teamId} updated successfully`);
+        request.session.success = 'Team updated successfully!';
         return response.redirect('/teams/list');
       })
       .catch((error) => {
-        console.error('[POST /teams/edit] Failed to update team members:', error.sqlMessage || error.message);
+        console.error('[POST /teams/edit] Failed to update team:', error.sqlMessage || error.message);
         console.error('[POST /teams/edit] Full error:', error);
-        request.session.error = 'Error updating team members: ' + (error.sqlMessage || error.message || 'Unknown error');
+        request.session.error = 'Error updating team: ' + (error.sqlMessage || error.message || 'Unknown error');
         return response.redirect(`/teams/edit/${teamId}`);
       });
 };
