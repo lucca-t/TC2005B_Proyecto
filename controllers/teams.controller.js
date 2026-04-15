@@ -178,18 +178,15 @@ exports.post_edit = (request, response, next) => {
           return response.redirect(`/teams/edit/${teamId}`);
         }
 
-        console.log(`[POST /teams/edit] All user IDs are valid. Updating team members`);
-
         return Team.updateTeamMembers(teamId, userIdString);
       })
       .then(() => {
-        request.session.success = 'Team updated successfully!';
+        request.session.success = 'Team members updated successfully!';
         return response.redirect('/teams/list');
       })
       .catch((error) => {
         console.error('[POST /teams/edit] Failed to update team members:', error.sqlMessage || error.message);
-        console.error('[POST /teams/edit] Full error:', error);
-        request.session.error = 'Error updating team members: ' + (error.sqlMessage || error.message || 'Unknown error');
+        request.session.error = 'Could not update team members. Please try again.';
         return response.redirect(`/teams/edit/${teamId}`);
       });
 };
@@ -382,26 +379,14 @@ exports.get_details = (request, response, next) => {
     return response.redirect('/teams/list');
   }
 
-  Promise.all([
-    Team.getTeamsDetails(teamId),
-    Team.selectLast3reports(teamId),
-  ])
-      .then(([teamResult, reportsResult]) => {
-
+  Team.getTeamsDetails(teamId)
+      .then((result) => {
         let rows = [];
         if (Array.isArray(teamResult) && Array.isArray(teamResult[0]) && Array.isArray(teamResult[0][0])) {
           rows = teamResult[0][0];
         } else if (Array.isArray(teamResult) && Array.isArray(teamResult[0])) {
           rows = teamResult[0];
         }
-
-        let reports = [];
-        if (Array.isArray(reportsResult) && Array.isArray(reportsResult[0])) {
-          reports = reportsResult[0];
-        } else if (Array.isArray(reportsResult)) {
-          reports = reportsResult;
-        }
-
 
         if (!rows || rows.length === 0) {
           request.session.error = 'Team not found.';
@@ -413,15 +398,12 @@ exports.get_details = (request, response, next) => {
 
         const members = rows
             .filter((row) => row.user_id !== null && row.user_id !== undefined)
-            .map((row) => {
-              const memberObj = {
-                user_id: parseInt(row.user_id),
-                full_name: row.full_name,
-                email: row.email,
-                slack_handle: row.slack_handle,
-              };
-              return memberObj;
-            });
+            .map((row) => ({
+              user_id: parseInt(row.user_id),
+              full_name: row.full_name,
+              email: row.email,
+              slack_handle: row.slack_handle,
+            }));
 
         const viewData = {
           csrfToken: request.csrfToken(),
@@ -430,16 +412,12 @@ exports.get_details = (request, response, next) => {
           teamId: teamId,
           teamName: teamName,
           members: members,
-          reports: reports,
         };
-
 
         response.render('teamDetails', viewData);
       })
       .catch((error) => {
         console.error('[GET /teams/details] Failed to fetch team details:', error);
-        console.error('[GET /teams/details] Error message:', error.message);
-        console.error('[GET /teams/details] Error code:', error.code);
         request.session.error = 'Could not load team details. Please try again.';
         return response.redirect('/teams/list');
       });

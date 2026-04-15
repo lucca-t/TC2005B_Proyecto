@@ -157,3 +157,47 @@ exports.post_delete = (request, response, next) => {
         next(error);
       });
 };
+
+exports.get_role = (request, response, next) => {
+  const userId = request.params.userId;
+
+  Promise.all([
+    User.getUserRole(userId),
+    User.getAllRoles(),
+    User.getAll(),
+  ])
+      .then(([[roleRows], [roles], [allUsers]]) => {
+        const currentRole = roleRows.length > 0 ? roleRows[0] : null;
+        const user = allUsers.find((u) => String(u.user_id) === String(userId)) || {user_id: userId, email: '', full_name: ''};
+
+        response.render('userRole', {
+          csrfToken: request.csrfToken(),
+          email: request.session.email || '',
+          user: user,
+          currentRole: currentRole,
+          roles: roles,
+        });
+      })
+      .catch((error) => {
+        console.error('[GET /users/role] Failed to load role page:', error.message);
+        next(error);
+      });
+};
+
+exports.post_role = (request, response, next) => {
+  const userId = request.params.userId;
+  const {role_id} = request.body;
+
+  if (!role_id) {
+    return response.redirect(`/users/role/${userId}`);
+  }
+
+  User.assignRole(userId, role_id)
+      .then(() => {
+        return response.redirect('/users/list');
+      })
+      .catch((error) => {
+        console.error('[POST /users/role] Failed to assign role:', error.message);
+        next(error);
+      });
+};
