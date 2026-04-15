@@ -76,17 +76,7 @@
                                 </thead>
                                 <tbody id="userTable">
                                     <% if (typeof allUsers !== 'undefined' && allUsers.length > 0) { %>
-                                        <% 
-                                            // Debug: Log the data structure
-                                            console.log('[DEBUG _teamEdit.ejs] ====== RENDER LOOP START ======');
-                                            console.log('[DEBUG _teamEdit.ejs] members:', members);
-                                            console.log('[DEBUG _teamEdit.ejs] members is array?', Array.isArray(members));
-                                            console.log('[DEBUG _teamEdit.ejs] members length:', members ? members.length : 'undefined');
-                                            if (members && Array.isArray(members)) {
-                                                console.log('[DEBUG _teamEdit.ejs] member IDs:', members.map(m => ({ id: m.user_id, type: typeof m.user_id, full_name: m.full_name })));
-                                            }
-                                            console.log('[DEBUG _teamEdit.ejs] allUsers count:', allUsers.length);
-                                        %>
+                                        
                                         <% allUsers.forEach(user => {
                                             const userId = parseInt(user.user_id);
                                             const userIdOrig = user.user_id;
@@ -97,14 +87,9 @@
                                                 isMember = members.some(m => {
                                                     const memberId = parseInt(m.user_id);
                                                     const isMatch = memberId === userId;
-                                                    if (user.user_id === allUsers[0].user_id) { // Log only for first user to avoid spam
-                                                        console.log(`[DEBUG] Comparing user ${userIdOrig}(${userId}) vs member ${m.user_id}(${memberId}): ${isMatch}`);
-                                                    }
                                                     return isMatch;
                                                 });
                                             }
-                                            
-                                            console.log(`[DEBUG _teamEdit.ejs] User ${user.full_name} (${userIdOrig}): isMember=${isMember}`);
                                         %>
                                             <tr class="user-row" data-search="<%= (user.full_name + ' ' + user.email).toLowerCase() %>">
                                                 <td style="text-align: center; vertical-align: middle;">
@@ -124,7 +109,6 @@
                                                 </td>
                                             </tr>
                                         <% }) %>
-                                        <% console.log('[DEBUG _teamEdit.ejs] ====== RENDER LOOP END ======'); %>
                                         <tr id="noResultsRow" style="display: none;">
                                             <td colspan="2" class="has-text-centered has-text-grey py-5">
                                                 Users not found.
@@ -178,14 +162,6 @@
                 button.parentElement.remove();
             });
         });
-        
-        // Debug: Check which checkboxes are actually checked
-        console.log('[DEBUG client-side] Page loaded');
-        const checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
-        console.log('[DEBUG client-side] Checked checkboxes count:', checkedBoxes.length);
-        checkedBoxes.forEach(cb => {
-            console.log('[DEBUG client-side] Checked user:', cb.value, 'data-user-id:', cb.getAttribute('data-user-id'));
-        });
     });
 
     // SEARCH FILTER
@@ -218,12 +194,5 @@
         const checkboxes = document.querySelectorAll('.user-checkbox:checked');
         const userIds = Array.from(checkboxes).map(cb => cb.value).join(',');
         document.getElementById('userIdsInput').value = userIds;
-        console.log('Selected User IDs for submission:', userIds);
-        console.log('Number of checked checkboxes:', checkboxes.length);
-        
-        // If no checkboxes are checked, send empty string to remove all members
-        if (checkboxes.length === 0) {
-            console.log('No users selected - all current members will be removed');
-        }
     });
 </script>

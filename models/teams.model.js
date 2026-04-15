@@ -49,7 +49,7 @@ module.exports = class Team {
 
     const dateStart = new Date().toISOString().split('T')[0];
 
-    // Insert all members sequentially
+    // Insert all members 
     return memberIds.reduce((promise, memberId) => {
       return promise.then(() => {
         return db.execute(
@@ -94,7 +94,6 @@ module.exports = class Team {
       userIdsArray = newUsers.split(',').map((id) => parseInt(id.trim())).filter((id) => !isNaN(id));
     }
 
-    // Convert to JSON array string, e.g., '[1, 2, 5]' or '[]'
     const userIdsJson = JSON.stringify(userIdsArray);
 
     return db.execute(

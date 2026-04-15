@@ -46,11 +46,8 @@ exports.get_edit = (request, response, next) => {
     return response.redirect('/teams/list');
   }
 
-  console.log(`[GET /teams/edit] Loading team ${teamId}`);
-
   Team.getTeamsDetails(teamId)
       .then((result) => {
-        console.log(`[GET /teams/edit] Query result structure:`, result);
 
         // New stored procedure returns multiple rows (one per member, or one row with NULLs if no members)
         // The structure is nested: result[0][0] contains the actual rows array
@@ -62,10 +59,8 @@ exports.get_edit = (request, response, next) => {
           rows = result[0];
         }
 
-        console.log(`[GET /teams/edit] Extracted rows:`, rows);
 
         if (!rows || rows.length === 0) {
-          console.log(`[GET /teams/edit] No data found for team ${teamId}`);
           request.session.error = 'Team not found.';
           return response.redirect('/teams/list');
         }
@@ -74,8 +69,6 @@ exports.get_edit = (request, response, next) => {
         const firstRow = rows[0];
         const teamName = firstRow.team_name ? String(firstRow.team_name).trim() : '';
 
-        console.log(`[GET /teams/edit] First row object:`, firstRow);
-        console.log(`[GET /teams/edit] Team Name extracted: "${teamName}"`);
 
         // Filter rows where user_id is NOT null to get only actual members
         // If a team has 0 members, there will be 1 row with user_id=null
@@ -88,17 +81,11 @@ exports.get_edit = (request, response, next) => {
                 email: row.email,
                 slack_handle: row.slack_handle,
               };
-              console.log(`[GET /teams/edit] Mapped member:`, memberObj);
               return memberObj;
             });
 
-        console.log(`[GET /teams/edit] Final Members array:`, members);
-        console.log(`[GET /teams/edit] Members count: ${members.length}`);
-
         // Get all available users to allow adding new members
         return User.getAll().then(([allUsers]) => {
-          console.log(`[GET /teams/edit] All users count: ${allUsers.length}`);
-          console.log(`[GET /teams/edit] All users sample:`, allUsers.slice(0, 2));
 
           const viewData = {
             csrfToken: request.csrfToken(),
@@ -110,21 +97,11 @@ exports.get_edit = (request, response, next) => {
             allUsers: allUsers,
           };
 
-          console.log(`[GET /teams/edit] ========== RENDERING VIEW WITH DATA =========`);
-          console.log(`[GET /teams/edit] teamName: "${viewData.teamName}"`);
-          console.log(`[GET /teams/edit] teamId: ${viewData.teamId}`);
-          console.log(`[GET /teams/edit] members array:`, viewData.members);
-          console.log(`[GET /teams/edit] members IDs:`, viewData.members.map((m) => m.user_id));
-          console.log(`[GET /teams/edit] allUsers IDs:`, viewData.allUsers.map((u) => u.user_id));
-          console.log(`[GET /teams/edit] =========================================`);
 
           response.render('teamEdit', viewData);
         });
       })
       .catch((error) => {
-        console.error('[GET /teams/edit] Failed to fetch team details:', error);
-        console.error('[GET /teams/edit] Error message:', error.message);
-        console.error('[GET /teams/edit] Error code:', error.code);
         request.session.error = 'Error loading team details: ' + (error.message || 'Unknown error');
         return response.redirect('/teams/list');
       });
@@ -148,9 +125,6 @@ exports.post_edit = (request, response, next) => {
   const newTeamName = teamName.trim();
   const userIdString = userIds || '';
 
-  console.log(`[POST /teams/edit/:${teamId}] Received teamName:`, newTeamName);
-  console.log(`[POST /teams/edit/:${teamId}] Received userIds:`, userIdString);
-
   // First, check if the new team name already exists (and is different from current name)
   Team.getTeamsDetails(teamId)
       .then((result) => {
@@ -173,7 +147,6 @@ exports.post_edit = (request, response, next) => {
           return Team.findByName(newTeamName)
               .then(([existingTeams]) => {
                 if (existingTeams.length > 0) {
-                  console.log('[POST /teams/edit] Team name already exists:', newTeamName);
                   request.session.error = 'Duplicate team names are not allowed';
                   response.redirect(`/teams/edit/${teamId}`);
                   return Promise.reject(new Error('DUPLICATE_NAME'));
@@ -193,9 +166,6 @@ exports.post_edit = (request, response, next) => {
                 requestedUserIds = userIdString.split(',').map((id) => parseInt(id.trim())).filter((id) => !isNaN(id));
               }
 
-              console.log(`[POST /teams/edit] Valid user IDs in database:`, validUserIds);
-              console.log(`[POST /teams/edit] Requested user IDs:`, requestedUserIds);
-
               // Check if any requested user IDs don't exist
               const invalidUserIds = requestedUserIds.filter((id) => !validUserIds.includes(id));
               if (invalidUserIds.length > 0) {
@@ -205,8 +175,6 @@ exports.post_edit = (request, response, next) => {
                 return Promise.reject(new Error('INVALID_USER_IDS'));
               }
 
-              console.log(`[POST /teams/edit] All user IDs are valid. Updating team name and members`);
-
               // Update both team name and members
               return Promise.all([
                 Team.updateTeamName(teamId, newTeamName),
@@ -215,7 +183,6 @@ exports.post_edit = (request, response, next) => {
             });
       })
       .then(() => {
-        console.log(`[POST /teams/edit] Team ${teamId} updated successfully`);
         request.session.success = 'Team updated successfully!';
         return response.redirect('/teams/list');
       })
@@ -224,8 +191,6 @@ exports.post_edit = (request, response, next) => {
         if (error.message === 'DUPLICATE_NAME' || error.message === 'INVALID_USER_IDS') {
           return; // Error already handled and redirect already sent
         }
-        console.error('[POST /teams/edit] Failed to update team:', error.sqlMessage || error.message);
-        console.error('[POST /teams/edit] Full error:', error);
         request.session.error = 'Error updating team: ' + (error.sqlMessage || error.message || 'Unknown error');
         return response.redirect(`/teams/edit/${teamId}`);
       });
@@ -258,9 +223,6 @@ exports.get_add = (request, response, next) => {
 exports.post_add = (request, response, next) => {
   const {teamName, members, leads} = request.body;
 
-  console.log('[POST /teams/add] Form data received:', {teamName, members, leads});
-  console.log('[POST /teams/add] Full body:', request.body);
-
   if (!teamName || teamName.trim() === '') {
     return response.status(400).render('teamAdd', {
       csrfToken: request.csrfToken(),
@@ -274,7 +236,6 @@ exports.post_add = (request, response, next) => {
   Team.findByName(teamName)
       .then(([rows]) => {
         if (rows.length > 0) {
-          console.log('[POST /teams/add] Team name already exists:', teamName);
           return User.getAll()
               .then(([userRows]) => {
                 response.status(400).render('teamAdd', {
@@ -304,16 +265,12 @@ exports.post_add = (request, response, next) => {
               // Ensure members is an array (it comes as array from hidden inputs)
               const memberArray = Array.isArray(members) ? members : (members ? [members] : []);
 
-              console.log(`[POST /teams/add] Created team ${teamId} with members:`, memberArray);
-
               if (memberArray.length === 0) {
-                console.log(`[POST /teams/add] No members added to team ${teamId}`);
                 return response.redirect('/teams/list');
               }
 
               return Team.addMembersToTeam(teamId, memberArray)
                   .then(() => {
-                    console.log(`[POST /teams/add] Successfully added ${memberArray.length} members to team ${teamId}`);
                     return response.redirect('/teams/list');
                   })
                   .catch((error) => {
@@ -374,7 +331,6 @@ exports.post_delete = (request, response, next) => {
 
   Team.delete(teamId)
       .then(() => {
-        console.log(`[POST /teams/delete] Team ${teamId} deleted successfully`);
         request.session.success = 'Team deleted successfully!';
         return response.redirect('/teams/list');
       })
@@ -395,15 +351,11 @@ exports.get_details = (request, response, next) => {
     return response.redirect('/teams/list');
   }
 
-  console.log(`[GET /teams/details] Loading team ${teamId}`);
-
   Promise.all([
     Team.getTeamsDetails(teamId),
     Team.selectLast3reports(teamId),
   ])
       .then(([teamResult, reportsResult]) => {
-        console.log(`[GET /teams/details] Team query result structure:`, teamResult);
-        console.log(`[GET /teams/details] Reports query result structure:`, reportsResult);
 
         let rows = [];
         if (Array.isArray(teamResult) && Array.isArray(teamResult[0]) && Array.isArray(teamResult[0][0])) {
@@ -419,20 +371,14 @@ exports.get_details = (request, response, next) => {
           reports = reportsResult;
         }
 
-        console.log(`[GET /teams/details] Extracted rows:`, rows);
-        console.log(`[GET /teams/details] Extracted reports:`, reports);
 
         if (!rows || rows.length === 0) {
-          console.log(`[GET /teams/details] No data found for team ${teamId}`);
           request.session.error = 'Team not found.';
           return response.redirect('/teams/list');
         }
 
         const firstRow = rows[0];
         const teamName = firstRow.team_name ? String(firstRow.team_name).trim() : '';
-
-        console.log(`[GET /teams/details] First row object:`, firstRow);
-        console.log(`[GET /teams/details] Team Name extracted: "${teamName}"`);
 
         const members = rows
             .filter((row) => row.user_id !== null && row.user_id !== undefined)
@@ -443,13 +389,8 @@ exports.get_details = (request, response, next) => {
                 email: row.email,
                 slack_handle: row.slack_handle,
               };
-              console.log(`[GET /teams/details] Mapped member:`, memberObj);
               return memberObj;
             });
-
-        console.log(`[GET /teams/details] Final Members array:`, members);
-        console.log(`[GET /teams/details] Members count: ${members.length}`);
-        console.log(`[GET /teams/details] Reports count: ${reports.length}`);
 
         const viewData = {
           csrfToken: request.csrfToken(),
@@ -461,13 +402,6 @@ exports.get_details = (request, response, next) => {
           reports: reports,
         };
 
-        console.log(`[GET /teams/details] ========== RENDERING VIEW WITH DATA =========`);
-        console.log(`[GET /teams/details] teamName: "${viewData.teamName}"`);
-        console.log(`[GET /teams/details] teamId: ${viewData.teamId}`);
-        console.log(`[GET /teams/details] members array:`, viewData.members);
-        console.log(`[GET /teams/details] members IDs:`, viewData.members.map((m) => m.user_id));
-        console.log(`[GET /teams/details] reports IDs:`, viewData.reports.map((report) => report.report_id));
-        console.log(`[GET /teams/details] =========================================`);
 
         response.render('teamDetails', viewData);
       })
