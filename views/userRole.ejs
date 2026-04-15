@@ -18,7 +18,7 @@
 
             <% if (currentRole) { %>
                 <p class="mb-4">
-                    Current role: <span class="tag is-info is-medium"><%= currentRole.role_name %></span>
+                    Current role: <span class="tag is-primary is-medium"><%= currentRole.role_name %></span>
                 </p>
             <% } else { %>
                 <p class="mb-4 has-text-grey">No role assigned yet.</p>
@@ -46,7 +46,7 @@
 
                 <div class="field mt-4">
                     <div class="control">
-                        <button type="submit" class="button is-warning">
+                        <button type="submit" class="button is-primary">
                             <strong>Assign Role</strong>
                         </button>
                     </div>
