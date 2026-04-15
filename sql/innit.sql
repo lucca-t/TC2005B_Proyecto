@@ -35,6 +35,8 @@ DROP TABLE IF EXISTS `privilege`;
 
 DROP PROCEDURE IF EXISTS `getTeamDetails`;
 
+DROP PROCEDURE IF EXISTS `getProjectDetails`;
+
 DROP PROCEDURE IF EXISTS `updateTeamMembers`;
 
 SET
