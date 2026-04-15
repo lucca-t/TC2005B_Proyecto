@@ -174,8 +174,9 @@ exports.post_edit = (request, response, next) => {
               .then(([existingTeams]) => {
                 if (existingTeams.length > 0) {
                   console.log('[POST /teams/edit] Team name already exists:', newTeamName);
-                  request.session.error = `A team with the name "${newTeamName}" already exists.`;
-                  return response.redirect(`/teams/edit/${teamId}`);
+                  request.session.error = 'Duplicate team names are not allowed';
+                  response.redirect(`/teams/edit/${teamId}`);
+                  return Promise.reject(new Error('DUPLICATE_NAME'));
                 }
               });
         }
@@ -200,7 +201,8 @@ exports.post_edit = (request, response, next) => {
               if (invalidUserIds.length > 0) {
                 console.error(`[POST /teams/edit] Invalid user IDs detected:`, invalidUserIds);
                 request.session.error = `Error: Invalid user IDs - ${invalidUserIds.join(', ')} do not exist.`;
-                return response.redirect(`/teams/edit/${teamId}`);
+                response.redirect(`/teams/edit/${teamId}`);
+                return Promise.reject(new Error('INVALID_USER_IDS'));
               }
 
               console.log(`[POST /teams/edit] All user IDs are valid. Updating team name and members`);
@@ -218,6 +220,10 @@ exports.post_edit = (request, response, next) => {
         return response.redirect('/teams/list');
       })
       .catch((error) => {
+        // Don't log error if it's our custom rejection
+        if (error.message === 'DUPLICATE_NAME' || error.message === 'INVALID_USER_IDS') {
+          return; // Error already handled and redirect already sent
+        }
         console.error('[POST /teams/edit] Failed to update team:', error.sqlMessage || error.message);
         console.error('[POST /teams/edit] Full error:', error);
         request.session.error = 'Error updating team: ' + (error.sqlMessage || error.message || 'Unknown error');

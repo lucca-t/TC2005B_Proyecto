@@ -16,18 +16,21 @@
             </div>
         <% } %>
 
-        <div class="columns">
-            <!-- LEFT: TEAM INFO -->
-            <div class="column is-5">
-                <div class="box">
-                    <h2 class="subtitle has-text-centered mb-5">Team Information</h2>
+        <form action="/teams/edit/<%= teamId %>" method="POST" id="teamEditForm">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            
+            <div class="columns">
+                <!-- LEFT: TEAM INFO -->
+                <div class="column is-5">
+                    <div class="box">
+                        <h2 class="subtitle has-text-centered mb-5">Team Information</h2>
 
-                    <div class="field">
-                        <label class="label">Team Name</label>
-                        <div class="control">
-                            <input class="input" type="text" name="teamName" value="<%= teamName || 'N/A' %>" required>
+                        <div class="field">
+                            <label class="label">Team Name</label>
+                            <div class="control">
+                                <input class="input" type="text" name="teamName" value="<%= teamName || 'N/A' %>" required>
+                            </div>
                         </div>
-                    </div>
 
                     <hr>
 
@@ -54,16 +57,13 @@
             <div class="column is-7">
                 <div class="box">
                     <h2 class="subtitle mb-4">Quick Assign Members</h2>
-
-                    <form action="/teams/edit/<%= teamId %>" method="POST" id="teamEditForm">
-                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                        
-                        <!-- SEARCH -->
-                        <div class="field mb-4">
-                            <div class="control">
-                                <input id="searchInput" class="input" type="text" placeholder="Search user by name or email...">
-                            </div>
+                    
+                    <!-- SEARCH -->
+                    <div class="field mb-4">
+                        <div class="control">
+                            <input id="searchInput" class="input" type="text" placeholder="Search user by name or email...">
                         </div>
+                    </div>
 
                         <!-- TABLE with CHECKBOXES -->
                         <div style="max-height: 400px; overflow-y: auto; border: 1px solid #dbdbdb; border-radius: 4px;">
@@ -157,14 +157,14 @@
                             </div>
                         </div>
 
-                    </form>
-
                     <p class="has-text-grey mt-3 is-size-7">
                         ✓ Check members to include them in the team
                     </p>
                 </div>
             </div>
         </div>
+
+        </form>
     </div>
 </section>
 
