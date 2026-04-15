@@ -168,18 +168,14 @@ exports.post_edit = (request, response, next) => {
           return response.redirect(`/teams/edit/${teamId}`);
         }
 
-        console.log(`[POST /teams/edit] All user IDs are valid. Updating team members`);
-
         return Team.updateTeamMembers(teamId, userIdString);
       })
       .then(() => {
-        console.log(`[POST /teams/edit] Team ${teamId} members updated successfully`);
         request.session.success = 'Team members updated successfully!';
         return response.redirect('/teams/list');
       })
       .catch((error) => {
         console.error('[POST /teams/edit] Failed to update team members:', error.sqlMessage || error.message);
-        console.error('[POST /teams/edit] Full error:', error);
         request.session.error = 'Could not update team members. Please try again.';
         return response.redirect(`/teams/edit/${teamId}`);
       });
@@ -382,14 +378,8 @@ exports.get_details = (request, response, next) => {
     return response.redirect('/teams/list');
   }
 
-  console.log(`[GET /teams/details] Loading team ${teamId}`);
-
   Team.getTeamsDetails(teamId)
       .then((result) => {
-        console.log(`[GET /teams/details] Query result structure:`, result);
-
-        // New stored procedure returns multiple rows (one per member, or one row with NULLs if no members)
-        // The structure is nested: result[0][0] contains the actual rows array
         let rows = [];
 
         if (Array.isArray(result) && Array.isArray(result[0]) && Array.isArray(result[0][0])) {
@@ -398,38 +388,22 @@ exports.get_details = (request, response, next) => {
           rows = result[0];
         }
 
-        console.log(`[GET /teams/details] Extracted rows:`, rows);
-
         if (!rows || rows.length === 0) {
-          console.log(`[GET /teams/edit] No data found for team ${teamId}`);
           request.session.error = 'Team not found.';
           return response.redirect('/teams/list');
         }
 
-        // Get team name from first row (all rows have the same team_name)
         const firstRow = rows[0];
         const teamName = firstRow.team_name ? String(firstRow.team_name).trim() : '';
 
-        console.log(`[GET /teams/details] First row object:`, firstRow);
-        console.log(`[GET /teams/details] Team Name extracted: "${teamName}"`);
-
-        // Filter rows where user_id is NOT null to get only actual members
-        // If a team has 0 members, there will be 1 row with user_id=null
         const members = rows
             .filter((row) => row.user_id !== null && row.user_id !== undefined)
-            .map((row) => {
-              const memberObj = {
-                user_id: parseInt(row.user_id),
-                full_name: row.full_name,
-                email: row.email,
-                slack_handle: row.slack_handle,
-              };
-              console.log(`[GET /teams/details] Mapped member:`, memberObj);
-              return memberObj;
-            });
-
-        console.log(`[GET /teams/details] Final Members array:`, members);
-        console.log(`[GET /teams/details] Members count: ${members.length}`);
+            .map((row) => ({
+              user_id: parseInt(row.user_id),
+              full_name: row.full_name,
+              email: row.email,
+              slack_handle: row.slack_handle,
+            }));
 
         const viewData = {
           csrfToken: request.csrfToken(),
@@ -440,19 +414,10 @@ exports.get_details = (request, response, next) => {
           members: members,
         };
 
-        console.log(`[GET /teams/details] ========== RENDERING VIEW WITH DATA =========`);
-        console.log(`[GET /teams/details] teamName: "${viewData.teamName}"`);
-        console.log(`[GET /teams/details] teamId: ${viewData.teamId}`);
-        console.log(`[GET /teams/details] members array:`, viewData.members);
-        console.log(`[GET /teams/details] members IDs:`, viewData.members.map((m) => m.user_id));
-        console.log(`[GET /teams/details] =========================================`);
-
         response.render('teamDetails', viewData);
       })
       .catch((error) => {
         console.error('[GET /teams/details] Failed to fetch team details:', error);
-        console.error('[GET /teams/details] Error message:', error.message);
-        console.error('[GET /teams/details] Error code:', error.code);
         request.session.error = 'Could not load team details. Please try again.';
         return response.redirect('/teams/list');
       });
