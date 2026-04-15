@@ -69,24 +69,6 @@
 
             <hr>
 
-            <div class="field">
-                <label class="label has-text-weight-bold">Current Members: <span class="tag is-primary"><%= members ? members.length : 0 %></span></label>
-            </div>
-
-            <div class="box" style="background-color: #fafafa; border: 1px solid #dbdbdb; max-height: 400px; overflow-y: auto;">
-                <% if (members && members.length > 0) { %>
-                    <% members.forEach(member => { %>
-                        <div class="media mb-3" style="padding-bottom: 10px;">
-                            <div class="media-content">
-                                <p class="title is-6"><%= member.slack_handle || member.full_name || 'Unknown user' %></p>
-                                <p class="subtitle is-7 has-text-grey"><%= member.email || 'No email' %></p>
-                            </div>
-                        </div>
-                    <% }) %>
-                <% } else { %>
-                    <p class="has-text-grey has-text-centered py-4">No members in this project team</p>
-                <% } %>
-            </div>
         </div>
 
         <div class="box">
