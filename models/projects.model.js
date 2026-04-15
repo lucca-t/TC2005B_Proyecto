@@ -178,6 +178,7 @@ module.exports = class Project {
         [
           name,
           description,
+
           start_date,
           end_date,
           team_id,
@@ -199,6 +200,14 @@ module.exports = class Project {
           ORDER BY r.date_generated DESC
           LIMIT 3`,
         [projectId],
+    );
+  }
+
+  static getProjectDetails(projectId) {
+    return db.execute(
+        `
+            CALL getProjectDetails(?)
+            `, [projectId],
     );
   }
 

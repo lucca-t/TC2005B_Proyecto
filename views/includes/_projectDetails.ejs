@@ -1,0 +1,145 @@
+<section class="section">
+    <div class="container">
+        <div class="level mb-4">
+            <div class="level-left">
+                <h1 class="title">Project Details</h1>
+            </div>
+            <div class="level-right">
+                <a href="/projects/list" class="button is-light"><strong>< Back to Projects</strong></a>
+                <a href="/projects/edit/<%= projectId %>" class="button is-primary"><strong>Edit Project</strong></a>
+            </div>
+        </div>
+
+        <% if (typeof error !== 'undefined' && error) { %>
+            <div class="notification is-danger is-light mb-4" id="errorNotification">
+                <button class="delete"></button>
+                <strong><%= error %></strong>
+            </div>
+        <% } %>
+
+        <div class="box">
+            <h2 class="subtitle has-text-centered mb-5">Project Information</h2>
+
+            <div class="field">
+                <label class="label">Project Name</label>
+                <div class="control">
+                    <input class="input" type="text" value="<%= projectName || (project && project.name) || 'N/A' %>" disabled>
+                </div>
+            </div>
+
+            <div class="field">
+                <label class="label">Description</label>
+                <div class="control">
+                    <textarea class="textarea" disabled><%= (project && project.description) ? project.description : 'No description available.' %></textarea>
+                </div>
+            </div>
+
+            <div class="columns">
+                <div class="column">
+                    <label class="label">Status</label>
+                    <div>
+                        <% const statusValue = (project && project.status) ? project.status : 'N/A'; %>
+                        <% if (statusValue === 'active') { %>
+                            <span class="tag is-success is-light">Active</span>
+                        <% } else if (statusValue === 'inactive' || statusValue === 'paused') { %>
+                            <span class="tag is-warning is-light"><%= statusValue %></span>
+                        <% } else if (statusValue === 'completed') { %>
+                            <span class="tag is-info is-light">Completed</span>
+                        <% } else { %>
+                            <span class="tag is-light"><%= statusValue %></span>
+                        <% } %>
+                    </div>
+                </div>
+                <div class="column">
+                    <label class="label">Team</label>
+                    <p><%= (project && project.team_name) ? project.team_name : 'No team assigned' %></p>
+                </div>
+            </div>
+
+            <div class="columns">
+                <div class="column">
+                    <label class="label">Start Date</label>
+                    <p><%= (project && project.start_date) ? new Date(project.start_date).toLocaleDateString() : 'N/A' %></p>
+                </div>
+                <div class="column">
+                    <label class="label">End Date</label>
+                    <p><%= (project && project.end_date) ? new Date(project.end_date).toLocaleDateString() : 'N/A' %></p>
+                </div>
+            </div>
+
+            <hr>
+
+            <div class="field">
+                <label class="label has-text-weight-bold">Current Members: <span class="tag is-primary"><%= members ? members.length : 0 %></span></label>
+            </div>
+
+            <div class="box" style="background-color: #fafafa; border: 1px solid #dbdbdb; max-height: 400px; overflow-y: auto;">
+                <% if (members && members.length > 0) { %>
+                    <% members.forEach(member => { %>
+                        <div class="media mb-3" style="padding-bottom: 10px;">
+                            <div class="media-content">
+                                <p class="title is-6"><%= member.slack_handle || member.full_name || 'Unknown user' %></p>
+                                <p class="subtitle is-7 has-text-grey"><%= member.email || 'No email' %></p>
+                            </div>
+                        </div>
+                    <% }) %>
+                <% } else { %>
+                    <p class="has-text-grey has-text-centered py-4">No members in this project team</p>
+                <% } %>
+            </div>
+        </div>
+
+        <div class="box">
+            <h2 class="subtitle has-text-centered mb-5">Recent reports from <%= projectName || 'this project' %></h2>
+
+            <% const formatDate = (value) => {
+                if (!value) return 'N/A';
+                const parsed = new Date(value);
+                return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleDateString('en-GB');
+            } %>
+
+            <% if (reports && reports.length > 0) { %>
+                <% reports.forEach(report => { %>
+                    <div class="box mb-4" style="background-color: #f8f9fa; border: 1px solid #dbdbdb;">
+                        <div class="level">
+                            <div class="level-left">
+                                <div>
+                                    <p class="title is-6">Report #<%= report.report_id %></p>
+                                    <p class="subtitle is-7 has-text-grey">
+                                        Generated on <strong><%= report.date_generated ? report.date_generated : 'Unknown' %></strong>
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="level-right">
+                                <span class="button is-small is-primary">View report</span>
+                            </div>
+                        </div>
+                        <div class="content">
+                            <p><strong>From</strong>
+                                <%= formatDate(report.date_beginning) %>
+                                <b>to</b> <%= formatDate(report.date_end) %>
+                            </p>
+                            <p><strong>Summary:</strong></p>
+                            <p class="has-text-grey">
+                                <%= report.ai_content ? (report.ai_content.length > 220 ? report.ai_content.substring(0, 220) + '...' : report.ai_content) : 'No summary available.' %>
+                            </p>
+                        </div>
+                    </div>
+                <% }) %>
+            <% } else { %>
+                <p class="has-text-grey has-text-centered py-4">No recent reports for this project.</p>
+            <% } %>
+        </div>
+    </div>
+</section>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const closeButtons = document.querySelectorAll('.notification .delete');
+        closeButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                button.parentElement.remove();
+            });
+        });
+    });
+</script>
