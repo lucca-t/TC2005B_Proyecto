@@ -104,9 +104,7 @@ exports.get_edit = (request, response, next) => {
       })
       .catch((error) => {
         console.error('[GET /teams/edit] Failed to fetch team details:', error);
-        console.error('[GET /teams/edit] Error message:', error.message);
-        console.error('[GET /teams/edit] Error code:', error.code);
-        request.session.error = 'Error loading team details: ' + (error.message || 'Unknown error');
+        request.session.error = 'Could not load team details. Please try again.';
         return response.redirect('/teams/list');
       });
 };
@@ -170,21 +168,23 @@ exports.post_edit = (request, response, next) => {
                 requestedUserIds = userIdString.split(',').map((id) => parseInt(id.trim())).filter((id) => !isNaN(id));
               }
 
-        // Check if any requested user IDs don't exist
-        const invalidUserIds = requestedUserIds.filter((id) => !validUserIds.includes(id));
-        if (invalidUserIds.length > 0) {
-          console.error(`[POST /teams/edit] Invalid user IDs detected:`, invalidUserIds);
-          request.session.error = `Error: Invalid user IDs - ${invalidUserIds.join(', ')} do not exist.`;
-          return response.redirect(`/teams/edit/${teamId}`);
-        }
+              // Check if any requested user IDs don't exist
+              const invalidUserIds = requestedUserIds.filter((id) => !validUserIds.includes(id));
+              if (invalidUserIds.length > 0) {
+                console.error(`[POST /teams/edit] Invalid user IDs detected:`, invalidUserIds);
+                request.session.error = 'Some selected users are no longer available. Please refresh and try again.';
+                return response.redirect(`/teams/edit/${teamId}`);
+              }
 
-        return Team.updateTeamMembers(teamId, userIdString);
+              return Team.updateTeamMembers(teamId, userIdString);
+            });
       })
       .then(() => {
         request.session.success = 'Team members updated successfully!';
         return response.redirect('/teams/list');
       })
       .catch((error) => {
+        if (error.message === 'DUPLICATE_NAME') return;
         console.error('[POST /teams/edit] Failed to update team members:', error.sqlMessage || error.message);
         request.session.error = 'Could not update team members. Please try again.';
         return response.redirect(`/teams/edit/${teamId}`);
@@ -293,12 +293,14 @@ exports.post_add = (request, response, next) => {
 
               if (memberArray.length === 0) {
                 console.log(`[POST /teams/add] No members added to team ${teamId}`);
+                request.session.success = 'Team created successfully!';
                 return response.redirect('/teams/list');
               }
 
               return Team.addMembersToTeam(teamId, memberArray)
                   .then(() => {
                     console.log(`[POST /teams/add] Successfully added ${memberArray.length} members to team ${teamId}`);
+                    request.session.success = 'Team created successfully!';
                     return response.redirect('/teams/list');
                   })
                   .catch((error) => {
@@ -382,10 +384,10 @@ exports.get_details = (request, response, next) => {
   Team.getTeamsDetails(teamId)
       .then((result) => {
         let rows = [];
-        if (Array.isArray(teamResult) && Array.isArray(teamResult[0]) && Array.isArray(teamResult[0][0])) {
-          rows = teamResult[0][0];
-        } else if (Array.isArray(teamResult) && Array.isArray(teamResult[0])) {
-          rows = teamResult[0];
+        if (Array.isArray(result) && Array.isArray(result[0]) && Array.isArray(result[0][0])) {
+          rows = result[0][0];
+        } else if (Array.isArray(result) && Array.isArray(result[0])) {
+          rows = result[0];
         }
 
         if (!rows || rows.length === 0) {
