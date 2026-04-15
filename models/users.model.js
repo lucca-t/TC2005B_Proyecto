@@ -60,4 +60,41 @@ module.exports = class User {
       );
     });
   }
+
+  static getAllRoles() {
+    return db.execute(`SELECT role_id, role_name FROM role ORDER BY role_name ASC`);
+  }
+
+  static getUserRole(userId) {
+    return db.execute(
+        `SELECT r.role_id, r.role_name
+         FROM user_role ur
+         INNER JOIN role r ON ur.role_id = r.role_id
+         WHERE ur.user_id = ? AND ur.end_date IS NULL`,
+        [userId],
+    );
+  }
+
+  static assignRole(userId, roleId) {
+    return db.execute(
+        `UPDATE user_role SET end_date = CURDATE() WHERE user_id = ? AND end_date IS NULL`,
+        [userId],
+    ).then(() => {
+      return db.execute(
+          `INSERT INTO user_role (user_id, role_id, start_date) VALUES (?, ?, CURDATE())`,
+          [userId, roleId],
+      );
+    });
+  }
+
+  static getAllWithRoles() {
+    return db.execute(
+        `SELECT u.user_id, u.email, u.full_name, u.slack_handle, u.slack_id,
+                r.role_name
+         FROM user u
+         LEFT JOIN user_role ur ON u.user_id = ur.user_id AND ur.end_date IS NULL
+         LEFT JOIN role r ON ur.role_id = r.role_id
+         WHERE u.deleted_at IS NULL`,
+    );
+  }
 };
