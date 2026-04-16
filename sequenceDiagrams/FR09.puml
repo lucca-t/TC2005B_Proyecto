@@ -71,7 +71,6 @@ alt teamName is valid
     deactivate db
     model -->> controller: 19b. [rows]
     deactivate model
-    deactivate controller
     alt Team name is unique
 
 /'
@@ -83,8 +82,10 @@ alt teamName is valid
 create entity "ModelObject" as the_model
 
 controller -> the_model: 20b. new Team(teamName)
-activate controller 
-controller ->> model: 20c. save()
+controller -> the_model: 20c. save()
+activate the_model
+the_model ->> model
+deactivate the_model
 activate model
 
 model ->> db: 21b. INSERT INTO Team(team_name) VALUES (?)
@@ -96,11 +97,8 @@ deactivate db
 model -->> controller: 23b. result
 deactivate model
 
-deactivate controller
-
         alt Members selected
             controller ->> model: 24b-ii. async Team.addMembersToTeam(teamId, members[])
-            activate controller
             activate model
             loop For each memberId
                 model ->> db: 25b. INSERT INTO User_Team\n(user_id, team_id, date_start)
@@ -112,19 +110,15 @@ deactivate controller
             deactivate model
             controller -> browser: 28b. redirect('/teams/list')
             activate browser
-            deactivate controller
             deactivate browser
         else No members selected
             controller -> browser: 24b-i. redirect('/teams/list')
-            activate controller
             activate browser
             deactivate browser
-            deactivate controller
         end
 
     else Team name already exists
         controller ->> usersModel: 20a. async User.getAll()
-        activate controller
         activate usersModel
         usersModel ->> db: 21a. SELECT * FROM User
         activate db
@@ -134,7 +128,6 @@ deactivate controller
         deactivate usersModel
         
         controller -> view: 24a. render("teamAdd",\n{error: 'A team with the name "X" already exists.'})
-        deactivate controller
         activate view
 
         view -> browser: 25a. Display duplicate name error
@@ -149,7 +142,6 @@ deactivate controller
 else teamName is empty
     deactivate user 
     controller -> view: 16a. render("teamAdd",\n{error: "Team name is required."})
-    activate controller
     deactivate controller
     activate view
     view -> browser: 17a. Display error
@@ -161,7 +153,6 @@ else teamName is empty
     deactivate browser
     
 end
-deactivate controller
 deactivate routes
 
 == Redirect to Team List ==
