@@ -45,6 +45,7 @@ deactivate VL
 
 
 ' Section about getting the info of one team '
+alt user confirms changes
 activate U
 U -> RO : GET /teams/edit/:teamId
 deactivate U
@@ -101,3 +102,32 @@ activate VL
 VL -> U : html
 deactivate VL
 activate U
+deactivate U
+
+end
+
+alt user doesnt confirm changes
+activate U
+U -> RO : GET /teams/list
+deactivate U
+
+activate RO
+RO -> C : getList(request, response)
+deactivate RO
+
+activate C
+C -->> TM : getAllWithMemberCount()
+activate TM
+TM -->> BD : SELECT \nt.team_id, \nt.team_name, \nt.team_start_date, \nCOUNT(ut.user_id) as memberCount \nFROM Team t \nLEFT JOIN User_Team ut ON t.team_id = ut.team_id \nWHERE t.deleted_at IS NULL \nGROUP BY t.team_id, t.team_name, t.team_start_date \nORDER BY t.team_name ASC`
+
+deactivate BD
+TM -->> C : teams
+deactivate TM
+
+C -> VL : response.render('teamList', teams)
+deactivate C
+
+activate VL
+VL -> U : html
+deactivate VL
+end
