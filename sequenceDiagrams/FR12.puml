@@ -1,4 +1,4 @@
-@startuml "Assign user to team"
+@startuml "Modify team NOT DONE"
 skinparam style strictuml
 
 actor Lead as U
