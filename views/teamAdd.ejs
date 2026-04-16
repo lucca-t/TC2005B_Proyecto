@@ -113,67 +113,67 @@
 <!-- JS -->
 <script>
     // SEARCH FILTER
-    const searchInput = document.getElementById("searchInput");
-    const rows = document.querySelectorAll("#userTable tr.user-row");
-    const noResultsRow = document.getElementById("noResultsRow");
+    const searchInput = document.getElementById('searchInput');
+    const rows = document.querySelectorAll('#userTable tr.user-row');
+    const noResultsRow = document.getElementById('noResultsRow');
 
     function updateSearchResults() {
         const value = searchInput.value.toLowerCase();
         let visibleCount = 0;
 
         rows.forEach(row => {
-            const searchData = row.getAttribute("data-search") || "";
+            const searchData = row.getAttribute('data-search') || '';
             const show = searchData.includes(value);
-            row.style.display = show ? "" : "none";
+            row.style.display = show ? '' : 'none';
             if (show) visibleCount += 1;
         });
 
         if (visibleCount === 0 && rows.length > 0) {
-            noResultsRow.style.display = "";
+            noResultsRow.style.display = '';
         } else {
-            noResultsRow.style.display = "none";
+            noResultsRow.style.display = 'none';
         }
     }
 
-    searchInput.addEventListener("keyup", updateSearchResults);
+    searchInput.addEventListener('keyup', updateSearchResults);
 
     // CREATE HIDDEN INPUTS FOR SELECTED MEMBERS
     function updateMemberInputs() {
-        const memberInputs = document.getElementById("memberInputs");
-        memberInputs.innerHTML = "";
+        const memberInputs = document.getElementById('memberInputs');
+        memberInputs.innerHTML = '';
 
-        document.querySelectorAll(".user-checkbox:checked").forEach(checkbox => {
-            const input = document.createElement("input");
-            input.type = "hidden";
-            input.name = "members";
+        document.querySelectorAll('.user-checkbox:checked').forEach(checkbox => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'members';
             input.value = checkbox.value;
             memberInputs.appendChild(input);
         });
 
-        const selectedCount = document.querySelectorAll(".user-checkbox:checked").length;
-        console.log("[TeamAdd] Selected members:", selectedCount);
+        const selectedCount = document.querySelectorAll('.user-checkbox:checked').length;
+        console.log('[TeamAdd] Selected members:', selectedCount);
     }
 
     // UPDATE WHEN CHECKBOX IS CHANGED
-    document.querySelectorAll(".user-checkbox").forEach(checkbox => {
-        checkbox.addEventListener("change", updateMemberInputs);
+    document.querySelectorAll('.user-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', updateMemberInputs);
     });
 
     // UPDATE BEFORE FORM SUBMISSION
-    document.getElementById("teamForm").addEventListener("submit", function(e) {
-        console.log("[TeamAdd] Form submitting...");
+    document.getElementById('teamForm').addEventListener('submit', function(e) {
+        console.log('[TeamAdd] Form submitting...');
         updateMemberInputs();
-        const selected = Array.from(document.querySelectorAll(".user-checkbox:checked")).map(c => c.value);
-        console.log("[TeamAdd] Final members list:", selected);
+        const selected = Array.from(document.querySelectorAll('.user-checkbox:checked')).map(c => c.value);
+        console.log('[TeamAdd] Final members list:', selected);
     });
 
     // CHARACTER COUNTER FOR TEAM NAME
-    const teamNameInput = document.getElementById("teamNameInput");
-    const charCounter = document.getElementById("charCounter");
+    const teamNameInput = document.getElementById('teamNameInput');
+    const charCounter = document.getElementById('charCounter');
 
     function updateCharCounter() {
         const current = teamNameInput.value.length;
-        charCounter.textContent = current + "/100";
+        charCounter.textContent = current + '/100';
     }
 
     teamNameInput.addEventListener("input", updateCharCounter);

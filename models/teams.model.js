@@ -1,5 +1,4 @@
 const db = require('../util/database');
-const bcrypt = require('bcrypt');
 
 module.exports = class Team {
   constructor(myTeamName) {
@@ -13,9 +12,9 @@ module.exports = class Team {
     );
   }
 
-  static fetchOne(team_idSearch) {
+  static fetchOne(teamIdSearch) {
     return db.execute(
-        `SELECT * FROM team WHERE team_id = ?`, [team_idSearch],
+        `SELECT * FROM team WHERE team_id = ?`, [teamIdSearch],
     );
   }
 
@@ -49,7 +48,7 @@ module.exports = class Team {
 
     const dateStart = new Date().toISOString().split('T')[0];
 
-    // Insert all members 
+    // Insert all members
     return memberIds.reduce((promise, memberId) => {
       return promise.then(() => {
         return db.execute(

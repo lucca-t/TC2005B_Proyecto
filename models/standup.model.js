@@ -49,17 +49,17 @@ module.exports = class Standup {
   }
 
   static findById(standupId) {
-  return db.execute(
-    'SELECT * FROM standup WHERE standup_id = ?',
-    [standupId]
-  );
-}
+    return db.execute(
+        'SELECT * FROM standup WHERE standup_id = ?',
+        [standupId],
+    );
+  }
 
-static update(standupId, date, did_today, do_tomorrow, blockers) {
-  return db.execute(
-    'UPDATE standup SET date = ?, did_today = ?, do_tomorrow = ?, blockers = ? WHERE standup_id = ?',
-    [date, did_today, do_tomorrow, blockers, standupId]
-  );
-}
+  static update(standupId, date, did_today, do_tomorrow, blockers) {
+    return db.execute(
+        'UPDATE standup SET date = ?, did_today = ?, do_tomorrow = ?, blockers = ? WHERE standup_id = ?',
+        [date, did_today, do_tomorrow, blockers, standupId],
+    );
+  }
 };
 

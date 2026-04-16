@@ -1,8 +1,7 @@
 const Team = require('../models/teams.model');
 const User = require('../models/users.model');
-const bcrypt = require('bcrypt');
 
-exports.get_list = (request, response, next) => {
+exports.getList = (request, response, next) => {
   const error = request.session.error || '';
   const success = request.session.success || '';
   request.session.error = '';
@@ -37,7 +36,7 @@ exports.get_list = (request, response, next) => {
       });
 };
 
-exports.get_edit = (request, response, next) => {
+exports.getEdit = (request, response, next) => {
   const teamId = request.params.teamId;
   const error = request.session.error || '';
   request.session.error = '';
@@ -49,7 +48,6 @@ exports.get_edit = (request, response, next) => {
 
   Team.getTeamsDetails(teamId)
       .then((result) => {
-
         // New stored procedure returns multiple rows (one per member, or one row with NULLs if no members)
         // The structure is nested: result[0][0] contains the actual rows array
         let rows = [];
@@ -87,7 +85,6 @@ exports.get_edit = (request, response, next) => {
 
         // Get all available users to allow adding new members
         return User.getAll().then(([allUsers]) => {
-
           const viewData = {
             csrfToken: request.csrfToken(),
             error: error,
@@ -109,7 +106,7 @@ exports.get_edit = (request, response, next) => {
       });
 };
 
-exports.post_edit = (request, response, next) => {
+exports.postEdit = (request, response, next) => {
   const teamId = request.params.teamId;
   const {userIds, teamName} = request.body;
 
@@ -191,7 +188,7 @@ exports.post_edit = (request, response, next) => {
       });
 };
 
-exports.get_add = (request, response, next) => {
+exports.getAdd = (request, response, next) => {
   const error = request.session.error || '';
   request.session.error = '';
 
@@ -215,7 +212,7 @@ exports.get_add = (request, response, next) => {
       });
 };
 
-exports.post_add = (request, response, next) => {
+exports.postAdd = (request, response, next) => {
   const {teamName, members, leads} = request.body;
 
   if (!teamName || teamName.trim() === '') {
@@ -351,7 +348,7 @@ exports.post_add = (request, response, next) => {
       });
 };
 
-exports.post_delete = (request, response, next) => {
+exports.postDelete = (request, response, next) => {
   const teamId = request.params.id;
 
   if (!teamId) {
@@ -371,7 +368,7 @@ exports.post_delete = (request, response, next) => {
       });
 };
 
-exports.get_details = (request, response, next) => {
+exports.getDetails = (request, response, next) => {
   const teamId = request.params.teamId;
   const error = request.session.error || '';
   request.session.error = '';
