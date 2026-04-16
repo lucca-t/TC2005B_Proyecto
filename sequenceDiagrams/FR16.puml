@@ -22,7 +22,7 @@ activate C
 C -->> TM : getAllWithMemberCount()
 activate TM
 TM -->> BD : SELECT \nt.team_id, \nt.team_name, \nt.team_start_date, \nCOUNT(ut.user_id) as memberCount \nFROM Team t \nLEFT JOIN User_Team ut ON t.team_id = ut.team_id \nWHERE t.deleted_at IS NULL \nGROUP BY t.team_id, t.team_name, t.team_start_date \nORDER BY t.team_name ASC`
-
+BD -->> TM : teams
 deactivate BD
 TM -->> C : teams
 deactivate TM
@@ -32,7 +32,9 @@ C -> VL : response.render('teamList', {teams: [], message: 'No teams available'}
 
 activate VL
 VL -> U : html
+activate U
 deactivate VL
+deactivate U
 end
 
 C -> VL : response.render('teamList', teams)
@@ -45,7 +47,6 @@ deactivate VL
 
 
 ' Section about getting the info of one team '
-alt user confirms changes
 activate U
 U -> RO : GET /teams/edit/:teamId
 deactivate U
@@ -59,7 +60,7 @@ C -->> TM : getTeamDetails(teamId)
 
 activate TM
 
-TM -->> BD : getTeamDetails(teamId)
+TM -->> BD : CALL getTeamDetails(teamId)
 activate BD
 
 BD -->> TM : team
@@ -77,6 +78,7 @@ VE -> U : html
 deactivate VE
 
 ' Section about posting the changes of users '
+alt user confirms changes
 activate U
 U -> RO : POST /teams/edit/:teamId
 deactivate U
