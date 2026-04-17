@@ -61,5 +61,18 @@ module.exports = class Standup {
         [date, did_today, do_tomorrow, blockers, standupId],
     );
   }
+
+  static getStandupsByTeam(teamId, startDate, endDate) {
+    return db.execute(
+        `SELECT s.date, s.did_today, s.do_tomorrow, s.blockers, u.full_name, u.email
+         FROM standup s
+         INNER JOIN user u ON s.user_id = u.user_id
+         INNER JOIN user_team ut ON u.user_id = ut.user_id
+         WHERE ut.team_id = ? AND u.deleted_at IS NULL AND ut.date_end IS NULL
+           AND s.date BETWEEN ? AND ?
+         ORDER BY s.date ASC, u.full_name ASC`,
+        [teamId, startDate, endDate],
+    );
+  }
 };
 

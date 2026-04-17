@@ -1,3 +1,58 @@
 <%- include('includes/_header') %>
-<%- include('includes/_reportShows') %>
+
+<section class="section">
+    <div class="container">
+        <h1 class="title">Team Report</h1>
+        <h2 class="subtitle">Generate an AI-powered report for a team's standups</h2>
+
+        <div class="box">
+            <form action="/reports/team" method="GET">
+                <div class="field">
+                    <label class="label">Select Team</label>
+                    <div class="control">
+                        <div class="select">
+                            <select name="teamId" required>
+                                <option value="">Choose a team...</option>
+                                <% if (teams && teams.length > 0) { %>
+                                    <% teams.forEach(team => { %>
+                                        <option value="<%= team.team_id %>" <%= selectedTeamId == team.team_id ? 'selected' : '' %>>
+                                            <%= team.team_name %>
+                                        </option>
+                                    <% }); %>
+                                <% } else { %>
+                                    <option value="" disabled>No teams found</option>
+                                <% } %>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label">Start Date</label>
+                    <div class="control">
+                        <input class="input" type="date" name="startDate" value="<%= startDate %>" required>
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label">End Date</label>
+                    <div class="control">
+                        <input class="input" type="date" name="endDate" value="<%= endDate %>" required>
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="control">
+                        <button type="submit" class="button is-primary">Generate Report</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <% if (report) { %>
+        <div class="box">
+            <h3 class="title is-4">Generated Report</h3>
+            <pre><%= report %></pre>
+        </div>
+        <% } %>
+    </div>
+</section>
+
 <%- include('includes/_footer') %>
