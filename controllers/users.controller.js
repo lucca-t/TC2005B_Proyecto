@@ -17,27 +17,6 @@ const formatDateForInput = (value) => {
   return parsed.toISOString().split('T')[0];
 };
 
-
-const getSessionUserId = (request) => {
-  const sessionEmail = (request.session.email || '').trim();
-  if (!sessionEmail) {
-    return Promise.resolve(null);
-  }
-
-  return User.fetchOne(sessionEmail)
-      .then(([rows]) => {
-        if (!rows || rows.length === 0) {
-          return null;
-        }
-
-        return rows[0].user_id;
-      })
-      .catch(() => {
-        return null;
-      });
-};
-
-
 const getSessionUserId = (request) => {
   const sessionEmail = (request.session.email || '').trim();
   if (!sessionEmail) {
@@ -125,15 +104,9 @@ exports.post_add = (request, response, next) => {
             '[POST /users/add] Failed to save user:',
             error.sqlMessage || error.message,
         );
-        console.error(
-            '[POST /users/add] Failed to save user:',
-            error.sqlMessage || error.message,
-        );
         response.status(400).render('userAdd', {
           csrfToken: request.csrfToken(),
           email: request.session.email || '',
-          error: 'Error creating user: ' +
-            (error.sqlMessage || error.message || 'Unknown error'),
           error: 'Error creating user: ' +
             (error.sqlMessage || error.message || 'Unknown error'),
         });
@@ -154,10 +127,6 @@ exports.post_edit = (request, response, next) => {
   const normalizedSlackHandle = (slack_handle || '').trim();
   const normalizedSlackId = (slack_id || '').trim();
 
-  if (
-    !normalizedEmail || !normalizedFullName ||
-    !normalizedSlackHandle || !normalizedSlackId
-  ) {
   if (
     !normalizedEmail || !normalizedFullName ||
     !normalizedSlackHandle || !normalizedSlackId
@@ -206,10 +175,6 @@ exports.post_edit = (request, response, next) => {
             '[POST /users/edit] Failed to update user:',
             error.sqlMessage || error.message,
         );
-        console.error(
-            '[POST /users/edit] Failed to update user:',
-            error.sqlMessage || error.message,
-        );
         response.status(400).render('userEdit', {
           user: {
             email: normalizedEmail,
@@ -219,8 +184,6 @@ exports.post_edit = (request, response, next) => {
           },
           csrfToken: request.csrfToken(),
           email: request.session.email || '',
-          error: 'Error updating user: ' +
-            (error.sqlMessage || error.message || 'Unknown error'),
           error: 'Error updating user: ' +
             (error.sqlMessage || error.message || 'Unknown error'),
         });
@@ -235,10 +198,6 @@ exports.post_delete = (request, response, next) => {
         return response.redirect('/users/list');
       })
       .catch((error) => {
-        console.error(
-            '[POST /users/delete] Failed to delete user:',
-            error.sqlMessage || error.message,
-        );
         console.error(
             '[POST /users/delete] Failed to delete user:',
             error.sqlMessage || error.message,
@@ -260,9 +219,6 @@ exports.get_role = (request, response, next) => {
         const user = allUsers.find(
             (u) => String(u.user_id) === String(userId),
         ) || {user_id: userId, email: '', full_name: ''};
-        const user = allUsers.find(
-            (u) => String(u.user_id) === String(userId),
-        ) || {user_id: userId, email: '', full_name: ''};
 
         response.render('userRole', {
           csrfToken: request.csrfToken(),
@@ -273,10 +229,6 @@ exports.get_role = (request, response, next) => {
         });
       })
       .catch((error) => {
-        console.error(
-            '[GET /users/role] Failed to load role page:',
-            error.message,
-        );
         console.error(
             '[GET /users/role] Failed to load role page:',
             error.message,
@@ -298,10 +250,6 @@ exports.post_role = (request, response, next) => {
         return response.redirect('/users/list');
       })
       .catch((error) => {
-        console.error(
-            '[POST /users/role] Failed to assign role:',
-            error.message,
-        );
         console.error(
             '[POST /users/role] Failed to assign role:',
             error.message,
@@ -454,10 +402,6 @@ exports.post_report = (request, response, next) => {
               'Please select at least one quarter or use the ' +
               'custom date range.',
           );
-          return renderError(
-              'Please select at least one quarter or use the ' +
-              'custom date range.',
-          );
         }
 
         let startDate;
@@ -465,10 +409,6 @@ exports.post_report = (request, response, next) => {
 
         if (report_type === 'custom') {
           if (!start_date || !end_date) {
-            return renderError(
-                'Both start date and end date are required ' +
-                'for a custom report.',
-            );
             return renderError(
                 'Both start date and end date are required ' +
                 'for a custom report.',
@@ -485,11 +425,6 @@ exports.post_report = (request, response, next) => {
             return renderError('Start date cannot be after end date.');
           }
         } else {
-          // Quarter-based format: "2026-Q1" or "2026-Q1,2025-Q4".
-          const quarters = report_type
-              .split(',')
-              .map((q) => q.trim())
-              .filter(Boolean);
           // Quarter-based format: "2026-Q1" or "2026-Q1,2025-Q4".
           const quarters = report_type
               .split(',')
@@ -536,8 +471,6 @@ exports.post_report = (request, response, next) => {
                   report: null,
                   error: 'No daily standups found for ' +
                     (user.full_name || user.email) +
-                  error: 'No daily standups found for ' +
-                    (user.full_name || user.email) +
                     ' between ' + startStr + ' and ' + endStr +
                     '. A report cannot be generated without standup data.',
                   startDate: start_date || startStr,
@@ -553,17 +486,9 @@ exports.post_report = (request, response, next) => {
                       return response.redirect(
                           '/users/report/' + userId +
                           '?reportId=' + existingReport.report_id,
-                          '/users/report/' + userId +
-                          '?reportId=' + existingReport.report_id,
                       );
                     }
 
-                    return generateUserReport(
-                        user,
-                        startDate,
-                        endDate,
-                        standups,
-                    )
                     return generateUserReport(
                         user,
                         startDate,
@@ -574,26 +499,7 @@ exports.post_report = (request, response, next) => {
                           const standupIds = standups.map(
                               (row) => row.standup_id,
                           );
-                          const standupIds = standups.map(
-                              (row) => row.standup_id,
-                          );
 
-                          return getSessionUserId(request)
-                              .then((sessionUserId) => {
-                                return Reports.createUserReport({
-                                  generatedByUserId: sessionUserId,
-                                  userAboutId: userId,
-                                  startDate: startStr,
-                                  endDate: endStr,
-                                  aiContent: reportText,
-                                  standupIds,
-                                })
-                                    .then((created) => {
-                                      return response.redirect(
-                                          '/users/report/' + userId +
-                                          '?reportId=' + created.report_id,
-                                      );
-                                    });
                           return getSessionUserId(request)
                               .then((sessionUserId) => {
                                 return Reports.createUserReport({
@@ -619,17 +525,11 @@ exports.post_report = (request, response, next) => {
                   '[POST /users/report] AI generation failed:',
                   aiError.message,
               );
-              console.error(
-                  '[POST /users/report] AI generation failed:',
-                  aiError.message,
-              );
               response.render('userReport', {
                 csrfToken: request.csrfToken(),
                 email: request.session.email || '',
                 user: user,
                 report: null,
-                error: 'Failed to generate AI report: ' +
-                  (aiError.message || 'Unknown error'),
                 error: 'Failed to generate AI report: ' +
                   (aiError.message || 'Unknown error'),
                 startDate: start_date || '',
@@ -643,12 +543,6 @@ exports.post_report = (request, response, next) => {
             '[POST /users/report] Failed to fetch user:',
             error.message,
         );
-        console.error(
-            '[POST /users/report] Failed to fetch user:',
-            error.message,
-        );
         next(error);
       });
-};
-
 };
