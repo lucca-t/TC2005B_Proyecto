@@ -82,7 +82,7 @@ controller -> controller: 23. Validate role_id is not empty
 
 alt role_id is valid
 
-    controller ->> model: 24b. async User.assignRole(userId, roleId)
+    controller ->> model: 24b. User.assignRole(userId, roleId)
     activate model
 
     model ->> db: 25b. UPDATE user_role\nSET end_date = CURDATE()\nWHERE user_id = ? AND end_date IS NULL
@@ -100,7 +100,6 @@ alt role_id is valid
 
     controller -> browser: 30b. redirect('/users/list')
     activate browser
-    deactivate controller
     deactivate browser
 
 else role_id is empty or invalid
