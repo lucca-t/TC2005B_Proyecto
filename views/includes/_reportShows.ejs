@@ -17,11 +17,17 @@
             </div>
         </div>
 
+        <% if (typeof error !== 'undefined' && error) { %>
+        <div class="notification is-danger">
+            <strong>Error:</strong> <%= error %>
+        </div>
+        <% } %>
+
         <div class="box">
             <div class="content">
                 <% if (typeof report !== 'undefined' && report) { %>
                     <%- report.replace(/\n/g, '<br>') %>
-                <% } else { %>
+                <% } else if (!(typeof error !== 'undefined' && error)) { %>
                     Here goes the content of the report
                 <% } %>
             </div>

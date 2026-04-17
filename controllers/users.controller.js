@@ -212,16 +212,27 @@ exports.get_report = (request, response, next) => {
           return response.status(404).redirect('/users/list');
         }
         const user = rows[0];
-        return generateUserReport(user).then((reportText) => {
-          response.render('userReport', {
-            email: request.session.email || '',
-            user: user,
-            report: reportText,
-          });
-        });
+        return generateUserReport(user)
+            .then((reportText) => {
+              response.render('userReport', {
+                email: request.session.email || '',
+                user: user,
+                report: reportText,
+                error: null,
+              });
+            })
+            .catch((aiError) => {
+              console.error('[GET /users/report] AI generation failed:', aiError.message);
+              response.render('userReport', {
+                email: request.session.email || '',
+                user: user,
+                report: null,
+                error: 'Failed to generate AI report: ' + (aiError.message || 'Unknown error'),
+              });
+            });
       })
       .catch((error) => {
-        console.error('[GET /users/report] Failed to generate report:', error.message);
+        console.error('[GET /users/report] Failed to fetch user:', error.message);
         next(error);
       });
 }
