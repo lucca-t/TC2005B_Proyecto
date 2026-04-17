@@ -1,4 +1,5 @@
 const User = require('../models/users.model');
+const {generateUserReport} = require('../util/ai-report');
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -201,3 +202,26 @@ exports.post_role = (request, response, next) => {
         next(error);
       });
 };
+
+exports.get_report = (request, response, next) => {
+  const userId = request.params.userId;
+
+  User.fetchById(userId)
+      .then(([rows]) => {
+        if (!rows || rows.length === 0) {
+          return response.status(404).redirect('/users/list');
+        }
+        const user = rows[0];
+        return generateUserReport(user).then((reportText) => {
+          response.render('userReport', {
+            email: request.session.email || '',
+            user: user,
+            report: reportText,
+          });
+        });
+      })
+      .catch((error) => {
+        console.error('[GET /users/report] Failed to generate report:', error.message);
+        next(error);
+      });
+}

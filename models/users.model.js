@@ -87,6 +87,14 @@ module.exports = class User {
     });
   }
 
+  static fetchById(userId) {
+    return db.execute(
+        `SELECT user_id, email, full_name, slack_handle, slack_id
+         FROM user WHERE user_id = ? AND deleted_at IS NULL`,
+        [userId],
+    );
+  }
+
   static getAllWithRoles() {
     return db.execute(
         `SELECT u.user_id, u.email, u.full_name, u.slack_handle, u.slack_id,
