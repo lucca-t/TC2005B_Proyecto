@@ -1,7 +1,21 @@
 const User = require('../models/users.model');
+const Reports = require('../models/reports.model');
 const {generateUserReport} = require('../util/ai-report');
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const formatDateForInput = (value) => {
+  if (!value) {
+    return '';
+  }
+
+  const parsed = new Date(value);
+  if (isNaN(parsed.getTime())) {
+    return '';
+  }
+
+  return parsed.toISOString().split('T')[0];
+};
 
 exports.get_list = (request, response, next) => {
   User.getAll().then(([rows, fieldData]) => {
@@ -205,22 +219,56 @@ exports.post_role = (request, response, next) => {
 
 exports.get_report = (request, response, next) => {
   const userId = request.params.userId;
+  const reportId = Number(request.query.reportId) || 0;
 
   User.fetchById(userId)
       .then(([rows]) => {
         if (!rows || rows.length === 0) {
           return response.status(404).redirect('/users/list');
         }
-        response.render('userReport', {
-          csrfToken: request.csrfToken(),
-          email: request.session.email || '',
-          user: rows[0],
-          report: null,
-          error: null,
-          startDate: '',
-          endDate: '',
-          reportType: '',
-        });
+
+        const user = rows[0];
+
+        if (!reportId) {
+          return response.render('userReport', {
+            csrfToken: request.csrfToken(),
+            email: request.session.email || '',
+            user: user,
+            report: null,
+            error: null,
+            startDate: '',
+            endDate: '',
+            reportType: '',
+          });
+        }
+
+        return Reports.findUserReportById(reportId, userId)
+            .then(([reportRows]) => {
+              if (!reportRows || reportRows.length === 0) {
+                return response.render('userReport', {
+                  csrfToken: request.csrfToken(),
+                  email: request.session.email || '',
+                  user: user,
+                  report: null,
+                  error: 'Saved report not found for this user.',
+                  startDate: '',
+                  endDate: '',
+                  reportType: '',
+                });
+              }
+
+              const savedReport = reportRows[0];
+              return response.render('userReport', {
+                csrfToken: request.csrfToken(),
+                email: request.session.email || '',
+                user: user,
+                report: savedReport.ai_content,
+                error: null,
+                startDate: formatDateForInput(savedReport.date_beginning),
+                endDate: formatDateForInput(savedReport.date_end),
+                reportType: '',
+              });
+            });
       })
       .catch((error) => {
         console.error('[GET /users/report] Failed to fetch user:', error.message);
@@ -324,18 +372,33 @@ exports.post_report = (request, response, next) => {
                 });
               }
 
-              return generateUserReport(user, startDate, endDate)
-                  .then((reportText) => {
-                    response.render('userReport', {
-                      csrfToken: request.csrfToken(),
-                      email: request.session.email || '',
-                      user: user,
-                      report: reportText,
-                      error: null,
-                      startDate: startStr,
-                      endDate: endStr,
-                      reportType: report_type,
-                    });
+              return Reports.findUserReportByRange(userId, startStr, endStr)
+                  .then(([existingReports]) => {
+                    if (existingReports && existingReports.length > 0) {
+                      const existingReport = existingReports[0];
+                      return response.redirect(
+                          `/users/report/${userId}?reportId=${existingReport.report_id}`,
+                      );
+                    }
+
+                    return generateUserReport(user, startDate, endDate, standups)
+                        .then((reportText) => {
+                          const standupIds = standups.map((row) => row.standup_id);
+
+                          return Reports.createUserReport({
+                            generatedByUserId: userId,
+                            userAboutId: userId,
+                            startDate: startStr,
+                            endDate: endStr,
+                            aiContent: reportText,
+                            standupIds,
+                          })
+                              .then((created) => {
+                                return response.redirect(
+                                    `/users/report/${userId}?reportId=${created.report_id}`,
+                                );
+                              });
+                        });
                   });
             })
             .catch((aiError) => {
