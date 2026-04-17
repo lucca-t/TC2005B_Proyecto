@@ -12,5 +12,6 @@ router.get('/role/:userId', isAuth, usersController.get_role);
 router.post('/role/:userId', isAuth, usersController.post_role);
 router.post('/delete/:userId', isAuth, usersController.post_delete);
 router.get('/report/:userId', isAuth, usersController.get_report);
+router.post('/report/:userId', isAuth, usersController.post_report);
 
 module.exports = router;

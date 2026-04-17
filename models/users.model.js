@@ -95,6 +95,16 @@ module.exports = class User {
     );
   }
 
+  static getStandupsByDateRange(userId, startDate, endDate) {
+    return db.execute(
+        `SELECT s.standup_id, s.date, s.did_today, s.do_tomorrow, s.blockers
+         FROM standup s
+         WHERE s.user_id = ? AND s.date >= ? AND s.date <= ?
+         ORDER BY s.date ASC`,
+        [userId, startDate, endDate],
+    );
+  }
+
   static getAllWithRoles() {
     return db.execute(
         `SELECT u.user_id, u.email, u.full_name, u.slack_handle, u.slack_id,
