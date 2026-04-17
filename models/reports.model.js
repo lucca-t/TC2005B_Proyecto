@@ -45,6 +45,25 @@ module.exports = class Reports {
 		try {
 			await connection.beginTransaction();
 
+			const [existingRows] = await connection.execute(
+					`SELECT r.report_id
+					 FROM report r
+					 INNER JOIN user_report ur ON ur.report_id = r.report_id
+					 WHERE ur.user_about = ?
+						 AND r.date_beginning = ?
+						 AND r.date_end = ?
+						 AND r.deleted_at IS NULL
+					 ORDER BY r.date_generated DESC
+					 LIMIT 1
+					 FOR UPDATE`,
+					[userAboutId, startDate, endDate],
+			);
+
+			if (existingRows.length > 0) {
+				await connection.commit();
+				return {report_id: existingRows[0].report_id};
+			}
+
 			const [insertResult] = await connection.execute(
 					`INSERT INTO report(date_beginning, date_end, ai_content, user_id)
 					 VALUES (?, ?, ?, ?)`,
