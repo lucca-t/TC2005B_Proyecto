@@ -1,4 +1,4 @@
-@startuml "Modify team NOT DONE"
+@startuml "Modify team"
 skinparam style strictuml
 
 actor Lead as U
@@ -29,7 +29,6 @@ deactivate TM
 
 alt teams.length == 0
 C -> VL : response.render('teamList', {teams: [], message: 'No teams available'})
-
 activate VL
 VL -> U : html
 deactivate VL
@@ -37,7 +36,65 @@ end
 
 C -> VL : response.render('teamList', teams)
 deactivate C
-
 activate VL
 VL -> U : html
 deactivate VL
+
+' Section about getting a team name for edit '
+activate U
+U -> RO : GET /teams/edit/:teamId
+deactivate U
+
+activate RO
+RO -> C : getEdit(request, response, teamId)
+deactivate RO
+
+activate C
+C -->> TM : getTeamsDetails(teamId)
+activate TM
+TM -->> BD : CALL getTeamDetails(teamId)
+activate BD
+BD -->> TM : teamDetails
+deactivate BD
+TM -->> C : teamDetails
+deactivate TM
+
+C -> VE : response.render('teamEdit', {teamId, teamName})
+deactivate C
+activate VE
+VE -> U : html
+deactivate VE
+
+' Section about posting team changes '
+activate U
+U -> RO : POST /teams/edit/:teamId
+deactivate U
+
+activate RO
+RO -> C : postEdit(request, response, teamId)
+deactivate RO
+
+activate C
+C -->> TM : getTeamsDetails(teamId)
+activate TM
+TM -->> BD : CALL getTeamDetails(teamId)
+activate BD
+BD -->> TM : teamDetails
+deactivate BD
+TM -->> C : teamDetails
+deactivate TM
+
+C -->> TM : updateTeamName(teamId, newTeamName)
+activate TM
+TM -->> BD : UPDATE team SET team_name = ? WHERE team_id = ?
+activate BD
+BD -->> TM : 
+deactivate BD
+TM -->> C : 
+deactivate TM
+
+
+C -> U : response.redirect('/teams/list')
+deactivate C
+activate U
+@enduml
