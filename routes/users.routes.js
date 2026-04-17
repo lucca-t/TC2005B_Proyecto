@@ -11,7 +11,9 @@ router.post('/add', isAuth, usersController.post_add);
 router.get('/role/:userId', isAuth, usersController.get_role);
 router.post('/role/:userId', isAuth, usersController.post_role);
 router.post('/delete/:userId', isAuth, usersController.post_delete);
+router.get('/report/history', isAuth, usersController.get_my_report_history);
 router.get('/report/:userId', isAuth, usersController.get_report);
+router.get('/report/:userId/history', isAuth, usersController.get_report_history);
 router.post('/report/:userId', isAuth, usersController.post_report);
 
 module.exports = router;
