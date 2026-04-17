@@ -83,7 +83,7 @@
                                     type="date"
                                     name="date"
                                     id="fecha_blocker"
-                                    value="<%= editMode ? standup.date.toISOString().split('T')[0] : '' %>"
+                                    value="<%= editMode ? standup.date.toISOString().split('T')[0] : new Date().toLocaleDateString('en-CA') %>"
                                 >
                             </div>
                         </div>
