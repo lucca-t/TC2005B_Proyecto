@@ -17,6 +17,26 @@ const formatDateForInput = (value) => {
   return parsed.toISOString().split('T')[0];
 };
 
+
+const getSessionUserId = (request) => {
+  const sessionEmail = (request.session.email || '').trim();
+  if (!sessionEmail) {
+    return Promise.resolve(null);
+  }
+
+  return User.fetchOne(sessionEmail)
+      .then(([rows]) => {
+        if (!rows || rows.length === 0) {
+          return null;
+        }
+
+        return rows[0].user_id;
+      })
+      .catch(() => {
+        return null;
+      });
+};
+
 exports.get_list = (request, response, next) => {
   User.getAll().then(([rows, fieldData]) => {
     response.render('userList', {
@@ -81,11 +101,15 @@ exports.post_add = (request, response, next) => {
         return response.redirect('/users/list');
       })
       .catch((error) => {
-        console.error('[POST /users/add] Failed to save user:', error.sqlMessage || error.message);
+        console.error(
+            '[POST /users/add] Failed to save user:',
+            error.sqlMessage || error.message,
+        );
         response.status(400).render('userAdd', {
           csrfToken: request.csrfToken(),
           email: request.session.email || '',
-          error: 'Error creating user: ' + (error.sqlMessage || error.message || 'Unknown error'),
+          error: 'Error creating user: ' +
+            (error.sqlMessage || error.message || 'Unknown error'),
         });
       });
 };
@@ -104,7 +128,10 @@ exports.post_edit = (request, response, next) => {
   const normalizedSlackHandle = (slack_handle || '').trim();
   const normalizedSlackId = (slack_id || '').trim();
 
-  if (!normalizedEmail || !normalizedFullName || !normalizedSlackHandle || !normalizedSlackId) {
+  if (
+    !normalizedEmail || !normalizedFullName ||
+    !normalizedSlackHandle || !normalizedSlackId
+  ) {
     return response.status(400).render('userEdit', {
       user: {
         email: normalizedEmail,
@@ -145,7 +172,10 @@ exports.post_edit = (request, response, next) => {
         return response.redirect('/users/list');
       })
       .catch((error) => {
-        console.error('[POST /users/edit] Failed to update user:', error.sqlMessage || error.message);
+        console.error(
+            '[POST /users/edit] Failed to update user:',
+            error.sqlMessage || error.message,
+        );
         response.status(400).render('userEdit', {
           user: {
             email: normalizedEmail,
@@ -155,7 +185,8 @@ exports.post_edit = (request, response, next) => {
           },
           csrfToken: request.csrfToken(),
           email: request.session.email || '',
-          error: 'Error updating user: ' + (error.sqlMessage || error.message || 'Unknown error'),
+          error: 'Error updating user: ' +
+            (error.sqlMessage || error.message || 'Unknown error'),
         });
       });
 };
@@ -168,7 +199,10 @@ exports.post_delete = (request, response, next) => {
         return response.redirect('/users/list');
       })
       .catch((error) => {
-        console.error('[POST /users/delete] Failed to delete user:', error.sqlMessage || error.message);
+        console.error(
+            '[POST /users/delete] Failed to delete user:',
+            error.sqlMessage || error.message,
+        );
         next(error);
       });
 };
@@ -183,7 +217,9 @@ exports.get_role = (request, response, next) => {
   ])
       .then(([[roleRows], [roles], [allUsers]]) => {
         const currentRole = roleRows.length > 0 ? roleRows[0] : null;
-        const user = allUsers.find((u) => String(u.user_id) === String(userId)) || {user_id: userId, email: '', full_name: ''};
+        const user = allUsers.find(
+            (u) => String(u.user_id) === String(userId),
+        ) || {user_id: userId, email: '', full_name: ''};
 
         response.render('userRole', {
           csrfToken: request.csrfToken(),
@@ -194,7 +230,10 @@ exports.get_role = (request, response, next) => {
         });
       })
       .catch((error) => {
-        console.error('[GET /users/role] Failed to load role page:', error.message);
+        console.error(
+            '[GET /users/role] Failed to load role page:',
+            error.message,
+        );
         next(error);
       });
 };
@@ -212,7 +251,10 @@ exports.post_role = (request, response, next) => {
         return response.redirect('/users/list');
       })
       .catch((error) => {
-        console.error('[POST /users/role] Failed to assign role:', error.message);
+        console.error(
+            '[POST /users/role] Failed to assign role:',
+            error.message,
+        );
         next(error);
       });
 };
@@ -271,7 +313,63 @@ exports.get_report = (request, response, next) => {
             });
       })
       .catch((error) => {
-        console.error('[GET /users/report] Failed to fetch user:', error.message);
+        console.error(
+            '[GET /users/report] Failed to fetch user:',
+            error.message,
+        );
+        next(error);
+      });
+};
+
+exports.get_my_report_history = (request, response, next) => {
+  const sessionEmail = (request.session.email || '').trim();
+  if (!sessionEmail) {
+    return response.redirect('/users/list');
+  }
+
+  return User.fetchOne(sessionEmail)
+      .then(([rows]) => {
+        if (!rows || rows.length === 0) {
+          return response.redirect('/users/list');
+        }
+
+        const sessionUserId = rows[0].user_id;
+        return response.redirect(`/users/report/${sessionUserId}/history`);
+      })
+      .catch((error) => {
+        console.error(
+            '[GET /users/report/history] Failed to resolve session user:',
+            error.message,
+        );
+        next(error);
+      });
+};
+
+exports.get_report_history = (request, response, next) => {
+  const userId = request.params.userId;
+
+  User.fetchById(userId)
+      .then(([rows]) => {
+        if (!rows || rows.length === 0) {
+          return response.status(404).redirect('/users/list');
+        }
+
+        const user = rows[0];
+        return Reports.listUserReports(userId)
+            .then(([reportRows]) => {
+              return response.render('userReportHistory', {
+                csrfToken: request.csrfToken(),
+                email: request.session.email || '',
+                user: user,
+                reports: reportRows || [],
+              });
+            });
+      })
+      .catch((error) => {
+        console.error(
+            '[GET /users/report/history] Failed to fetch reports:',
+            error.message,
+        );
         next(error);
       });
 };
@@ -301,7 +399,10 @@ exports.post_report = (request, response, next) => {
         };
 
         if (!report_type) {
-          return renderError('Please select at least one quarter or use the custom date range.');
+          return renderError(
+              'Please select at least one quarter or use the ' +
+              'custom date range.',
+          );
         }
 
         let startDate;
@@ -309,7 +410,10 @@ exports.post_report = (request, response, next) => {
 
         if (report_type === 'custom') {
           if (!start_date || !end_date) {
-            return renderError('Both start date and end date are required for a custom report.');
+            return renderError(
+                'Both start date and end date are required ' +
+                'for a custom report.',
+            );
           }
           startDate = new Date(start_date + 'T00:00:00');
           endDate = new Date(end_date + 'T00:00:00');
@@ -322,8 +426,11 @@ exports.post_report = (request, response, next) => {
             return renderError('Start date cannot be after end date.');
           }
         } else {
-          // Quarter-based: report_type is like "2026-Q1" or multiple "2026-Q1,2025-Q4"
-          const quarters = report_type.split(',').map((q) => q.trim()).filter(Boolean);
+          // Quarter-based format: "2026-Q1" or "2026-Q1,2025-Q4".
+          const quarters = report_type
+              .split(',')
+              .map((q) => q.trim())
+              .filter(Boolean);
           if (quarters.length === 0) {
             return renderError('Please select at least one quarter.');
           }
@@ -363,7 +470,8 @@ exports.post_report = (request, response, next) => {
                   email: request.session.email || '',
                   user: user,
                   report: null,
-                  error: 'No daily standups found for ' + (user.full_name || user.email) +
+                  error: 'No daily standups found for ' +
+                    (user.full_name || user.email) +
                     ' between ' + startStr + ' and ' + endStr +
                     '. A report cannot be generated without standup data.',
                   startDate: start_date || startStr,
@@ -377,38 +485,54 @@ exports.post_report = (request, response, next) => {
                     if (existingReports && existingReports.length > 0) {
                       const existingReport = existingReports[0];
                       return response.redirect(
-                          `/users/report/${userId}?reportId=${existingReport.report_id}`,
+                          '/users/report/' + userId +
+                          '?reportId=' + existingReport.report_id,
                       );
                     }
 
-                    return generateUserReport(user, startDate, endDate, standups)
+                    return generateUserReport(
+                        user,
+                        startDate,
+                        endDate,
+                        standups,
+                    )
                         .then((reportText) => {
-                          const standupIds = standups.map((row) => row.standup_id);
+                          const standupIds = standups.map(
+                              (row) => row.standup_id,
+                          );
 
-                          return Reports.createUserReport({
-                            generatedByUserId: userId,
-                            userAboutId: userId,
-                            startDate: startStr,
-                            endDate: endStr,
-                            aiContent: reportText,
-                            standupIds,
-                          })
-                              .then((created) => {
-                                return response.redirect(
-                                    `/users/report/${userId}?reportId=${created.report_id}`,
-                                );
+                          return getSessionUserId(request)
+                              .then((sessionUserId) => {
+                                return Reports.createUserReport({
+                                  generatedByUserId: sessionUserId,
+                                  userAboutId: userId,
+                                  startDate: startStr,
+                                  endDate: endStr,
+                                  aiContent: reportText,
+                                  standupIds,
+                                })
+                                    .then((created) => {
+                                      return response.redirect(
+                                          '/users/report/' + userId +
+                                          '?reportId=' + created.report_id,
+                                      );
+                                    });
                               });
                         });
                   });
             })
             .catch((aiError) => {
-              console.error('[POST /users/report] AI generation failed:', aiError.message);
+              console.error(
+                  '[POST /users/report] AI generation failed:',
+                  aiError.message,
+              );
               response.render('userReport', {
                 csrfToken: request.csrfToken(),
                 email: request.session.email || '',
                 user: user,
                 report: null,
-                error: 'Failed to generate AI report: ' + (aiError.message || 'Unknown error'),
+                error: 'Failed to generate AI report: ' +
+                  (aiError.message || 'Unknown error'),
                 startDate: start_date || '',
                 endDate: end_date || '',
                 reportType: report_type,
@@ -416,7 +540,10 @@ exports.post_report = (request, response, next) => {
             });
       })
       .catch((error) => {
-        console.error('[POST /users/report] Failed to fetch user:', error.message);
+        console.error(
+            '[POST /users/report] Failed to fetch user:',
+            error.message,
+        );
         next(error);
       });
-}
+};

@@ -1,0 +1,59 @@
+<%- include('includes/_header') %>
+
+<section class="section">
+  <div class="container">
+    <div class="level">
+      <div class="level-left">
+        <h1 class="title">
+          <% if (typeof user !== 'undefined' && user) { %>
+            Report History for <%= user.full_name || user.email %>
+          <% } else { %>
+            Report History
+          <% } %>
+        </h1>
+      </div>
+      <div class="level-right">
+        <a href="/users/list" class="button is-light">Back to Users</a>
+      </div>
+    </div>
+
+    <div class="box">
+      <h2 class="subtitle">Saved Reports</h2>
+
+      <% if (reports && reports.length > 0) { %>
+      <table class="table is-fullwidth is-striped is-hoverable">
+        <thead>
+          <tr>
+            <th>Period</th>
+            <th>Generated On</th>
+            <th class="has-text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% reports.forEach((report) => { %>
+          <tr>
+            <td>
+              <%= new Date(report.date_beginning).toISOString().split('T')[0] %>
+              &mdash;
+              <%= new Date(report.date_end).toISOString().split('T')[0] %>
+            </td>
+            <td>
+              <%= new Date(report.date_generated).toLocaleString() %>
+            </td>
+            <td class="has-text-right">
+              <a href="/users/report/<%= user.user_id %>?reportId=<%= report.report_id %>" class="button is-small is-light">
+                Open
+              </a>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+      <% } else { %>
+      <p class="has-text-grey">No saved reports yet for this user.</p>
+      <% } %>
+    </div>
+  </div>
+</section>
+
+<%- include('includes/_footer') %>

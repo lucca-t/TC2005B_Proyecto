@@ -88,6 +88,16 @@
             </form>
         </div>
 
+        <div id="reportLoadingOverlay" class="report-loading-overlay" aria-hidden="true">
+            <div class="report-loading-card">
+                <span class="icon is-large">
+                    <i class="fas fa-spinner fa-pulse fa-2x"></i>
+                </span>
+                <p class="title is-6 mt-4 mb-2">Generating report...</p>
+                <p class="has-text-grey is-size-7">Please wait while we analyze standups.</p>
+            </div>
+        </div>
+
         <style>
             .quarter-btn {
                 color: #000 !important;
@@ -97,11 +107,36 @@
                 border-color: #ffd257 !important;
                 color: #000 !important;
             }
+            .report-loading-overlay {
+                position: fixed;
+                inset: 0;
+                z-index: 9999;
+                display: none;
+                align-items: center;
+                justify-content: center;
+                background: rgba(255, 255, 255, 0.8);
+                backdrop-filter: blur(1px);
+            }
+            .report-loading-overlay.is-active {
+                display: flex;
+            }
+            .report-loading-card {
+                min-width: 280px;
+                padding: 1.5rem 1.75rem;
+                border: 1px solid #dbdbdb;
+                border-radius: 10px;
+                background: #fff;
+                text-align: center;
+                box-shadow: 0 12px 30px rgba(10, 10, 10, 0.15);
+            }
         </style>
 
         <script>
         (function() {
             var activeQuarter = null;
+            var form = document.getElementById('report-form');
+            var submitButton = document.getElementById('submit-btn');
+            var loadingOverlay = document.getElementById('reportLoadingOverlay');
             var startInput = document.getElementById('start-date');
             var endInput = document.getElementById('end-date');
             var reportTypeInput = document.getElementById('report-type-input');
@@ -162,7 +197,7 @@
             endInput.addEventListener('input', onManualDateChange);
 
             // Client-side validation
-            document.getElementById('report-form').addEventListener('submit', function(e) {
+            form.addEventListener('submit', function(e) {
                 var startVal = startInput.value;
                 var endVal = endInput.value;
 
@@ -182,6 +217,28 @@
 
                 if (!reportTypeInput.value) {
                     reportTypeInput.value = 'custom';
+                }
+
+                if (submitButton) {
+                    submitButton.disabled = true;
+                    submitButton.classList.add('is-loading');
+                }
+
+                if (loadingOverlay) {
+                    loadingOverlay.classList.add('is-active');
+                    loadingOverlay.setAttribute('aria-hidden', 'false');
+                }
+            });
+
+            window.addEventListener('pageshow', function() {
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.classList.remove('is-loading');
+                }
+
+                if (loadingOverlay) {
+                    loadingOverlay.classList.remove('is-active');
+                    loadingOverlay.setAttribute('aria-hidden', 'true');
                 }
             });
         })();
