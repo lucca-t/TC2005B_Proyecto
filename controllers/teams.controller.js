@@ -121,6 +121,11 @@ exports.postEdit = (request, response, next) => {
     return response.redirect(`/teams/edit/${teamId}`);
   }
 
+  if (teamName.trim().length > 100) {
+    request.session.error = 'Team name cannot exceed 100 characters.';
+    return response.redirect(`/teams/edit/${teamId}`);
+  }
+
   const newTeamName = teamName.trim();
   const userIdString = userIds || '';
 
@@ -173,11 +178,12 @@ exports.postEdit = (request, response, next) => {
                 return response.redirect(`/teams/edit/${teamId}`);
               }
 
-              return Team.updateTeamMembers(teamId, userIdString);
+              return Team.updateTeamName(teamId, newTeamName)
+                  .then(() => Team.updateTeamMembers(teamId, userIdString));
             });
       })
       .then(() => {
-        request.session.success = 'Team members updated successfully!';
+        request.session.success = 'Team updated successfully!';
         return response.redirect('/teams/list');
       })
       .catch((error) => {
