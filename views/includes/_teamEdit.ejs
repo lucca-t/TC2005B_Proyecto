@@ -28,8 +28,9 @@
                         <div class="field">
                             <label class="label">Team Name</label>
                             <div class="control">
-                                <input class="input" type="text" name="teamName" value="<%= teamName || 'N/A' %>" required>
+                                <input class="input" type="text" name="teamName" id="teamNameInput" value="<%= teamName || 'N/A' %>" maxlength="100" required>
                             </div>
+                            <p class="help" id="charCounter">0/100</p>
                         </div>
 
                     <hr>
@@ -188,6 +189,18 @@
     }
 
     searchInput.addEventListener('keyup', updateSearchResults);
+
+    // CHARACTER COUNTER FOR TEAM NAME
+    const teamNameInput = document.getElementById('teamNameInput');
+    const charCounter = document.getElementById('charCounter');
+
+    function updateCharCounter() {
+        const current = teamNameInput.value.length;
+        charCounter.textContent = current + '/100';
+    }
+
+    teamNameInput.addEventListener('input', updateCharCounter);
+    updateCharCounter();
 
     // HANDLE FORM SUBMISSION - COLLECT CHECKED USER IDS
     document.getElementById('teamEditForm').addEventListener('submit', function(e) {
