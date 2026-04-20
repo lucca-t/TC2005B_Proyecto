@@ -70,9 +70,16 @@
 
 
                                         <a href="/users/report/<%= user.user_id %>"
-                                        class="button is-small is-light">
+                                        class="button is-small is-dark">
                                         AI Report
                                         </a>
+
+                                        <% if (typeof role !== 'undefined' && role === 'Administrador') { %>
+                                        <a href="/users/role/<%= user.user_id %>" 
+                                        class="button is-small is-light">
+                                        Assign Role
+                                        </a>
+                                        <% } %>
 
                                         <a href="/users/edit/<%= user.email %>" 
                                         class="button is-small is-light">
@@ -85,7 +92,7 @@
                                             style="display:inline;">
                                             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                                             <button type="submit"
-                                                class="button is-small is-danger is-outlined"
+                                                class="button is-small is-light"
                                                 onclick="return confirm('Are you sure you want to delete this user?');">
                                                 Delete
                                             </button>
