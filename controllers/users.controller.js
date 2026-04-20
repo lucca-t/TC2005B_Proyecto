@@ -37,10 +37,11 @@ const getSessionUserId = (request) => {
 };
 
 exports.get_list = (request, response, next) => {
-  User.getAll().then(([rows, fieldData]) => {
+  User.getAllWithRoles().then(([rows, fieldData]) => {
     response.render('userList', {
       csrfToken: request.csrfToken(),
       email: request.session.email || '',
+      role: request.session.role || '',
       users: rows,
     });
   })
