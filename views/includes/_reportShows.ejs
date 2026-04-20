@@ -66,12 +66,12 @@
                             <div class="control">
                                 <label class="label is-small">Start Date</label>
                                 <input class="input" type="date" name="start_date" id="start-date"
-                                    value="<%= (typeof startDate !== 'undefined' && startDate) ? startDate : '' %>">
+                                    value="<%= (typeof startDate !== 'undefined' && startDate) ? startDate : new Date().toISOString().split('T')[0] %>">
                             </div>
                             <div class="control">
                                 <label class="label is-small">End Date</label>
                                 <input class="input" type="date" name="end_date" id="end-date"
-                                    value="<%= (typeof endDate !== 'undefined' && endDate) ? endDate : '' %>">
+                                    value="<%= (typeof endDate !== 'undefined' && endDate) ? endDate : new Date().toISOString().split('T')[0] %>">
                             </div>
                         </div>
                     </div>
