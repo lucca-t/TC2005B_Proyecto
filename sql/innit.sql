@@ -84,20 +84,15 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `updateTeamMembers` (IN `p_team_id` 
 
     START TRANSACTION;
 
-    -- 1. Marcar como "finalizados" a los miembros activos actuales de este equipo
     UPDATE user_team 
     SET date_end = CURRENT_DATE() 
     WHERE team_id = p_team_id AND date_end IS NULL;
 
-    -- 2. Recorrer el arreglo JSON que llega por parámetro
     SET v_array_length = JSON_LENGTH(p_user_ids_json);
 
     WHILE i < v_array_length DO
-        -- Extraer el ID actual del arreglo
         SET v_user_id = CAST(JSON_UNQUOTE(JSON_EXTRACT(p_user_ids_json, CONCAT('$[', i, ']'))) AS UNSIGNED);
 
-        -- 3. Insertar el nuevo miembro. Si el registro ya existía (por la Primary Key compuesta user_id + team_id), 
-        -- se actualiza su fecha de inicio y se borra su fecha de fin para reactivarlo.
         INSERT INTO user_team (user_id, team_id, date_start, date_end)
         VALUES (v_user_id, p_team_id, CURRENT_DATE(), NULL)
         ON DUPLICATE KEY UPDATE 
