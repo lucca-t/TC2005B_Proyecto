@@ -209,10 +209,9 @@ CREATE TABLE `role` (
 --
 
 INSERT INTO `role` (`role_id`, `role_name`) VALUES
-(1, 'Admin'),
-(2, 'Manager'),
-(3, 'Developer'),
-(4, 'Viewer');
+(1, 'Administrador'),
+(2, 'Lead Member'),
+(3, 'Member');
 
 -- --------------------------------------------------------
 
@@ -483,7 +482,7 @@ ALTER TABLE `report`
 -- AUTO_INCREMENT for table `role`
 --
 ALTER TABLE `role`
-  MODIFY `role_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `role_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `standup`

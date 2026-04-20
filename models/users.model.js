@@ -115,4 +115,16 @@ module.exports = class User {
          WHERE u.deleted_at IS NULL`,
     );
   }
+
+  static getRoleByEmail(email) {
+    return db.execute(
+        `SELECT r.role_id, r.role_name
+         FROM user u
+         INNER JOIN user_role ur ON u.user_id = ur.user_id AND ur.end_date IS NULL
+         INNER JOIN role r ON ur.role_id = r.role_id
+         WHERE u.email = ? AND u.deleted_at IS NULL
+         LIMIT 1`,
+        [email],
+    );
+  }
 };
