@@ -586,3 +586,5 @@ ALTER TABLE `user_team`
   ADD CONSTRAINT `user_team_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `user_team_ibfk_2` FOREIGN KEY (`team_id`) REFERENCES `team` (`team_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 COMMIT;
+
+INSERT INTO `user_role` (`user_id`, `role_id`, `start_date`, `end_date`) VALUES ('1', '1', '2026-04-01', NULL);
