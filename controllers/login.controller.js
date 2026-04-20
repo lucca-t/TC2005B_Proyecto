@@ -25,8 +25,12 @@ exports.post_login = (request, response, next) => {
       }
       request.session.isLoggedIn = true;
       request.session.email = request.body.email;
-      return request.session.save(() => {
-        return response.redirect('/users/list');
+
+      return User.getRoleByEmail(request.body.email).then(([roleRows]) => {
+        request.session.role = roleRows.length > 0 ? roleRows[0].role_name : null;
+        return request.session.save(() => {
+          return response.redirect('/users/list');
+        });
       });
     }).catch((error) => {
       console.error('[POST /login] bcrypt error:', error.message);

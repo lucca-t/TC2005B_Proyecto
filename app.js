@@ -29,6 +29,7 @@ app.use((req, res, next) => {
   res.locals.urlActual = req.path;
   res.locals.isLoggedIn = req.session.isLoggedIn || false;
   res.locals.email = req.session.email || '';
+  res.locals.role = req.session.role || null;
   next();
 });
 
