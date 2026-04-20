@@ -55,7 +55,9 @@
                 <h1 class="title">Team Management</h1>
             </div>
             <div class="level-right">
+                <% if (typeof role !== 'undefined' && (role === 'Administrador' || role === 'Lead Member')) { %>
                 <a href="/teams/add" class="button is-primary"><strong>+ New Team</strong></a>
+                <% } %>
             </div>
         </div>
 
@@ -84,6 +86,7 @@
                                     <div class="buttons is-right">
                                         <a href="/teams/report/<%= team.id %>" class="button is-small is-dark">AI Report</a>
 
+                                        <% if (typeof role !== 'undefined' && (role === 'Administrador' || role === 'Lead Member')) { %>
                                         <a href="/teams/edit/<%= team.id %>" class="button is-small is-light">Edit</a>
 
                                         <form action="/teams/delete/<%= team.id %>" method="POST"
@@ -93,6 +96,7 @@
                                                 class="button is-small is-light"
                                                 onclick="return confirm('Are you sure you want to delete this team?');">Delete</button>
                                         </form>
+                                        <% } %>
                                     </div>
                                 </td>
                             </tr>

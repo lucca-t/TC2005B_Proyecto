@@ -31,40 +31,49 @@
       <div class="navbar-start">
         <% if (isLoggedIn) { %>
 
-        <% if (role === 'Administrador') { %>
+        <% if (role === 'Administrador' || role === 'Lead Member' || role === 'Member') { %>
         <div class="navbar-item has-dropdown is-hoverable">
           <a href="/users/list" class="navbar-link">Users</a>
           <div class="navbar-dropdown">
+            <% if (role === 'Administrador') { %>
             <a href="/users/add" class="navbar-item">Register New User</a>
-            <a href="/users/report/history" class="navbar-item">Generated Reports</a>
+            <% } %>
+            <a href="/users/report/history" class="navbar-item">Users list</a>
           </div>
         </div>
         <% } %>
 
+        <% if (role === 'Administrador' || role === 'Lead Member' || role === 'Member') { %>
         <div class="navbar-item has-dropdown is-hoverable">
           <a href="/teams/list" class="navbar-link">Teams</a>
           <div class="navbar-dropdown">
             <% if (role === 'Administrador') { %>
             <a href="/teams/add" class="navbar-item">Register New Team</a>
             <% } %>
+            <a href="/teams/list" class="navbar-item">Teams list</a>
           </div>
         </div>
+        <% } %>
+  
+        <% if (role === 'Administrador' || role === 'Lead Member' || role === 'Member') { %>
         <div class="navbar-item has-dropdown is-hoverable">   
           <a href="/projects/list" class="navbar-link">Projects</a>
           <div class="navbar-dropdown">
             <% if (role === 'Administrador') { %>
-            <a href="/projects/add" class="navbar-item">Create New Project</a>
+            <a href="/projects/add" class="navbar-item">Register New Project</a>
             <% } %>
-            <a href="/reports/project" class="navbar-item">Project Reports</a>
+            <a href="/projects/list" class="navbar-item">Projects list</a>
+            <a href="/projects/report" class="navbar-item">Projects reports</a>
           </div>
         </div>
+        <% } %>
 
-        <% if (role === 'Administrador') { %>
+        <% if (role === 'Administrador' || role === 'Lead Member' || role === 'Member') { %>
         <div class="navbar-item has-dropdown is-hoverable">
           <a href="/daily_standup/history" class="navbar-link">Standup</a>
           <div class="navbar-dropdown">
             <a href="/daily_standup" class="navbar-item">Register Daily Standup</a>
-            <a href="/daily_standup/history" class="navbar-item">Activity history</a>
+            <a href="/daily_standup/history" class="navbar-item">Activity History</a>
           </div>
         </div>
         <% } %>
