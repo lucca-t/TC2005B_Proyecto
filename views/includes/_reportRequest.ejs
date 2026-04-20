@@ -25,14 +25,14 @@
                 <div class="field">
                     <label class="label">Start Date</label>
                     <div class="control">
-                        <input class="input" type="date" name="startDate" required>
+                        <input class="input" type="date" name="startDate" value="<%= new Date().toISOString().split('T')[0] %>" required>
                     </div>
                 </div>
 
                 <div class="field">
                     <label class="label">End Date</label>
                     <div class="control">
-                        <input class="input" type="date" name="endDate" required>
+                        <input class="input" type="date" name="endDate" value="<%= new Date().toISOString().split('T')[0] %>" required>
                     </div>
                 </div>
 
