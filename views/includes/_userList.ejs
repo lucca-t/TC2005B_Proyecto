@@ -13,6 +13,27 @@
             </div>
         </div>
 
+        <div id="userSearchMeta"
+            data-role="<%= typeof role !== 'undefined' ? role : '' %>"
+            data-csrf="<%= csrfToken %>"
+            data-email="<%= typeof email !== 'undefined' ? email : '' %>"
+            style="display:none;"></div>
+
+        <div class="field has-addons mb-4">
+            <div class="control is-expanded has-icons-left">
+                <input id="userSearchInput" class="input" type="text"
+                    placeholder="Search users by name or email..."
+                    autocomplete="off" maxlength="100">
+                <span class="icon is-left"><i class="fas fa-search"></i></span>
+            </div>
+            <div class="control">
+                <button id="userSearchClear" class="button is-light"
+                    type="button" title="Clear search">
+                    <span class="icon"><i class="fas fa-times"></i></span>
+                </button>
+            </div>
+        </div>
+
         <div class="box">
             <table class="table is-fullwidth is-striped is-hoverable">
                 <thead>
@@ -25,7 +46,7 @@
                         <th class="has-text-right">Actions</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="usersTableBody">
 
                     <% if (typeof users !== 'undefined' && users.length > 0) { %>
 
@@ -69,11 +90,22 @@
 
                                 <td class="has-text-right is-vcentered">
                                     <div class="buttons is-right">
-
-
+                                        <% const qp = user.quarterProgress || 0; %>
+                                        <span
+                                            title="<%= qp %>/3 months reported this quarter"
+                                            style="display:inline-flex;align-items:center;margin-right:4px;">
+                                            <% for (let i = 0; i < 3; i++) { %>
+                                                <span style="display:inline-block;
+                                                    width:10px;height:10px;
+                                                    border-radius:50%;margin:0 2px;
+                                                    background:<%= i < qp ? '#3273dc' : '#dbdbdb' %>;"></span>
+                                            <% } %>
+                                            <span style="font-size:0.72rem;color:#555;
+                                                margin-left:4px;"><%= qp %>/3</span>
+                                        </span>
                                         <a href="/users/report/<%= user.user_id %>"
-                                        class="button is-small is-dark">
-                                        AI Report
+                                            class="button is-small is-dark">
+                                            AI Report
                                         </a>
 
                                         <% if (typeof role !== 'undefined' && role === 'Administrador') { %>
@@ -126,4 +158,190 @@
             </table>
         </div>
     </div>
+    <script>
+        (function () {
+            const input = document.getElementById('userSearchInput');
+            const clearBtn = document.getElementById('userSearchClear');
+            const tbody = document.getElementById('usersTableBody');
+            const meta = document.getElementById('userSearchMeta');
+
+            if (!input || !tbody || !meta) return;
+
+            const userRole = meta.dataset.role;
+            const csrfToken = meta.dataset.csrf;
+            const sessionEmail = meta.dataset.email;
+            const isAdmin = userRole === 'Administrador';
+            const originalRows = tbody.innerHTML;
+
+            let debounceTimer = null;
+            let currentController = null;
+
+            function escapeHtml(str) {
+                const div = document.createElement('div');
+                div.appendChild(document.createTextNode(String(str)));
+                return div.innerHTML;
+            }
+
+            function buildProgressBadge(filled) {
+                const bg = function(i) {
+                    return i < filled ? '#3273dc' : '#dbdbdb';
+                };
+                const dot = function(i) {
+                    return '<span style="display:inline-block;' +
+                        'width:10px;height:10px;' +
+                        'border-radius:50%;margin:0 2px;' +
+                        'background:' + bg(i) + ';"></span>';
+                };
+                const dots = [0, 1, 2].map(dot).join('');
+                const label =
+                    '<span style="font-size:0.72rem;color:#555;' +
+                    'margin-left:4px;">' + filled + '/3</span>';
+                return '<span title="' + filled +
+                    '/3 months reported this quarter"' +
+                    ' style="display:inline-flex;' +
+                    'align-items:center;margin-right:4px;">' +
+                    dots + label + '</span>';
+            }
+
+            function buildRow(user) {
+                const filled = user.quarterProgress || 0;
+                const progressBadge = buildProgressBadge(filled);
+
+                const roleTag = user.role_name
+                    ? '<span class="tag is-info is-light">' +
+                        escapeHtml(user.role_name) + '</span>'
+                    : '<span class="tag is-light">No role</span>';
+
+                const slackHandle = user.slack_handle
+                    ? '<span class="tag is-link is-light">' +
+                        escapeHtml(user.slack_handle) + '</span>'
+                    : '<span class="has-text-grey">&mdash;</span>';
+
+                const slackId = user.slack_id
+                    ? '<span class="tag is-link is-light">' +
+                        escapeHtml(user.slack_id) + '</span>'
+                    : '<span class="has-text-grey">&mdash;</span>';
+
+                const editBtn = isAdmin
+                    ? '<a href="/users/edit/' +
+                        escapeHtml(user.email) +
+                        '" class="button is-small is-light">Edit</a>'
+                    : '';
+
+                const roleBtn =
+                    isAdmin && user.role_name !== 'Administrador'
+                    ? '<a href="/users/role/' + user.user_id +
+                        '" class="button is-small is-light">Assign Role</a>'
+                    : '';
+
+                const deleteBtn =
+                    isAdmin && user.email !== sessionEmail
+                    ? `<form action="/users/delete/${user.user_id}"
+                            method="POST" style="display:inline;">
+                            <input type="hidden" name="_csrf"
+                                value="${escapeHtml(csrfToken)}">
+                            <button type="submit"
+                                class="button is-small is-light"
+                                onclick="return confirm(
+                                    'Are you sure you want to delete this user?');"
+                            >Delete</button>
+                        </form>`
+                    : isAdmin
+                        ? '<span class="has-text-grey">' +
+                            'Cannot delete yourself</span>'
+                        : '';
+
+                return `<tr>
+                    <td class="is-vcentered">
+                        <strong>${escapeHtml(user.email)}</strong>
+                    </td>
+                    <td class="is-vcentered">
+                        ${user.full_name
+                            ? escapeHtml(user.full_name) : '&mdash;'}
+                    </td>
+                    <td class="is-vcentered">${roleTag}</td>
+                    <td class="is-vcentered">${slackHandle}</td>
+                    <td class="is-vcentered">${slackId}</td>
+                    <td class="has-text-right is-vcentered">
+                        <div class="buttons is-right">
+                            ${progressBadge}
+                            <a href="/users/report/${user.user_id}"
+                                class="button is-small is-dark">AI Report</a>
+                            ${editBtn}${roleBtn}${deleteBtn}
+                        </div>
+                    </td>
+                </tr>`;
+            }
+
+            function renderResults(users) {
+                if (users.length === 0) {
+                    tbody.innerHTML = `<tr>
+                        <td colspan="6"
+                            class="has-text-centered has-text-grey py-5">
+                            No users match your search.
+                        </td>
+                    </tr>`;
+                    return;
+                }
+                tbody.innerHTML = users.map(buildRow).join('');
+            }
+
+            function resetToOriginal() {
+                if (currentController) currentController.abort();
+                clearTimeout(debounceTimer);
+                tbody.innerHTML = originalRows;
+            }
+
+            function doSearch(query) {
+                if (currentController) currentController.abort();
+                currentController = new AbortController();
+
+                const controlDiv = input.closest('.control');
+                if (controlDiv) controlDiv.classList.add('is-loading');
+
+                fetch('/users/search?q=' + encodeURIComponent(query), {
+                    signal: currentController.signal,
+                    headers: { 'Accept': 'application/json' },
+                })
+                .then(function(res) {
+                    if (!res.ok) throw new Error('Network error');
+                    return res.json();
+                })
+                .then(function(data) {
+                    renderResults(data.users || []);
+                })
+                .catch(function(err) {
+                    if (err.name === 'AbortError') return;
+                    tbody.innerHTML = originalRows;
+                })
+                .finally(function() {
+                    if (controlDiv) {
+                        controlDiv.classList.remove('is-loading');
+                    }
+                });
+            }
+
+            input.addEventListener('input', function() {
+                clearTimeout(debounceTimer);
+                const q = input.value.trim();
+                if (!q) { resetToOriginal(); return; }
+                debounceTimer = setTimeout(
+                    function() { doSearch(q); }, 300
+                );
+            });
+
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    input.value = '';
+                    resetToOriginal();
+                }
+            });
+
+            clearBtn.addEventListener('click', function() {
+                input.value = '';
+                resetToOriginal();
+                input.focus();
+            });
+        }());
+    </script>
 </section>

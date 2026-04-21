@@ -38,16 +38,39 @@ const getSessionUserId = (request) => {
 
 exports.get_list = (request, response, next) => {
   User.getAllWithRoles().then(([rows, fieldData]) => {
+    const users = rows.map((row) => ({
+      ...row,
+      quarterProgress: row.quarterProgress || 0,
+    }));
     response.render('userList', {
       csrfToken: request.csrfToken(),
       email: request.session.email || '',
       role: request.session.role || '',
-      users: rows,
+      users,
     });
   })
       .catch((error) => {
         next(error);
       });
+};
+
+exports.getSearch = (request, response, next) => {
+  const q = (request.query.q || '').trim().slice(0, 100);
+  const fetchUsers = q
+    ? User.searchByNameOrEmailWithRoles(q)
+    : User.getAllWithRoles();
+  fetchUsers.then(([rows]) => {
+    const users = rows.map((row) => ({
+      user_id: row.user_id,
+      email: row.email,
+      full_name: row.full_name,
+      slack_handle: row.slack_handle,
+      slack_id: row.slack_id,
+      role_name: row.role_name,
+      quarterProgress: row.quarterProgress || 0,
+    }));
+    return response.json({ users });
+  }).catch((error) => next(error));
 };
 
 exports.get_add = (request, response, next) => {
