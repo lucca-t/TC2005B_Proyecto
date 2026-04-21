@@ -1,5 +1,7 @@
 const Team = require('../models/teams.model');
 const User = require('../models/users.model');
+const Reports = require('../models/reports.model');
+const {generateTeamReport} = require('../util/ai-report');
 
 exports.getList = (request, response, next) => {
   const error = request.session.error || '';
@@ -57,6 +59,279 @@ exports.getSearch = (request, response, next) => {
       .catch((err) => {
         console.error('[GET /teams/search] Failed to search teams:', err.message);
         return response.status(500).json({ error: 'Error searching teams.' });
+      });
+};
+
+const formatDateForInput = (value) => {
+  if (!value) return '';
+  const parsed = new Date(value);
+  if (isNaN(parsed.getTime())) return '';
+  return parsed.toISOString().split('T')[0];
+};
+
+const getSessionUserId = (request) => {
+  const sessionEmail = (request.session.email || '').trim();
+  if (!sessionEmail) return Promise.resolve(null);
+  return User.fetchOne(sessionEmail)
+      .then(([rows]) => {
+        if (!rows || rows.length === 0) return null;
+        return rows[0].user_id;
+      })
+      .catch(() => null);
+};
+
+exports.getReport = (request, response, next) => {
+  const teamId = request.params.teamId;
+  const reportId = Number(request.query.reportId) || 0;
+
+  Team.getTeamWithMembers(teamId)
+      .then(([rows]) => {
+        if (!rows || rows.length === 0) {
+          return response.status(404).redirect('/teams/list');
+        }
+
+        const team = {
+          team_id: rows[0].team_id,
+          team_name: rows[0].team_name,
+          members: rows
+              .filter((r) => r.user_id !== null)
+              .map((r) => ({
+                user_id: r.user_id,
+                full_name: r.full_name,
+                email: r.email,
+              })),
+        };
+
+        if (!reportId) {
+          return response.render('teamReport', {
+            csrfToken: request.csrfToken(),
+            email: request.session.email || '',
+            role: request.session.role || '',
+            team,
+            report: null,
+            error: null,
+            startDate: '',
+            endDate: '',
+            reportType: '',
+          });
+        }
+
+        return Reports.findTeamReportById(reportId, teamId)
+            .then(([reportRows]) => {
+              if (!reportRows || reportRows.length === 0) {
+                return response.render('teamReport', {
+                  csrfToken: request.csrfToken(),
+                  email: request.session.email || '',
+                  role: request.session.role || '',
+                  team,
+                  report: null,
+                  error: 'Saved report not found for this team.',
+                  startDate: '',
+                  endDate: '',
+                  reportType: '',
+                });
+              }
+
+              const saved = reportRows[0];
+              return response.render('teamReport', {
+                csrfToken: request.csrfToken(),
+                email: request.session.email || '',
+                role: request.session.role || '',
+                team,
+                report: saved.ai_content,
+                error: null,
+                startDate: formatDateForInput(saved.date_beginning),
+                endDate: formatDateForInput(saved.date_end),
+                reportType: '',
+              });
+            });
+      })
+      .catch((error) => {
+        console.error(
+            '[GET /teams/report] Failed to fetch team:',
+            error.message,
+        );
+        next(error);
+      });
+};
+
+exports.postReport = (request, response, next) => {
+  const teamId = request.params.teamId;
+  const {report_type, start_date, end_date} = request.body;
+
+  Team.getTeamWithMembers(teamId)
+      .then(([rows]) => {
+        if (!rows || rows.length === 0) {
+          return response.status(404).redirect('/teams/list');
+        }
+
+        const team = {
+          team_id: rows[0].team_id,
+          team_name: rows[0].team_name,
+          members: rows
+              .filter((r) => r.user_id !== null)
+              .map((r) => ({
+                user_id: r.user_id,
+                full_name: r.full_name,
+                email: r.email,
+              })),
+        };
+
+        const renderError = (msg) => {
+          return response.status(400).render('teamReport', {
+            csrfToken: request.csrfToken(),
+            email: request.session.email || '',
+            role: request.session.role || '',
+            team,
+            report: null,
+            error: msg,
+            startDate: start_date || '',
+            endDate: end_date || '',
+            reportType: report_type || '',
+          });
+        };
+
+        if (!report_type) {
+          return renderError(
+              'Please select at least one quarter or use the ' +
+              'custom date range.',
+          );
+        }
+
+        let startDate;
+        let endDate;
+
+        if (report_type === 'custom') {
+          if (!start_date || !end_date) {
+            return renderError(
+                'Both start date and end date are required ' +
+                'for a custom report.',
+            );
+          }
+          startDate = new Date(start_date + 'T00:00:00');
+          endDate = new Date(end_date + 'T00:00:00');
+
+          if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+            return renderError(
+                'Invalid date format. Please use valid dates.',
+            );
+          }
+          if (startDate > endDate) {
+            return renderError('Start date cannot be after end date.');
+          }
+        } else {
+          const quarters = report_type
+              .split(',')
+              .map((q) => q.trim())
+              .filter(Boolean);
+          if (quarters.length === 0) {
+            return renderError('Please select at least one quarter.');
+          }
+
+          const parsed = [];
+          for (const q of quarters) {
+            const match = q.match(/^(\d{4})-Q([1-4])$/);
+            if (!match) {
+              return renderError('Invalid quarter format: ' + q);
+            }
+            parsed.push({
+              year: parseInt(match[1]),
+              quarter: parseInt(match[2]),
+            });
+          }
+
+          let minStart = null;
+          let maxEnd = null;
+          for (const p of parsed) {
+            const qStart = new Date(p.year, (p.quarter - 1) * 3, 1);
+            const qEnd = new Date(p.year, p.quarter * 3, 0);
+            if (!minStart || qStart < minStart) minStart = qStart;
+            if (!maxEnd || qEnd > maxEnd) maxEnd = qEnd;
+          }
+          startDate = minStart;
+          endDate = maxEnd;
+        }
+
+        const startStr = startDate.toISOString().split('T')[0];
+        const endStr = endDate.toISOString().split('T')[0];
+
+        return Team.getTeamStandupsByDateRange(teamId, startStr, endStr)
+            .then(([standups]) => {
+              if (!standups || standups.length === 0) {
+                return renderError(
+                    'No daily standups found for ' +
+                    team.team_name +
+                    ' between ' + startStr + ' and ' + endStr +
+                    '. A report cannot be generated without standup data.',
+                );
+              }
+
+              return Reports.findTeamReportByRange(
+                  teamId, startStr, endStr,
+              )
+                  .then(([existing]) => {
+                    if (existing && existing.length > 0) {
+                      return response.redirect(
+                          '/teams/report/' + teamId +
+                          '?reportId=' + existing[0].report_id,
+                      );
+                    }
+
+                    return generateTeamReport(
+                        team,
+                        startDate,
+                        endDate,
+                        standups,
+                    )
+                        .then((reportText) => {
+                          const standupIds = standups.map(
+                              (r) => r.standup_id,
+                          );
+                          return getSessionUserId(request)
+                              .then((sessionUserId) => {
+                                return Reports.createTeamReport({
+                                  generatedByUserId: sessionUserId,
+                                  teamId,
+                                  startDate: startStr,
+                                  endDate: endStr,
+                                  aiContent: reportText,
+                                  standupIds,
+                                });
+                              })
+                              .then((created) => {
+                                return response.redirect(
+                                    '/teams/report/' + teamId +
+                                    '?reportId=' + created.report_id,
+                                );
+                              });
+                        });
+                  });
+            })
+            .catch((aiError) => {
+              console.error(
+                  '[POST /teams/report] AI generation failed:',
+                  aiError.message,
+              );
+              return response.render('teamReport', {
+                csrfToken: request.csrfToken(),
+                email: request.session.email || '',
+                role: request.session.role || '',
+                team,
+                report: null,
+                error: 'Failed to generate AI report: ' +
+                  (aiError.message || 'Unknown error'),
+                startDate: start_date || '',
+                endDate: end_date || '',
+                reportType: report_type,
+              });
+            });
+      })
+      .catch((error) => {
+        console.error(
+            '[POST /teams/report] Failed to fetch team:',
+            error.message,
+        );
+        next(error);
       });
 };
 

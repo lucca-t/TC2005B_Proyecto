@@ -133,6 +133,38 @@ module.exports = class Team {
     );
   }
 
+  static getTeamWithMembers(teamId) {
+    return db.execute(
+        `SELECT
+            t.team_id, t.team_name,
+            u.user_id, u.full_name, u.email
+         FROM team t
+         LEFT JOIN user_team ut
+           ON t.team_id = ut.team_id AND ut.date_end IS NULL
+         LEFT JOIN user u
+           ON ut.user_id = u.user_id AND u.deleted_at IS NULL
+         WHERE t.team_id = ? AND t.deleted_at IS NULL`,
+        [teamId],
+    );
+  }
+
+  static getTeamStandupsByDateRange(teamId, startDate, endDate) {
+    return db.execute(
+        `SELECT
+            s.standup_id, s.date, s.did_today, s.do_tomorrow, s.blockers,
+            u.user_id, u.full_name, u.email
+         FROM standup s
+         JOIN user u ON s.user_id = u.user_id AND u.deleted_at IS NULL
+         JOIN user_team ut
+           ON u.user_id = ut.user_id
+           AND ut.team_id = ?
+           AND ut.date_end IS NULL
+         WHERE s.date >= ? AND s.date <= ?
+         ORDER BY s.date ASC, u.full_name ASC`,
+        [teamId, startDate, endDate],
+    );
+  }
+
   static searchByNameWithMemberCount(query) {
     return db.execute(`
             SELECT
