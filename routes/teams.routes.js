@@ -10,6 +10,8 @@ const allRoles = authorize(ROLES.ADMIN, ROLES.LEAD, ROLES.MEMBER);
 // FR-11: Read Team - Admin, Lead, Member
 router.get('/list', isAuth, allRoles, teamsController.getList);
 router.get('/search', isAuth, allRoles, teamsController.getSearch);
+router.get('/report/:teamId', isAuth, allRoles, teamsController.getReport);
+router.post('/report/:teamId', isAuth, allRoles, teamsController.postReport);
 router.get('/details/:teamId', isAuth, allRoles, teamsController.getDetails);
 
 // FR-09: Register Team - Admin, Lead

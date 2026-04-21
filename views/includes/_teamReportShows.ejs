@@ -1,0 +1,370 @@
+<section class="section">
+    <div class="container">
+        <div class="level">
+            <div class="level-left">
+                <h1 class="title">
+                    <% if (typeof team !== 'undefined' && team) { %>
+                        AI Report &mdash; <%= team.team_name %>
+                    <% } else { %>
+                        AI Team Report
+                    <% } %>
+                </h1>
+            </div>
+            <div class="level-right">
+                <a href="/teams/list" class="button is-light">← Back</a>
+            </div>
+        </div>
+
+        <% if (typeof team !== 'undefined' && team && team.members && team.members.length > 0) { %>
+        <div class="tags mb-4">
+            <span class="tag is-light is-medium">Members included:</span>
+            <% team.members.forEach(function(m) { %>
+                <span class="tag is-info is-light">
+                    <%= m.full_name || m.email %>
+                </span>
+            <% }); %>
+        </div>
+        <% } %>
+
+        <% if (typeof error !== 'undefined' && error) { %>
+        <div class="notification is-danger is-light">
+            <button class="delete" onclick="this.parentElement.remove()"></button>
+            <strong><i class="fas fa-exclamation-triangle"></i> Error:</strong>
+            <%= error %>
+        </div>
+        <% } %>
+
+        <% if (!(typeof report !== 'undefined' && report)) { %>
+        <div class="box">
+            <h2 class="subtitle">Select Report Period</h2>
+            <p class="mb-4">Choose a quarter to auto-fill the date range,
+                or set the dates manually. Standups from all current team
+                members in that period will be included.</p>
+            <form id="report-form"
+                action="/teams/report/<%= team.team_id %>"
+                method="POST">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <input type="hidden" name="report_type"
+                    id="report-type-input"
+                    value="<%= (typeof reportType !== 'undefined' ? reportType : '') %>">
+
+                <div class="columns is-vcentered">
+                    <div class="column">
+                        <label class="label">Quarter</label>
+                        <div class="buttons" id="quarter-buttons">
+                            <%
+                                var now = new Date();
+                                var currentQuarter =
+                                    Math.floor(now.getMonth() / 3) + 1;
+                                var currentYear = now.getFullYear();
+                                var quarterLabels = [
+                                    'Jan \u2013 Mar', 'Apr \u2013 Jun',
+                                    'Jul \u2013 Sep', 'Oct \u2013 Dec'
+                                ];
+                                var quarters = [];
+                                var q = currentQuarter - 1;
+                                var y = currentYear;
+                                if (q < 1) { q = 4; y--; }
+                                for (var i = 0; i < 4; i++) {
+                                    quarters.unshift({
+                                        year: y,
+                                        quarter: q,
+                                        label: 'Q' + q + ' ' + y +
+                                            ' (' + quarterLabels[q - 1] + ')'
+                                    });
+                                    q--;
+                                    if (q < 1) { q = 4; y--; }
+                                }
+                            %>
+                            <% quarters.forEach(function(qtr) { %>
+                                <button type="button"
+                                    class="button is-outlined quarter-btn"
+                                    data-quarter="<%= qtr.year %>-Q<%= qtr.quarter %>"
+                                    data-year="<%= qtr.year %>"
+                                    data-q="<%= qtr.quarter %>">
+                                    <%= qtr.label %>
+                                </button>
+                            <% }); %>
+                        </div>
+                    </div>
+                    <div class="column is-narrow">
+                        <div class="field is-grouped">
+                            <div class="control">
+                                <label class="label is-small">Start Date</label>
+                                <input class="input" type="date"
+                                    name="start_date" id="start-date"
+                                    value="<%= (typeof startDate !== 'undefined' && startDate) ? startDate : new Date().toISOString().split('T')[0] %>">
+                            </div>
+                            <div class="control">
+                                <label class="label is-small">End Date</label>
+                                <input class="input" type="date"
+                                    name="end_date" id="end-date"
+                                    value="<%= (typeof endDate !== 'undefined' && endDate) ? endDate : new Date().toISOString().split('T')[0] %>">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field mt-4">
+                    <div class="control">
+                        <button type="submit" class="button is-primary"
+                            id="submit-btn">
+                            <span class="icon">
+                                <i class="fas fa-file-alt"></i>
+                            </span>
+                            <span>Generate Team Report</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div id="reportLoadingOverlay"
+            class="report-loading-overlay" aria-hidden="true">
+            <div class="report-loading-card">
+                <span class="icon is-large">
+                    <i class="fas fa-spinner fa-pulse fa-2x"></i>
+                </span>
+                <p class="title is-6 mt-4 mb-2">Generating team report...</p>
+                <p class="has-text-grey is-size-7">
+                    Analyzing standups from all team members.
+                </p>
+            </div>
+        </div>
+
+        <style>
+            .quarter-btn { color: #000 !important; }
+            .quarter-btn.is-selected {
+                background-color: #ffe08a !important;
+                border-color: #ffd257 !important;
+                color: #000 !important;
+            }
+            .report-loading-overlay {
+                position: fixed;
+                inset: 0;
+                z-index: 9999;
+                display: none;
+                align-items: center;
+                justify-content: center;
+                background: rgba(255, 255, 255, 0.8);
+                backdrop-filter: blur(1px);
+            }
+            .report-loading-overlay.is-active { display: flex; }
+            .report-loading-card {
+                min-width: 280px;
+                padding: 1.5rem 1.75rem;
+                border: 1px solid #dbdbdb;
+                border-radius: 10px;
+                background: #fff;
+                text-align: center;
+                box-shadow: 0 12px 30px rgba(10, 10, 10, 0.15);
+            }
+        </style>
+
+        <script>
+        (function() {
+            var activeQuarter = null;
+            var form = document.getElementById('report-form');
+            var submitButton = document.getElementById('submit-btn');
+            var loadingOverlay =
+                document.getElementById('reportLoadingOverlay');
+            var startInput = document.getElementById('start-date');
+            var endInput = document.getElementById('end-date');
+            var reportTypeInput =
+                document.getElementById('report-type-input');
+            var quarterBtns = document.querySelectorAll('.quarter-btn');
+
+            function pad(n) { return n < 10 ? '0' + n : '' + n; }
+
+            function formatDate(d) {
+                return d.getFullYear() + '-' +
+                    pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+            }
+
+            function getQuarterDates(year, q) {
+                var startMonth = (q - 1) * 3;
+                var start = new Date(year, startMonth, 1);
+                var end = new Date(year, startMonth + 3, 0);
+                return {start: start, end: end};
+            }
+
+            function deselectAll() {
+                quarterBtns.forEach(function(b) {
+                    b.classList.remove('is-selected');
+                    b.classList.add('is-outlined');
+                });
+                activeQuarter = null;
+            }
+
+            quarterBtns.forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var key = btn.getAttribute('data-quarter');
+                    var year = parseInt(btn.getAttribute('data-year'));
+                    var q = parseInt(btn.getAttribute('data-q'));
+
+                    if (activeQuarter === key) {
+                        deselectAll();
+                        startInput.value = '';
+                        endInput.value = '';
+                        reportTypeInput.value = '';
+                    } else {
+                        deselectAll();
+                        activeQuarter = key;
+                        btn.classList.add('is-selected');
+                        btn.classList.remove('is-outlined');
+                        var dates = getQuarterDates(year, q);
+                        startInput.value = formatDate(dates.start);
+                        endInput.value = formatDate(dates.end);
+                        reportTypeInput.value = key;
+                    }
+                });
+            });
+
+            function onManualDateChange() {
+                deselectAll();
+                reportTypeInput.value = 'custom';
+            }
+            startInput.addEventListener('input', onManualDateChange);
+            endInput.addEventListener('input', onManualDateChange);
+
+            form.addEventListener('submit', function(e) {
+                var startVal = startInput.value;
+                var endVal = endInput.value;
+
+                if (!startVal || !endVal) {
+                    e.preventDefault();
+                    alert('Please select a quarter or enter a date range.');
+                    return;
+                }
+
+                var sDate = new Date(startVal + 'T00:00:00');
+                var eDate = new Date(endVal + 'T00:00:00');
+                if (sDate > eDate) {
+                    e.preventDefault();
+                    alert('Start date cannot be after end date.');
+                    return;
+                }
+
+                if (!reportTypeInput.value) {
+                    reportTypeInput.value = 'custom';
+                }
+
+                if (submitButton) {
+                    submitButton.disabled = true;
+                    submitButton.classList.add('is-loading');
+                }
+
+                if (loadingOverlay) {
+                    loadingOverlay.classList.add('is-active');
+                    loadingOverlay.setAttribute('aria-hidden', 'false');
+                }
+            });
+
+            window.addEventListener('pageshow', function() {
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.classList.remove('is-loading');
+                }
+
+                if (loadingOverlay) {
+                    loadingOverlay.classList.remove('is-active');
+                    loadingOverlay.setAttribute('aria-hidden', 'true');
+                }
+            });
+        })();
+        </script>
+        <% } %>
+
+        <% if (typeof report !== 'undefined' && report) { %>
+        <div class="box">
+            <div class="level mb-2">
+                <div class="level-left">
+                    <h2 class="subtitle mb-0">Report Results</h2>
+                </div>
+                <div class="level-right">
+                    <div class="buttons are-small">
+                        <span class="tag is-info is-light is-medium">
+                            <%= (typeof startDate !== 'undefined' ? startDate : '') %>
+                            &mdash;
+                            <%= (typeof endDate !== 'undefined' ? endDate : '') %>
+                        </span>
+                        <button type="button" id="copyReportButton"
+                            class="button is-light">
+                            Copy Markdown
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="content" id="reportMarkdown"></div>
+            <script type="application/json"
+                id="reportMarkdownData"><%- JSON.stringify(report) %></script>
+            <script
+                src="https://cdn.jsdelivr.net/npm/marked/marked.min.js">
+            </script>
+            <script>
+                (function() {
+                    var output =
+                        document.getElementById('reportMarkdown');
+                    var rawData =
+                        document.getElementById('reportMarkdownData');
+                    var copyButton =
+                        document.getElementById('copyReportButton');
+
+                    if (!output || !rawData) return;
+
+                    var markdown = '';
+
+                    try {
+                        markdown = JSON.parse(
+                            rawData.textContent || '""'
+                        );
+                        if (typeof marked !== 'undefined' && marked.parse) {
+                            output.innerHTML = marked.parse(markdown);
+                        } else {
+                            output.textContent = markdown;
+                        }
+                    } catch (error) {
+                        markdown = rawData.textContent || '';
+                        output.textContent = markdown;
+                    }
+
+                    if (!copyButton) return;
+
+                    copyButton.addEventListener('click', async function() {
+                        try {
+                            await navigator.clipboard.writeText(markdown);
+                            copyButton.textContent = 'Copied';
+                            setTimeout(function() {
+                                copyButton.textContent = 'Copy Markdown';
+                            }, 1500);
+                        } catch (error) {
+                            copyButton.textContent = 'Copy failed';
+                            setTimeout(function() {
+                                copyButton.textContent = 'Copy Markdown';
+                            }, 1500);
+                        }
+                    });
+                })();
+            </script>
+        </div>
+
+        <div class="content has-text-right mt-2">
+            <p class="is-size-6 has-text-grey">
+                Report generated by <strong><%= email %></strong>
+                on <i><%= new Date().toLocaleDateString() %></i>
+            </p>
+        </div>
+
+        <div class="field mt-4">
+            <a href="/teams/report/<%= team.team_id %>"
+                class="button is-light">
+                <span class="icon">
+                    <i class="fas fa-arrow-left"></i>
+                </span>
+                <span>Generate Another Report</span>
+            </a>
+        </div>
+        <% } %>
+
+    </div>
+</section>
