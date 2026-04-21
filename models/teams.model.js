@@ -121,4 +121,20 @@ module.exports = class Team {
         [teamId],
     );
   }
+
+  static searchByNameWithMemberCount(query) {
+    return db.execute(`
+            SELECT
+                t.team_id,
+                t.team_name,
+                t.team_start_date,
+                COUNT(ut.user_id) as memberCount
+            FROM team t
+            LEFT JOIN user_team ut ON t.team_id = ut.team_id AND ut.date_end IS NULL
+            WHERE t.deleted_at IS NULL AND t.team_name LIKE ?
+            GROUP BY t.team_id, t.team_name, t.team_start_date
+            ORDER BY t.team_name ASC`,
+      [`%${query}%`],
+    );
+  }
 };

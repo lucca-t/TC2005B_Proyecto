@@ -1,4 +1,3 @@
-<!-- THIS SECTION IS ENTIRELY VIBE CODED, ONLY FOR VISUAL PURPOSES -->
 <section class="section">
     <div class="container">
         <% if (typeof success !== 'undefined' && success) { %>
@@ -61,6 +60,25 @@
             </div>
         </div>
 
+        <div id="teamSearchMeta"
+             data-role="<%= typeof role !== 'undefined' ? role : '' %>"
+             data-csrf="<%= csrfToken %>"
+             style="display:none;"></div>
+
+        <div class="field has-addons mb-4">
+            <div class="control is-expanded has-icons-left">
+                <input id="teamSearchInput" class="input" type="text"
+                       placeholder="Search teams by name..."
+                       autocomplete="off" maxlength="100">
+                <span class="icon is-left"><i class="fas fa-search"></i></span>
+            </div>
+            <div class="control">
+                <button id="teamSearchClear" class="button is-light" type="button" title="Clear search">
+                    <span class="icon"><i class="fas fa-times"></i></span>
+                </button>
+            </div>
+        </div>
+
         <div class="box">
             <table class="table is-fullwidth is-striped is-hoverable">
                 <thead>
@@ -70,7 +88,7 @@
                         <th class="has-text-right">Actions</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="teamsTableBody">
                     <% if (typeof teams !=='undefined' && teams.length> 0) { %>
                         <% teams.forEach(team=> { %>
                             <tr>
@@ -112,4 +130,119 @@
             </table>
         </div>
     </div>
+
+    <script>
+        (function () {
+            const input = document.getElementById('teamSearchInput');
+            const clearBtn = document.getElementById('teamSearchClear');
+            const tbody = document.getElementById('teamsTableBody');
+            const meta = document.getElementById('teamSearchMeta');
+
+            if (!input || !tbody || !meta) return;
+
+            const userRole = meta.dataset.role;
+            const csrfToken = meta.dataset.csrf;
+            const isAdminOrLead = userRole === 'Administrador' || userRole === 'Lead Member';
+            const originalRows = tbody.innerHTML;
+
+            let debounceTimer = null;
+            let currentController = null;
+
+            function escapeHtml(str) {
+                const div = document.createElement('div');
+                div.appendChild(document.createTextNode(String(str)));
+                return div.innerHTML;
+            }
+
+            function buildRow(team) {
+                const adminActions = isAdminOrLead ? `
+                    <a href="/teams/edit/${team.id}" class="button is-small is-light">Edit</a>
+                    <form action="/teams/delete/${team.id}" method="POST" style="display:inline;">
+                        <input type="hidden" name="_csrf" value="${escapeHtml(csrfToken)}">
+                        <button type="submit" class="button is-small is-light"
+                            onclick="return confirm('Are you sure you want to delete this team?');">Delete</button>
+                    </form>` : '';
+
+                return `<tr>
+                    <td class="is-vcentered"><strong>
+                        <a href="/teams/details/${team.id}" class="is-small is-link">${escapeHtml(team.name)}</a>
+                    </strong></td>
+                    <td class="is-vcentered">
+                        <span class="tag is-info is-light">${team.memberCount} members</span>
+                    </td>
+                    <td class="has-text-right is-vcentered">
+                        <div class="buttons is-right">
+                            <a href="/teams/report/${team.id}" class="button is-small is-dark">AI Report</a>
+                            ${adminActions}
+                        </div>
+                    </td>
+                </tr>`;
+            }
+
+            function renderResults(teams) {
+                if (teams.length === 0) {
+                    tbody.innerHTML = `<tr>
+                        <td colspan="3" class="has-text-centered has-text-grey py-5">
+                            No teams match your search.
+                        </td>
+                    </tr>`;
+                    return;
+                }
+                tbody.innerHTML = teams.map(buildRow).join('');
+            }
+
+            function resetToOriginal() {
+                if (currentController) currentController.abort();
+                clearTimeout(debounceTimer);
+                tbody.innerHTML = originalRows;
+            }
+
+            function doSearch(query) {
+                if (currentController) currentController.abort();
+                currentController = new AbortController();
+
+                const controlDiv = input.closest('.control');
+                if (controlDiv) controlDiv.classList.add('is-loading');
+
+                fetch('/teams/search?q=' + encodeURIComponent(query), {
+                    signal: currentController.signal,
+                    headers: { 'Accept': 'application/json' }
+                })
+                .then(function (res) {
+                    if (!res.ok) throw new Error('Network error');
+                    return res.json();
+                })
+                .then(function (data) {
+                    renderResults(data.teams || []);
+                })
+                .catch(function (err) {
+                    if (err.name === 'AbortError') return;
+                    tbody.innerHTML = originalRows;
+                })
+                .finally(function () {
+                    if (controlDiv) controlDiv.classList.remove('is-loading');
+                });
+            }
+
+            input.addEventListener('input', function () {
+                clearTimeout(debounceTimer);
+                const q = input.value.trim();
+                if (!q) { resetToOriginal(); return; }
+                debounceTimer = setTimeout(function () { doSearch(q); }, 300);
+            });
+
+            input.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    input.value = '';
+                    resetToOriginal();
+                }
+            });
+
+            clearBtn.addEventListener('click', function () {
+                input.value = '';
+                resetToOriginal();
+                input.focus();
+            });
+        }());
+    </script>
 </section>
