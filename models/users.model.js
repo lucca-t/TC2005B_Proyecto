@@ -108,11 +108,46 @@ module.exports = class User {
   static getAllWithRoles() {
     return db.execute(
         `SELECT u.user_id, u.email, u.full_name, u.slack_handle, u.slack_id,
-                r.role_name
+                r.role_name,
+                (
+                    SELECT COUNT(DISTINCT MONTH(rp.date_generated))
+                    FROM report rp
+                    JOIN user_report urp
+                      ON rp.report_id = urp.report_id
+                    WHERE urp.user_about = u.user_id
+                      AND QUARTER(rp.date_generated) = QUARTER(NOW())
+                      AND YEAR(rp.date_generated)    = YEAR(NOW())
+                      AND rp.deleted_at IS NULL
+                ) AS quarterProgress
          FROM user u
-         LEFT JOIN user_role ur ON u.user_id = ur.user_id AND ur.end_date IS NULL
+         LEFT JOIN user_role ur ON u.user_id = ur.user_id
+           AND ur.end_date IS NULL
          LEFT JOIN role r ON ur.role_id = r.role_id
          WHERE u.deleted_at IS NULL`,
+    );
+  }
+
+  static searchByNameOrEmailWithRoles(query) {
+    return db.execute(
+        `SELECT u.user_id, u.email, u.full_name, u.slack_handle, u.slack_id,
+                r.role_name,
+                (
+                    SELECT COUNT(DISTINCT MONTH(rp.date_generated))
+                    FROM report rp
+                    JOIN user_report urp
+                      ON rp.report_id = urp.report_id
+                    WHERE urp.user_about = u.user_id
+                      AND QUARTER(rp.date_generated) = QUARTER(NOW())
+                      AND YEAR(rp.date_generated)    = YEAR(NOW())
+                      AND rp.deleted_at IS NULL
+                ) AS quarterProgress
+         FROM user u
+         LEFT JOIN user_role ur ON u.user_id = ur.user_id
+           AND ur.end_date IS NULL
+         LEFT JOIN role r ON ur.role_id = r.role_id
+         WHERE u.deleted_at IS NULL
+           AND (u.email LIKE ? OR u.full_name LIKE ?)`,
+        [`%${query}%`, `%${query}%`],
     );
   }
 

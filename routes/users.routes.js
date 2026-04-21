@@ -10,6 +10,7 @@ const allRoles = authorize(ROLES.ADMIN, ROLES.LEAD, ROLES.MEMBER);
 
 // FR-07: Read User - Admin, Lead
 router.get('/list', isAuth, allRoles, usersController.get_list);
+router.get('/search', isAuth, allRoles, usersController.getSearch);
 
 // FR-05: Register User - Admin
 router.get('/add', isAuth, adminOnly, usersController.get_add);
