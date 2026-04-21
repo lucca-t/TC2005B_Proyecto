@@ -41,6 +41,36 @@ module.exports = class Standup {
     );
   }
 
+  static getTeamHistory(teamId, filters = {}) {
+    const queryParts = [
+      `SELECT s.standup_id, s.date, s.did_today, s.do_tomorrow, s.blockers,
+              u.user_id, u.full_name, u.email
+       FROM standup s
+       INNER JOIN user u ON s.user_id = u.user_id AND u.deleted_at IS NULL
+       INNER JOIN user_team ut
+         ON ut.user_id = u.user_id
+        AND ut.team_id = ?
+        AND ut.date_end IS NULL`,
+      'WHERE 1 = 1',
+    ];
+
+    const params = [teamId];
+
+    if (filters.userId) {
+      queryParts.push('AND u.user_id = ?');
+      params.push(filters.userId);
+    }
+
+    if (filters.date) {
+      queryParts.push('AND s.date = ?');
+      params.push(filters.date);
+    }
+
+    queryParts.push('ORDER BY s.date DESC, u.full_name ASC');
+
+    return db.execute(queryParts.join('\n'), params);
+  }
+
   static deleteRegister(standupId) {
     return db.execute(
         'DELETE FROM standup WHERE standup_id = ?',

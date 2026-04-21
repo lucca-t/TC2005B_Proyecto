@@ -1,5 +1,116 @@
 const {response} = require('express');
+const Team = require('../models/teams.model');
+const User = require('../models/users.model');
 const Standup = require('../models/standup.model');
+
+const getCurrentUserId = async (request) => {
+  const email = (request.session.email || '').trim();
+
+  if (!email) {
+    return null;
+  }
+
+  const [rows] = await User.fetchOne(email);
+  if (!rows || rows.length === 0) {
+    return null;
+  }
+
+  return rows[0].user_id;
+};
+
+const normalizeDateFilter = (value) => {
+  const normalized = (value || '').trim();
+
+  if (!normalized) {
+    return '';
+  }
+
+  const parsed = new Date(normalized + 'T00:00:00');
+  if (Number.isNaN(parsed.getTime())) {
+    return '';
+  }
+
+  return normalized;
+};
+
+const buildTeamHistoryViewModel = async (request) => {
+  const userId = await getCurrentUserId(request);
+
+  if (!userId) {
+    return {
+      redirectToLogin: true,
+    };
+  }
+
+  const [teamsRows] = await Team.getTeamsByUser(userId);
+  const teams = (teamsRows || []).map((row) => ({
+    id: row.team_id,
+    name: row.team_name,
+  }));
+
+  if (teams.length === 0) {
+    return {
+      teams: [],
+      selectedTeamId: '',
+      team: {
+        team_id: '',
+        team_name: '',
+        members: [],
+      },
+      standups: [],
+      error: 'No active team was found for your account.',
+    };
+  }
+
+  const requestedTeamId = (request.query.team_id || '').trim();
+  const selectedTeam = teams.find((team) => String(team.id) === requestedTeamId) || teams[0];
+  const selectedTeamId = String(selectedTeam.id);
+
+  const [teamRows] = await Team.getTeamWithMembers(selectedTeamId);
+  const team = {
+    team_id: selectedTeamId,
+    team_name: teamRows && teamRows.length > 0 ? teamRows[0].team_name : selectedTeam.name,
+    members: (teamRows || [])
+        .filter((row) => row.user_id !== null)
+        .map((row) => ({
+          user_id: row.user_id,
+          full_name: row.full_name,
+          email: row.email,
+        })),
+  };
+
+  const memberIds = new Set(team.members.map((member) => String(member.user_id)));
+  const selectedUserId = (request.query.user_id || '').trim();
+  const selectedDate = normalizeDateFilter(request.query.date);
+  const filters = {
+    userId: '',
+    date: selectedDate,
+  };
+  let error = '';
+
+  if (selectedUserId) {
+    if (!memberIds.has(selectedUserId)) {
+      error = 'The selected user does not belong to this team.';
+    } else {
+      filters.userId = selectedUserId;
+    }
+  }
+
+  const standups = error ? [] : await Standup.getTeamHistory(selectedTeamId, filters)
+      .then(([rows]) => rows || []);
+
+  return {
+    teams,
+    selectedTeamId,
+    team,
+    standups,
+    filters: {
+      userId: filters.userId,
+      date: selectedDate,
+    },
+    error,
+  };
+};
 
 exports.get_standup_form = (request, response, next) => {
   const error = request.session.error || '';
@@ -92,6 +203,49 @@ exports.get_standup_history = (request, response, next) => {
           error: 'Server connection error. Please try again later.',
         });
       });
+};
+
+exports.get_team_standup_history = async (request, response, next) => {
+  if (!request.session.email) {
+    return response.redirect('/users/login');
+  }
+
+  try {
+    const viewModel = await buildTeamHistoryViewModel(request);
+
+    if (viewModel.redirectToLogin) {
+      return response.redirect('/users/login');
+    }
+
+    return response.render('standup_team_history', {
+      csrfToken: request.csrfToken(),
+      title: 'Team Activity History - Daily Standup+',
+      email: request.session.email || '',
+      teams: viewModel.teams,
+      selectedTeamId: viewModel.selectedTeamId,
+      team: viewModel.team,
+      standups: viewModel.standups,
+      filters: viewModel.filters || {userId: '', date: ''},
+      error: viewModel.error || '',
+    });
+  } catch (err) {
+    console.error('Error fetching team standup history:', err);
+    return response.render('standup_team_history', {
+      csrfToken: request.csrfToken(),
+      title: 'Team Activity History - Daily Standup+',
+      email: request.session.email || '',
+      teams: [],
+      selectedTeamId: '',
+      team: {
+        team_id: '',
+        team_name: '',
+        members: [],
+      },
+      standups: [],
+      filters: {userId: '', date: ''},
+      error: 'Server connection error. Please try again later.',
+    });
+  }
 };
 
 exports.post_deleteRegister = (request, response, next) => {

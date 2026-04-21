@@ -26,6 +26,19 @@ module.exports = class Team {
     );
   }
 
+  static getTeamsByUser(userId) {
+    return db.execute(
+        `SELECT t.team_id, t.team_name
+         FROM team t
+         INNER JOIN user_team ut ON t.team_id = ut.team_id
+         WHERE t.deleted_at IS NULL
+           AND ut.date_end IS NULL
+           AND ut.user_id = ?
+         ORDER BY t.team_name ASC`,
+        [userId],
+    );
+  }
+
   static getAllWithMemberCount() {
     return db.execute(`
             SELECT

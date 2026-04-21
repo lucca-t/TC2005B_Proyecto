@@ -80,6 +80,9 @@
           <div class="navbar-dropdown">
             <a href="/daily_standup" class="navbar-item">Register Daily Standup</a>
             <a href="/daily_standup/history" class="navbar-item">Activity History</a>
+            <% if (role === 'Administrador' || role === 'Lead Member') { %>
+            <a href="/daily_standup/history/team" class="navbar-item">Team Activity History</a>
+            <% } %>
           </div>
         </div>
         <% } %>

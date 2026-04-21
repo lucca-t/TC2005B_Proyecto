@@ -1,0 +1,150 @@
+<%- include('includes/_header') %>
+
+<section class="section">
+  <div class="container">
+    <div class="level mb-4">
+      <div class="level-left">
+        <div>
+          <h1 class="title">Team Activity History</h1>
+          <h2 class="subtitle">Review standups from members of your team</h2>
+        </div>
+      </div>
+      <div class="level-right">
+        <a href="/daily_standup/history" class="button is-light">
+          <strong>My History</strong>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="padding-top: 0;">
+  <div class="container">
+    <% if (typeof error !== 'undefined' && error.length > 0) { %>
+      <div class="notification is-danger is-light">
+        <button class="delete" onclick="this.parentElement.remove()"></button>
+        <%= error %>
+      </div>
+    <% } %>
+
+    <div class="box mb-5">
+      <form method="GET" action="/daily_standup/history/team">
+        <div class="columns is-multiline is-vcentered">
+          <div class="column is-4">
+            <div class="field">
+              <label class="label">Team</label>
+              <div class="control">
+                <div class="select is-fullwidth">
+                  <select name="team_id" onchange="this.form.submit()">
+                    <% teams.forEach((teamOption) => { %>
+                      <option value="<%= teamOption.id %>" <%= String(teamOption.id) === String(selectedTeamId) ? 'selected' : '' %>><%= teamOption.name %></option>
+                    <% }) %>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="column is-4">
+            <div class="field">
+              <label class="label">Member</label>
+              <div class="control">
+                <div class="select is-fullwidth">
+                  <select name="user_id">
+                    <option value="">All members</option>
+                    <% team.members.forEach((member) => { %>
+                      <option value="<%= member.user_id %>" <%= String(member.user_id) === String(filters.userId || '') ? 'selected' : '' %>><%= member.full_name %> (<%= member.email %>)</option>
+                    <% }) %>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="column is-3">
+            <div class="field">
+              <label class="label">Date</label>
+              <div class="control">
+                <input
+                  class="input"
+                  type="date"
+                  name="date"
+                  value="<%= filters.date || '' %>"
+                >
+              </div>
+            </div>
+          </div>
+
+          <div class="column is-1">
+            <div class="field mt-5">
+              <div class="control">
+                <button type="submit" class="button is-primary is-fullwidth">Filter</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="buttons mt-2">
+          <a class="button is-light" href="/daily_standup/history/team?team_id=<%= selectedTeamId %>">Clear filters</a>
+        </div>
+      </form>
+    </div>
+
+    <div class="box">
+      <div class="content mb-4">
+        <h3 class="title is-5 mb-1"><%= team.team_name %></h3>
+        <p class="has-text-grey">Members visible in this view: <%= team.members.length %></p>
+      </div>
+
+      <% if (!standups || standups.length === 0) { %>
+        <div class="notification is-warning is-light">
+          No records found for the selected filters.
+        </div>
+      <% } else { %>
+        <div class="table-container">
+          <table class="table is-fullwidth is-striped is-hoverable is-narrow">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Member</th>
+                <th>Email</th>
+                <th>What did you do?</th>
+                <th>What will you do tomorrow?</th>
+                <th>Blockers</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% standups.forEach((standup) => { %>
+                <tr>
+                  <td><%= standup.date.toISOString().split('T')[0] %></td>
+                  <td><%= standup.full_name %></td>
+                  <td><%= standup.email %></td>
+                  <td><%= standup.did_today %></td>
+                  <td><%= standup.do_tomorrow %></td>
+                  <td><%= standup.blockers || '-' %></td>
+                  <td>
+                    <div class="buttons">
+                      <a href="/daily_standup/report/<%= standup.standup_id %>" class="button is-small is-dark">AI Report</a>
+                      <a href="/daily_standup/edit/<%= standup.standup_id %>" class="button is-small is-light">Edit</a>
+                      <form action="/daily_standup/history/<%= standup.standup_id %>" method="POST">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                        <button
+                          type="submit"
+                          class="button is-small is-light"
+                          onclick="return confirm('Are you sure you want to delete this record?');"
+                        >Delete</button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</section>
+
+<%- include('includes/_footer') %>
