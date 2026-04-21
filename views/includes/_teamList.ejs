@@ -103,6 +103,16 @@
                                 </td>
                                 <td class="has-text-right is-vcentered">
                                     <div class="buttons is-right">
+                                        <% const qp = team.quarterProgress || 0; %>
+                                        <span title="<%= qp %>/3 months reported this quarter"
+                                            style="display:inline-flex;align-items:center;margin-right:4px;">
+                                            <% for (let i = 0; i < 3; i++) { %>
+                                                <span style="display:inline-block;width:10px;
+                                                    height:10px;border-radius:50%;margin:0 2px;
+                                                    background:<%= i < qp ? '#3273dc' : '#dbdbdb' %>;"></span>
+                                            <% } %>
+                                            <span style="font-size:0.72rem;color:#555;margin-left:4px;"><%= qp %>/3</span>
+                                        </span>
                                         <a href="/teams/report/<%= team.id %>" class="button is-small is-dark">AI Report</a>
 
                                         <% if (typeof role !== 'undefined' && (role === 'Administrador' || role === 'Lead Member')) { %>
@@ -156,6 +166,28 @@
             }
 
             function buildRow(team) {
+                const filled = team.quarterProgress || 0;
+                const bg = function(i) {
+                    return i < filled ? '#3273dc' : '#dbdbdb';
+                };
+                const dot = function(i) {
+                    return '<span style="display:inline-block;' +
+                        'width:10px;height:10px;' +
+                        'border-radius:50%;margin:0 2px;' +
+                        'background:' + bg(i) + ';"></span>';
+                };
+                const dots = [0, 1, 2].map(dot).join('');
+                const qTitle =
+                    filled + '/3 months reported this quarter';
+                const qLabel =
+                    '<span style="font-size:0.72rem;color:#555;' +
+                    'margin-left:4px;">' + filled + '/3</span>';
+                const progressBadge =
+                    '<span title="' + qTitle + '"' +
+                    ' style="display:inline-flex;' +
+                    'align-items:center;margin-right:4px;">' +
+                    dots + qLabel + '</span>';
+
                 const adminActions = isAdminOrLead ? `
                     <a href="/teams/edit/${team.id}" class="button is-small is-light">Edit</a>
                     <form action="/teams/delete/${team.id}" method="POST" style="display:inline;">
@@ -173,6 +205,7 @@
                     </td>
                     <td class="has-text-right is-vcentered">
                         <div class="buttons is-right">
+                            ${progressBadge}
                             <a href="/teams/report/${team.id}" class="button is-small is-dark">AI Report</a>
                             ${adminActions}
                         </div>

@@ -28,13 +28,24 @@ module.exports = class Team {
 
   static getAllWithMemberCount() {
     return db.execute(`
-            SELECT 
+            SELECT
                 t.team_id,
                 t.team_name,
                 t.team_start_date,
-                COUNT(ut.user_id) as memberCount
+                COUNT(DISTINCT ut.user_id) AS memberCount,
+                (
+                    SELECT COUNT(DISTINCT MONTH(r.date_generated))
+                    FROM report r
+                    JOIN team_report tr
+                      ON r.report_id = tr.report_id
+                    WHERE tr.team_about = t.team_id
+                      AND QUARTER(r.date_generated) = QUARTER(NOW())
+                      AND YEAR(r.date_generated)    = YEAR(NOW())
+                      AND r.deleted_at IS NULL
+                ) AS quarterProgress
             FROM team t
-            LEFT JOIN user_team ut ON t.team_id = ut.team_id AND ut.date_end IS NULL
+            LEFT JOIN user_team ut
+              ON t.team_id = ut.team_id AND ut.date_end IS NULL
             WHERE t.deleted_at IS NULL
             GROUP BY t.team_id, t.team_name, t.team_start_date
             ORDER BY t.team_name ASC`,
@@ -128,9 +139,20 @@ module.exports = class Team {
                 t.team_id,
                 t.team_name,
                 t.team_start_date,
-                COUNT(ut.user_id) as memberCount
+                COUNT(DISTINCT ut.user_id) AS memberCount,
+                (
+                    SELECT COUNT(DISTINCT MONTH(r.date_generated))
+                    FROM report r
+                    JOIN team_report tr
+                      ON r.report_id = tr.report_id
+                    WHERE tr.team_about = t.team_id
+                      AND QUARTER(r.date_generated) = QUARTER(NOW())
+                      AND YEAR(r.date_generated)    = YEAR(NOW())
+                      AND r.deleted_at IS NULL
+                ) AS quarterProgress
             FROM team t
-            LEFT JOIN user_team ut ON t.team_id = ut.team_id AND ut.date_end IS NULL
+            LEFT JOIN user_team ut
+              ON t.team_id = ut.team_id AND ut.date_end IS NULL
             WHERE t.deleted_at IS NULL AND t.team_name LIKE ?
             GROUP BY t.team_id, t.team_name, t.team_start_date
             ORDER BY t.team_name ASC`,
