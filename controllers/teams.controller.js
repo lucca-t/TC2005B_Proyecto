@@ -14,6 +14,7 @@ exports.getList = (request, response, next) => {
           name: row.team_name,
           startDate: row.team_start_date,
           memberCount: row.memberCount || 0,
+          quarterProgress: row.quarterProgress || 0,
         }));
 
         response.render('teamList', {
@@ -49,6 +50,7 @@ exports.getSearch = (request, response, next) => {
           id: row.team_id,
           name: row.team_name,
           memberCount: row.memberCount || 0,
+          quarterProgress: row.quarterProgress || 0,
         }));
         return response.json({ teams });
       })
