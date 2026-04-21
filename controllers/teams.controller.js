@@ -36,6 +36,28 @@ exports.getList = (request, response, next) => {
       });
 };
 
+exports.getSearch = (request, response, next) => {
+  const q = (request.query.q || '').trim().slice(0, 100);
+
+  const fetchTeams = q
+    ? Team.searchByNameWithMemberCount(q)
+    : Team.getAllWithMemberCount();
+
+  fetchTeams
+      .then(([rows]) => {
+        const teams = rows.map((row) => ({
+          id: row.team_id,
+          name: row.team_name,
+          memberCount: row.memberCount || 0,
+        }));
+        return response.json({ teams });
+      })
+      .catch((err) => {
+        console.error('[GET /teams/search] Failed to search teams:', err.message);
+        return response.status(500).json({ error: 'Error searching teams.' });
+      });
+};
+
 exports.getEdit = (request, response, next) => {
   const teamId = request.params.teamId;
   const error = request.session.error || '';
