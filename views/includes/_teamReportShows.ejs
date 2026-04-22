@@ -15,6 +15,28 @@
             </div>
         </div>
 
+        <% if (typeof userTeams !== 'undefined' && userTeams && userTeams.length > 0) { %>
+        <div class="box mb-4">
+            <div class="field">
+                <label class="label">Switch Team</label>
+                <div class="control">
+                    <div class="select is-fullwidth <%= userTeams.length === 1 ? 'is-disabled' : '' %>">
+                        <select id="team-report-switcher">
+                            <% userTeams.forEach(function(item) { %>
+                                <option value="<%= item.id %>" <%= String(item.id) === String(selectedTeamId) ? 'selected' : '' %>>
+                                    <%= item.name %>
+                                </option>
+                            <% }); %>
+                        </select>
+                    </div>
+                </div>
+                <% if (userTeams.length === 1) { %>
+                    <p class="help">You only belong to one active team right now.</p>
+                <% } %>
+            </div>
+        </div>
+        <% } %>
+
         <% if (typeof team !== 'undefined' && team && team.members && team.members.length > 0) { %>
         <div class="tags mb-4">
             <span class="tag is-light is-medium">Members included:</span>
@@ -173,6 +195,7 @@
             var reportTypeInput =
                 document.getElementById('report-type-input');
             var quarterBtns = document.querySelectorAll('.quarter-btn');
+            var teamSwitcher = document.getElementById('team-report-switcher');
 
             function pad(n) { return n < 10 ? '0' + n : '' + n; }
 
@@ -186,6 +209,15 @@
                 var start = new Date(year, startMonth, 1);
                 var end = new Date(year, startMonth + 3, 0);
                 return {start: start, end: end};
+            }
+
+            if (teamSwitcher) {
+                teamSwitcher.addEventListener('change', function() {
+                    var selectedTeamId = teamSwitcher.value;
+                    if (selectedTeamId) {
+                        window.location.href = '/teams/report/' + selectedTeamId;
+                    }
+                });
             }
 
             function deselectAll() {

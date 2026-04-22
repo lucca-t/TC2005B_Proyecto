@@ -140,12 +140,25 @@ const getSessionUserId = (request) => {
       .catch(() => null);
 };
 
+const getCurrentUserTeams = (request) => {
+  return getSessionUserId(request)
+      .then((sessionUserId) => {
+        if (!sessionUserId) return [];
+        return Team.getTeamsByUser(sessionUserId)
+            .then(([rows]) => (rows || []).map((row) => ({
+              id: row.team_id,
+              name: row.team_name,
+            })));
+      })
+      .catch(() => []);
+};
+
 exports.getReport = (request, response, next) => {
   const teamId = request.params.teamId;
   const reportId = Number(request.query.reportId) || 0;
 
-  Team.getTeamWithMembers(teamId)
-      .then(([rows]) => {
+  Promise.all([Team.getTeamWithMembers(teamId), getCurrentUserTeams(request)])
+      .then(([[rows], userTeams]) => {
         if (!rows || rows.length === 0) {
           return response.status(404).redirect('/teams/list');
         }
@@ -162,12 +175,16 @@ exports.getReport = (request, response, next) => {
               })),
         };
 
+        const selectedTeamId = String(team.team_id);
+
         if (!reportId) {
           return response.render('teamReport', {
             csrfToken: request.csrfToken(),
             email: request.session.email || '',
             role: request.session.role || '',
             team,
+            userTeams,
+            selectedTeamId,
             report: null,
             error: null,
             startDate: '',
@@ -198,6 +215,8 @@ exports.getReport = (request, response, next) => {
                 email: request.session.email || '',
                 role: request.session.role || '',
                 team,
+                userTeams,
+                selectedTeamId,
                 report: saved.ai_content,
                 error: null,
                 startDate: formatDateForInput(saved.date_beginning),
@@ -219,8 +238,8 @@ exports.postReport = (request, response, next) => {
   const teamId = request.params.teamId;
   const {report_type, start_date, end_date} = request.body;
 
-  Team.getTeamWithMembers(teamId)
-      .then(([rows]) => {
+  Promise.all([Team.getTeamWithMembers(teamId), getCurrentUserTeams(request)])
+      .then(([[rows], userTeams]) => {
         if (!rows || rows.length === 0) {
           return response.status(404).redirect('/teams/list');
         }
@@ -237,12 +256,16 @@ exports.postReport = (request, response, next) => {
               })),
         };
 
+        const selectedTeamId = String(team.team_id);
+
         const renderError = (msg) => {
           return response.status(400).render('teamReport', {
             csrfToken: request.csrfToken(),
             email: request.session.email || '',
             role: request.session.role || '',
             team,
+            userTeams,
+            selectedTeamId,
             report: null,
             error: msg,
             startDate: start_date || '',
@@ -377,6 +400,8 @@ exports.postReport = (request, response, next) => {
                 email: request.session.email || '',
                 role: request.session.role || '',
                 team,
+                userTeams,
+                selectedTeamId,
                 report: null,
                 error: 'Failed to generate AI report: ' +
                   (aiError.message || 'Unknown error'),

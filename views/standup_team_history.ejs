@@ -29,6 +29,23 @@
       <form id="teamHistoryFiltersForm" method="GET" action="/daily_standup/history/team">
         <div class="columns is-multiline is-vcentered">
 
+          <div class="column is-4">
+            <div class="field">
+              <label class="label">Team</label>
+              <div class="control">
+                <div class="select is-fullwidth">
+                  <select id="teamHistoryTeamFilter" name="team_id">
+                    <% if (typeof teams !== 'undefined' && teams.length > 0) { %>
+                      <% teams.forEach((teamOption) => { %>
+                        <option value="<%= teamOption.id %>" <%= String(teamOption.id) === String(selectedTeamId || '') ? 'selected' : '' %>><%= teamOption.name %></option>
+                      <% }) %>
+                    <% } %>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="column is-3">
             <div class="field">
               <label class="label">Member</label>
@@ -119,6 +136,7 @@
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('teamHistoryFiltersForm');
+    const teamFilter = document.getElementById('teamHistoryTeamFilter');
     const userFilter = document.getElementById('teamHistoryUserFilter');
     const dateFilter = document.getElementById('teamHistoryDateFilter');
     const searchBtn = document.getElementById('teamHistorySearchBtn');
@@ -167,6 +185,23 @@
       errorBox.classList.remove('is-hidden');
     };
 
+    const renderMemberOptions = (team) => {
+      const members = (team && team.members) ? team.members : [];
+      const currentValue = userFilter.value || '';
+
+      const optionsHtml = [
+        '<option value="">All members</option>',
+        ...members.map((member) => {
+          const value = String(member.user_id);
+          const label = `${escapeHtml(member.full_name || '')} (${escapeHtml(member.email || '')})`;
+          const selected = value === currentValue ? 'selected' : '';
+          return `<option value="${escapeHtml(value)}" ${selected}>${label}</option>`;
+        }),
+      ].join('');
+
+      userFilter.innerHTML = optionsHtml;
+    };
+
     const hideError = () => {
       errorText.textContent = '';
       errorBox.classList.add('is-hidden');
@@ -206,6 +241,10 @@
     const fetchHistory = async () => {
       const params = new URLSearchParams();
 
+      if (teamFilter && teamFilter.value) {
+        params.set('team_id', teamFilter.value);
+      }
+
       if (userFilter.value) {
         params.set('user_id', userFilter.value);
       }
@@ -238,6 +277,10 @@
           title.textContent = 'Standups from ' + payload.team.team_name;
         }
 
+        if (payload.team) {
+          renderMemberOptions(payload.team);
+        }
+
         renderRows(payload.standups || []);
         updateBrowserUrl(params);
       } catch (error) {
@@ -251,6 +294,20 @@
       event.preventDefault();
       fetchHistory();
     });
+
+    if (teamFilter) {
+      teamFilter.addEventListener('change', () => {
+        userFilter.value = '';
+        dateFilter.value = '';
+        fetchHistory();
+      });
+    }
+
+    if (userFilter) {
+      userFilter.addEventListener('change', () => {
+        fetchHistory();
+      });
+    }
 
     clearBtn.addEventListener('click', () => {
       userFilter.value = '';
