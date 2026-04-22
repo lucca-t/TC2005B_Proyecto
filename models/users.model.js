@@ -15,7 +15,16 @@ module.exports = class User {
       return db.execute(
           `INSERT INTO user(email, password, full_name, slack_handle, slack_id) VALUES (?, ?, ?, ?, ?)`,
           [this.email, password_hash, this.fullName, this.slackHandle, this.slackId],
-      );
+      ).then(([userResult]) => {
+        return db.execute(
+            `INSERT INTO user_role (user_id, role_id, start_date)
+             SELECT ?, role_id, CURRENT_TIMESTAMP(6)
+             FROM role
+             WHERE role_name = 'Member'
+             LIMIT 1`,
+            [userResult.insertId],
+        );
+      });
     }).catch((error) => {
       console.log(error);
       throw error;
