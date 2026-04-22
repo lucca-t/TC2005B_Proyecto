@@ -54,7 +54,7 @@
             <% if (canManageUsersAndTeams) { %>
             <a href="/users/add" class="navbar-item">Register New User</a>
             <% } else { %>
-            <a href="#" class="navbar-item" onclick="showPermissionModal(); return false;">Register New User</a>
+            <a href="#" class="navbar-item js-permission-denied">Register New User</a>
             <% } %>
             <a href="/users/report/history" class="navbar-item">Users list</a>
           </div>
@@ -68,7 +68,7 @@
             <% if (canManageUsersAndTeams) { %>
             <a href="/teams/add" class="navbar-item">Register New Team</a>
             <% } else { %>
-            <a href="#" class="navbar-item" onclick="showPermissionModal(); return false;">Register New Team</a>
+            <a href="#" class="navbar-item js-permission-denied">Register New Team</a>
             <% } %>
             <a href="/teams/list" class="navbar-item">Teams list</a>
           </div>
@@ -82,7 +82,7 @@
             <% if (canManageProjects) { %>
             <a href="/projects/add" class="navbar-item">Register New Project</a>
             <% } else { %>
-            <a href="#" class="navbar-item" onclick="showPermissionModal(); return false;">Register New Project</a>
+            <a href="#" class="navbar-item js-permission-denied">Register New Project</a>
             <% } %>
             <a href="/projects/list" class="navbar-item">Project Management</a>
             <!-- <a href="/projects/report" class="navbar-item">Projects reports</a> -->
@@ -120,50 +120,22 @@
 
   <!-- Global permission denied modal -->
   <div id="permissionModal" class="modal">
-    <div class="modal-background" onclick="closePermissionModal()"></div>
+    <div class="modal-background js-close-permission-modal"></div>
     <div class="modal-card">
       <header class="modal-card-head">
         <p class="modal-card-title">
           <span class="icon has-text-warning"><i class="fas fa-exclamation-triangle"></i></span>
           Access Denied
         </p>
-        <button class="delete" aria-label="close" onclick="closePermissionModal()"></button>
+        <button class="delete js-close-permission-modal" aria-label="close"></button>
       </header>
       <section class="modal-card-body">
         <p>Your Role doesn't have the permission to perform this function.</p>
       </section>
       <footer class="modal-card-foot">
-        <button class="button is-warning" onclick="closePermissionModal()">OK</button>
+        <button class="button is-warning js-close-permission-modal">OK</button>
       </footer>
     </div>
   </div>
 
-  <!-- This is supposed to be a hamburguer menu on mobile -->
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const burger = document.querySelector('.navbar-burger');
-      const menu = document.getElementById(burger.dataset.target);
-      burger.addEventListener('click', () => {
-        burger.classList.toggle('is-active');
-        menu.classList.toggle('is-active');
-      });
-
-      // Auto-show modal if redirected with permissionDenied flag
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('permissionDenied') === '1') {
-        showPermissionModal();
-        // Clean the URL
-        const url = new URL(window.location);
-        url.searchParams.delete('permissionDenied');
-        window.history.replaceState({}, '', url);
-      }
-    });
-
-    function showPermissionModal() {
-      document.getElementById('permissionModal').classList.add('is-active');
-    }
-
-    function closePermissionModal() {
-      document.getElementById('permissionModal').classList.remove('is-active');
-    }
-  </script>
+  <script src="/js/navbar.js" defer></script>
