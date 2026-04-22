@@ -47,7 +47,6 @@
       <div class="navbar-start">
         <% if (userIsLoggedIn) { %>
 
-        <% if (hasBaseAccess) { %>
         <div class="navbar-item has-dropdown is-hoverable">
           <a href="#" class="navbar-link js-navbar-dropdown-toggle" aria-expanded="false">Users</a>
           <div class="navbar-dropdown">
@@ -59,9 +58,7 @@
             <a href="/users/report/history" class="navbar-item">Users list</a>
           </div>
         </div>
-        <% } %>
 
-        <% if (hasBaseAccess) { %>
         <div class="navbar-item has-dropdown is-hoverable">
           <a href="#" class="navbar-link js-navbar-dropdown-toggle" aria-expanded="false">Teams</a>
           <div class="navbar-dropdown">
@@ -73,9 +70,7 @@
             <a href="/teams/list" class="navbar-item">Teams list</a>
           </div>
         </div>
-        <% } %>
   
-        <% if (hasBaseAccess) { %>
         <div class="navbar-item has-dropdown is-hoverable">   
           <a href="#" class="navbar-link js-navbar-dropdown-toggle" aria-expanded="false">Projects</a>
           <div class="navbar-dropdown">
@@ -88,9 +83,7 @@
             <!-- <a href="/projects/report" class="navbar-item">Projects reports</a> -->
           </div>
         </div>
-        <% } %>
 
-        <% if (hasBaseAccess) { %>
         <div class="navbar-item has-dropdown is-hoverable">
           <a href="#" class="navbar-link js-navbar-dropdown-toggle" aria-expanded="false">Standup</a>
           <div class="navbar-dropdown">
@@ -101,7 +94,6 @@
             <% } %>
           </div>
         </div>
-        <% } %>
 
         <% } %>
       </div>
