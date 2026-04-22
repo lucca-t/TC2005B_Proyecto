@@ -11,6 +11,26 @@ app.use(bodyParser.urlencoded({extended: false}));
 const path = require('path');
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Keep current inline EJS scripts/styles functional in production environments
+// that enforce CSP defaults through reverse proxies.
+app.use((req, res, next) => {
+  res.setHeader(
+      'Content-Security-Policy',
+      [
+        "default-src 'self'",
+        "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com",
+        "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com",
+        "img-src 'self' data: https://upload.wikimedia.org",
+        "font-src 'self' data: https://cdnjs.cloudflare.com",
+        "connect-src 'self'",
+        "object-src 'none'",
+        "base-uri 'self'",
+        "frame-ancestors 'self'",
+      ].join('; '),
+  );
+  next();
+});
+
 app.set('view engine', 'ejs');
 app.set('views', 'views');
 
