@@ -9,14 +9,28 @@ exports.getList = (request, response, next) => {
   request.session.error = '';
   request.session.success = '';
 
-  Team.getAllWithMemberCount()
-      .then(([rows, fieldData]) => {
+  const currentUserTeamsPromise = getSessionUserId(request)
+      .then((sessionUserId) => {
+        if (!sessionUserId) return [];
+        return Team.getTeamsByUser(sessionUserId)
+            .then(([userTeams]) => userTeams || []);
+      });
+
+  Promise.all([Team.getAllWithMemberCount(), currentUserTeamsPromise])
+      .then(([[rows, fieldData], userTeams]) => {
+        const currentUserTeamIds = new Set(
+            userTeams
+                .map((team) => parseInt(team.team_id))
+                .filter((id) => !isNaN(id)),
+        );
+
         const teams = rows.map((row) => ({
           id: row.team_id,
           name: row.team_name,
           startDate: row.team_start_date,
           memberCount: row.memberCount || 0,
           quarterProgress: row.quarterProgress || 0,
+          isCurrentUserTeam: currentUserTeamIds.has(parseInt(row.team_id)),
         }));
 
         response.render('teamList', {
@@ -46,13 +60,27 @@ exports.getSearch = (request, response, next) => {
     ? Team.searchByNameWithMemberCount(q)
     : Team.getAllWithMemberCount();
 
-  fetchTeams
-      .then(([rows]) => {
+  const currentUserTeamsPromise = getSessionUserId(request)
+      .then((sessionUserId) => {
+        if (!sessionUserId) return [];
+        return Team.getTeamsByUser(sessionUserId)
+            .then(([userTeams]) => userTeams || []);
+      });
+
+  Promise.all([fetchTeams, currentUserTeamsPromise])
+      .then(([[rows], userTeams]) => {
+        const currentUserTeamIds = new Set(
+            userTeams
+                .map((team) => parseInt(team.team_id))
+                .filter((id) => !isNaN(id)),
+        );
+
         const teams = rows.map((row) => ({
           id: row.team_id,
           name: row.team_name,
           memberCount: row.memberCount || 0,
           quarterProgress: row.quarterProgress || 0,
+          isCurrentUserTeam: currentUserTeamIds.has(parseInt(row.team_id)),
         }));
         return response.json({ teams });
       })

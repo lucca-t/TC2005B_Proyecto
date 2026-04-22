@@ -1,4 +1,22 @@
 <section class="section">
+    <style>
+        .quarter-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin: 0 2px;
+        }
+
+        .quarter-dot.is-filled {
+            background-color: #3273dc;
+        }
+
+        .quarter-dot.is-empty {
+            background-color: #dbdbdb;
+        }
+    </style>
+
     <div class="container">
         <% if (typeof success !== 'undefined' && success) { %>
             <div class="notification is-success is-light" id="successNotification">
@@ -93,13 +111,16 @@
                     <% if (typeof teams !=='undefined' && teams.length> 0) { %>
                         <% teams.forEach(team=> { %>
                             <tr>
-                                <td class="is-vcentered"><strong>
-                                        <a href="/teams/details/<%= team.id %>" class="is-small is-link"><%= team.name %></a>
-                                    </strong></td>
                                 <td class="is-vcentered">
-                                    <span class="tag is-info is-light">
-                                        <%= team.memberCount %> members
-                                    </span>
+                                    <strong>
+                                        <a href="/teams/details/<%= team.id %>" class="is-small is-link"><%= team.name %></a>
+                                    </strong>
+                                    <% if (team.isCurrentUserTeam) { %>
+                                        <span class="tag is-success is-light ml-2">Your Team</span>
+                                    <% } %>
+                                </td>
+                                <td class="is-vcentered">
+                                    <span class="tag is-info is-light"><%= team.memberCount %> members</span>
                                 </td>
                                 <td class="has-text-right is-vcentered">
                                     <div class="buttons is-right">
@@ -107,9 +128,7 @@
                                         <span title="<%= qp %>/3 months reported this quarter"
                                             style="display:inline-flex;align-items:center;margin-right:4px;">
                                             <% for (let i = 0; i < 3; i++) { %>
-                                                <span style="display:inline-block;width:10px;
-                                                    height:10px;border-radius:50%;margin:0 2px;
-                                                    background:<%= i < qp ? '#3273dc' : '#dbdbdb' %>;"></span>
+                                                <span class="quarter-dot <%= i < qp ? 'is-filled' : 'is-empty' %>"></span>
                                             <% } %>
                                             <span style="font-size:0.72rem;color:#555;margin-left:4px;"><%= qp %>/3</span>
                                         </span>
@@ -188,6 +207,10 @@
                     'align-items:center;margin-right:4px;">' +
                     dots + qLabel + '</span>';
 
+                const membershipBadge = team.isCurrentUserTeam
+                    ? '<span class="tag is-success is-light ml-2">Your Team</span>'
+                    : '';
+
                 const adminActions = isAdminOrLead ? `
                     <a href="/teams/edit/${team.id}" class="button is-small is-light">Edit</a>
                     <form action="/teams/delete/${team.id}" method="POST" style="display:inline;">
@@ -199,7 +222,7 @@
                 return `<tr>
                     <td class="is-vcentered"><strong>
                         <a href="/teams/details/${team.id}" class="is-small is-link">${escapeHtml(team.name)}</a>
-                    </strong></td>
+                    </strong>${membershipBadge}</td>
                     <td class="is-vcentered">
                         <span class="tag is-info is-light">${team.memberCount} members</span>
                     </td>
