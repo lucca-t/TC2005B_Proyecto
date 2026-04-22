@@ -54,7 +54,8 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.addEventListener('click', (event) => {
-    const clickedInsideDropdown = event.target.closest('.navbar-item.has-dropdown');
+    const clickedInsideDropdown =
+      event.target instanceof Element && event.target.closest('.navbar-item.has-dropdown');
     if (clickedInsideDropdown) {
       return;
     }
