@@ -7,6 +7,22 @@ const ROLES = {
   MEMBER: 'Member',
 };
 
+const ROLE_ALIASES = {
+  administrador: ROLES.ADMIN,
+  admin: ROLES.ADMIN,
+  'lead member': ROLES.LEAD,
+  lead: ROLES.LEAD,
+  member: ROLES.MEMBER,
+};
+
+const normalizeRole = (role) => {
+  if (!role) {
+    return null;
+  }
+  const normalized = String(role).trim().toLowerCase();
+  return ROLE_ALIASES[normalized] || null;
+};
+
 /**
  * Middleware factory that restricts access to the specified roles.
  * Usage: authorize(ROLES.ADMIN, ROLES.LEAD)
@@ -18,9 +34,10 @@ const authorize = (...allowedRoles) => {
       return response.redirect('/login');
     }
 
-    const userRole = request.session.role;
+    const userRole = normalizeRole(request.session.role);
+    const normalizedAllowedRoles = allowedRoles.map((role) => normalizeRole(role));
 
-    if (!userRole || !allowedRoles.includes(userRole)) {
+    if (!userRole || !normalizedAllowedRoles.includes(userRole)) {
       return response.status(403).send('Acceso denegado. No tienes permisos para realizar esta acción.');
     }
 

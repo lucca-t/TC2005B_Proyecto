@@ -1,6 +1,17 @@
 <%
   const userIsLoggedIn = typeof isLoggedIn !== 'undefined' ? isLoggedIn : false;
-  const userRole = typeof role !== 'undefined' ? role : null;
+  const rawRole = typeof role !== 'undefined' && role !== null ? String(role).trim().toLowerCase() : '';
+  const roleAliases = {
+    administrador: 'Administrador',
+    admin: 'Administrador',
+    'lead member': 'Lead Member',
+    lead: 'Lead Member',
+    member: 'Member',
+  };
+  const userRole = roleAliases[rawRole] || null;
+  const hasBaseAccess = userRole === 'Administrador' || userRole === 'Lead Member' || userRole === 'Member';
+  const canManageUsersAndTeams = userRole === 'Administrador';
+  const canManageProjects = userRole === 'Administrador' || userRole === 'Lead Member';
 %>
 
 <!DOCTYPE html>
@@ -36,11 +47,11 @@
       <div class="navbar-start">
         <% if (userIsLoggedIn) { %>
 
-        <% if (userRole === 'Administrador' || userRole === 'Lead Member' || userRole === 'Member') { %>
+        <% if (hasBaseAccess) { %>
         <div class="navbar-item has-dropdown is-hoverable">
           <a href="/users/list" class="navbar-link">Users</a>
           <div class="navbar-dropdown">
-            <% if (userRole === 'Administrador') { %>
+            <% if (canManageUsersAndTeams) { %>
             <a href="/users/add" class="navbar-item">Register New User</a>
             <% } else { %>
             <a href="#" class="navbar-item" onclick="showPermissionModal(); return false;">Register New User</a>
@@ -50,11 +61,11 @@
         </div>
         <% } %>
 
-        <% if (userRole === 'Administrador' || userRole === 'Lead Member' || userRole === 'Member') { %>
+        <% if (hasBaseAccess) { %>
         <div class="navbar-item has-dropdown is-hoverable">
           <a href="/teams/list" class="navbar-link">Teams</a>
           <div class="navbar-dropdown">
-            <% if (userRole === 'Administrador') { %>
+            <% if (canManageUsersAndTeams) { %>
             <a href="/teams/add" class="navbar-item">Register New Team</a>
             <% } else { %>
             <a href="#" class="navbar-item" onclick="showPermissionModal(); return false;">Register New Team</a>
@@ -64,11 +75,11 @@
         </div>
         <% } %>
   
-        <% if (userRole === 'Administrador' || userRole === 'Lead Member' || userRole === 'Member') { %>
+        <% if (hasBaseAccess) { %>
         <div class="navbar-item has-dropdown is-hoverable">   
           <a href="/projects/list" class="navbar-link">Projects</a>
           <div class="navbar-dropdown">
-            <% if (userRole === 'Administrador' || userRole === 'Lead Member') { %>
+            <% if (canManageProjects) { %>
             <a href="/projects/add" class="navbar-item">Register New Project</a>
             <% } else { %>
             <a href="#" class="navbar-item" onclick="showPermissionModal(); return false;">Register New Project</a>
@@ -79,13 +90,13 @@
         </div>
         <% } %>
 
-        <% if (userRole === 'Administrador' || userRole === 'Lead Member' || userRole === 'Member') { %>
+        <% if (hasBaseAccess) { %>
         <div class="navbar-item has-dropdown is-hoverable">
           <a href="/daily_standup/history" class="navbar-link">Standup</a>
           <div class="navbar-dropdown">
             <a href="/daily_standup" class="navbar-item">Register Daily Standup</a>
             <a href="/daily_standup/history" class="navbar-item">Activity History</a>
-            <% if (userRole === 'Administrador' || userRole === 'Lead Member') { %>
+            <% if (canManageProjects) { %>
             <a href="/daily_standup/history/team" class="navbar-item">Team Activity History</a>
             <% } %>
           </div>
