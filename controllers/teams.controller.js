@@ -69,6 +69,38 @@ const formatDateForInput = (value) => {
   return parsed.toISOString().split('T')[0];
 };
 
+const compareUsersByNameThenEmail = (a, b) => {
+  const nameA = (a.full_name || '').trim().toLowerCase();
+  const nameB = (b.full_name || '').trim().toLowerCase();
+  const byName = nameA.localeCompare(nameB);
+  if (byName !== 0) return byName;
+
+  const emailA = (a.email || '').trim().toLowerCase();
+  const emailB = (b.email || '').trim().toLowerCase();
+  return emailA.localeCompare(emailB);
+};
+
+const sortUsersWithTeamMembersFirst = (users, members) => {
+  const memberIdSet = new Set(
+      (members || [])
+          .map((member) => parseInt(member.user_id))
+          .filter((id) => !isNaN(id)),
+  );
+
+  return [...(users || [])].sort((a, b) => {
+    const aId = parseInt(a.user_id);
+    const bId = parseInt(b.user_id);
+    const aIsMember = memberIdSet.has(aId);
+    const bIsMember = memberIdSet.has(bId);
+
+    if (aIsMember !== bIsMember) {
+      return aIsMember ? -1 : 1;
+    }
+
+    return compareUsersByNameThenEmail(a, b);
+  });
+};
+
 const getSessionUserId = (request) => {
   const sessionEmail = (request.session.email || '').trim();
   if (!sessionEmail) return Promise.resolve(null);
@@ -382,16 +414,19 @@ exports.getEdit = (request, response, next) => {
               return memberObj;
             });
 
+        const sortedMembers = [...members].sort(compareUsersByNameThenEmail);
+
         // Get all available users to allow adding new members
         return User.getAll().then(([allUsers]) => {
+          const allUsersSorted = sortUsersWithTeamMembersFirst(allUsers, sortedMembers);
           const viewData = {
             csrfToken: request.csrfToken(),
             error: error,
             email: request.session.email || '',
             teamId: teamId,
             teamName: teamName,
-            members: members,
-            allUsers: allUsers,
+            members: sortedMembers,
+            allUsers: allUsersSorted,
           };
 
 
@@ -707,7 +742,8 @@ exports.getDetails = (request, response, next) => {
               full_name: row.full_name,
               email: row.email,
               slack_handle: row.slack_handle,
-            }));
+            }))
+            .sort(compareUsersByNameThenEmail);
 
         const viewData = {
           csrfToken: request.csrfToken(),
