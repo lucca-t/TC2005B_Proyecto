@@ -20,15 +20,13 @@
 
 <section class="section" style="padding-top: 0;">
   <div class="container">
-    <% if (typeof error !== 'undefined' && error.length > 0) { %>
-      <div class="notification is-danger is-light">
-        <button class="delete" onclick="this.parentElement.remove()"></button>
-        <%= error %>
-      </div>
-    <% } %>
+    <div id="teamHistoryError" class="notification is-danger is-light <%= (typeof error !== 'undefined' && error.length > 0) ? '' : 'is-hidden' %>">
+      <button class="delete" onclick="this.parentElement.classList.add('is-hidden')"></button>
+      <span id="teamHistoryErrorText"><%= (typeof error !== 'undefined' && error.length > 0) ? error : '' %></span>
+    </div>
 
     <div class="box mb-5">
-      <form method="GET" action="/daily_standup/history/team">
+      <form id="teamHistoryFiltersForm" method="GET" action="/daily_standup/history/team">
         <div class="columns is-multiline is-vcentered">
 
           <div class="column is-3">
@@ -36,7 +34,7 @@
               <label class="label">Member</label>
               <div class="control">
                 <div class="select is-fullwidth">
-                  <select name="user_id">
+                  <select id="teamHistoryUserFilter" name="user_id">
                     <option value="">All members</option>
                     <% team.members.forEach((member) => { %>
                       <option value="<%= member.user_id %>" <%= String(member.user_id) === String(filters.userId || '') ? 'selected' : '' %>><%= member.full_name %> (<%= member.email %>)</option>
@@ -52,6 +50,7 @@
               <label class="label">Date</label>
               <div class="control">
                 <input
+                  id="teamHistoryDateFilter"
                   class="input"
                   type="date"
                   name="date"
@@ -64,14 +63,14 @@
           <div class="column is-1">
             <div class="field mt-5">
               <div class="buttons control">
-                <button type="submit" class="button is-primary is-fullwidth">Search</button>
+                <button id="teamHistorySearchBtn" type="submit" class="button is-primary is-fullwidth">Search</button>
               </div>
             </div>
           </div>
           <div class="column is-1">
             <div class="field mt-5">
               <div class="buttons control">
-                <button class="button is-light" href="/daily_standup/history/team?team_id=<%= selectedTeamId %>">Clear filters</button>
+                <button id="teamHistoryClearBtn" type="button" class="button is-light">Clear filters</button>
               </div>
             </div>
           </div>
@@ -82,42 +81,183 @@
 
     <div class="box">
       <div class="content mb-4">
-        <h3 class="title is-5 mb-1">Standups from <%= team.team_name %></h3>
+        <h3 id="teamHistoryTitle" class="title is-5 mb-1">Standups from <%= team.team_name %></h3>
       </div>
 
-      <% if (!standups || standups.length === 0) { %>
-        <div class="notification is-warning is-light">
-          No records found for the selected filters.
-        </div>
-      <% } else { %>
-        <div class="table-container">
-          <table class="table is-fullwidth is-striped is-hoverable is-narrow">
-            <thead>
+      <div id="teamHistoryEmptyState" class="notification is-warning is-light <%= standups && standups.length > 0 ? 'is-hidden' : '' %>">
+        No records found for the selected filters.
+      </div>
+
+      <div id="teamHistoryTableContainer" class="table-container <%= !standups || standups.length === 0 ? 'is-hidden' : '' %>">
+        <table class="table is-fullwidth is-striped is-hoverable is-narrow">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Email</th>
+              <th>What did you do?</th>
+              <th>What will you do tomorrow?</th>
+              <th>Blockers</th>
+            </tr>
+          </thead>
+          <tbody id="teamHistoryTableBody">
+            <% standups.forEach((standup) => { %>
               <tr>
-                <th>Date</th>
-                <th>Email</th>
-                <th>What did you do?</th>
-                <th>What will you do tomorrow?</th>
-                <th>Blockers</th>
+                <td><%= standup.date.toISOString().split('T')[0] %></td>
+                <td><%= standup.email %></td>
+                <td><%= standup.did_today %></td>
+                <td><%= standup.do_tomorrow %></td>
+                <td><%= standup.blockers || '-' %></td>
               </tr>
-            </thead>
-            <tbody>
-              <% standups.forEach((standup) => { %>
-                <tr>
-                  <td><%= standup.date.toISOString().split('T')[0] %></td>
-                  <td><%= standup.email %></td>
-                  <td><%= standup.did_today %></td>
-                  <td><%= standup.do_tomorrow %></td>
-                  <td><%= standup.blockers || '-' %></td>
-                  
-                </tr>
-              <% }) %>
-            </tbody>
-          </table>
-        </div>
-      <% } %>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </section>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('teamHistoryFiltersForm');
+    const userFilter = document.getElementById('teamHistoryUserFilter');
+    const dateFilter = document.getElementById('teamHistoryDateFilter');
+    const searchBtn = document.getElementById('teamHistorySearchBtn');
+    const clearBtn = document.getElementById('teamHistoryClearBtn');
+    const errorBox = document.getElementById('teamHistoryError');
+    const errorText = document.getElementById('teamHistoryErrorText');
+    const emptyState = document.getElementById('teamHistoryEmptyState');
+    const tableContainer = document.getElementById('teamHistoryTableContainer');
+    const tableBody = document.getElementById('teamHistoryTableBody');
+    const title = document.getElementById('teamHistoryTitle');
+    const endpoint = '/daily_standup/history/team/data';
+
+    const escapeHtml = (value) => {
+      return String(value || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+    };
+
+    const formatDate = (value) => {
+      if (!value) return '-';
+
+      const text = String(value);
+      if (text.length >= 10 && text[4] === '-' && text[7] === '-') {
+        return text.slice(0, 10);
+      }
+
+      const parsed = new Date(value);
+      if (Number.isNaN(parsed.getTime())) {
+        return '-';
+      }
+
+      return parsed.toISOString().split('T')[0];
+    };
+
+    const setLoading = (isLoading) => {
+      searchBtn.disabled = isLoading;
+      clearBtn.disabled = isLoading;
+      searchBtn.textContent = isLoading ? 'Loading...' : 'Search';
+    };
+
+    const showError = (message) => {
+      errorText.textContent = message || 'Unknown error';
+      errorBox.classList.remove('is-hidden');
+    };
+
+    const hideError = () => {
+      errorText.textContent = '';
+      errorBox.classList.add('is-hidden');
+    };
+
+    const renderRows = (standups) => {
+      if (!standups || standups.length === 0) {
+        tableBody.innerHTML = '';
+        tableContainer.classList.add('is-hidden');
+        emptyState.classList.remove('is-hidden');
+        return;
+      }
+
+      const rowsHtml = standups.map((standup) => {
+        return `
+          <tr>
+            <td>${escapeHtml(formatDate(standup.date))}</td>
+            <td>${escapeHtml(standup.email || '')}</td>
+            <td>${escapeHtml(standup.did_today || '')}</td>
+            <td>${escapeHtml(standup.do_tomorrow || '')}</td>
+            <td>${escapeHtml(standup.blockers || '-')}</td>
+          </tr>
+        `;
+      }).join('');
+
+      tableBody.innerHTML = rowsHtml;
+      tableContainer.classList.remove('is-hidden');
+      emptyState.classList.add('is-hidden');
+    };
+
+    const updateBrowserUrl = (params) => {
+      const query = params.toString();
+      const target = '/daily_standup/history/team' + (query ? '?' + query : '');
+      window.history.replaceState({}, '', target);
+    };
+
+    const fetchHistory = async () => {
+      const params = new URLSearchParams();
+
+      if (userFilter.value) {
+        params.set('user_id', userFilter.value);
+      }
+
+      if (dateFilter.value) {
+        params.set('date', dateFilter.value);
+      }
+
+      setLoading(true);
+      hideError();
+
+      try {
+        const response = await fetch(endpoint + (params.toString() ? '?' + params.toString() : ''), {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+          },
+        });
+
+        const payload = await response.json();
+
+        if (!response.ok || !payload.ok) {
+          showError(payload.error || 'Error loading standup history.');
+          renderRows([]);
+          return;
+        }
+
+        if (payload.team && payload.team.team_name) {
+          title.textContent = 'Standups from ' + payload.team.team_name;
+        }
+
+        renderRows(payload.standups || []);
+        updateBrowserUrl(params);
+      } catch (error) {
+        showError('Server connection error. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      fetchHistory();
+    });
+
+    clearBtn.addEventListener('click', () => {
+      userFilter.value = '';
+      dateFilter.value = '';
+      fetchHistory();
+    });
+  });
+</script>
 
 <%- include('includes/_footer') %>
