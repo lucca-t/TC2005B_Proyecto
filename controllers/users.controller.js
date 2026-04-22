@@ -4,6 +4,15 @@ const {generateUserReport} = require('../util/ai-report');
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+const normalizeSlackHandle = (value) => {
+  const trimmedValue = (value || '').trim();
+  if (!trimmedValue) {
+    return '';
+  }
+
+  return '@' + trimmedValue.replace(/^@+/, '');
+};
+
 const formatDateForInput = (value) => {
   if (!value) {
     return '';
@@ -103,7 +112,13 @@ exports.post_add = (request, response, next) => {
     slack_id,
   } = request.body;
 
-  if (!EMAIL_REGEX.test((email || '').trim())) {
+  const normalizedEmail = (email || '').trim();
+  const normalizedPassword = (password || '').trim();
+  const normalizedFullName = (full_name || '').trim();
+  const normalizedSlackHandle = normalizeSlackHandle(slack_handle);
+  const normalizedSlackId = (slack_id || '').trim();
+
+  if (!EMAIL_REGEX.test(normalizedEmail)) {
     return response.status(400).render('userAdd', {
       csrfToken: request.csrfToken(),
       email: request.session.email || '',
@@ -112,11 +127,11 @@ exports.post_add = (request, response, next) => {
   }
 
   const user = new User(
-      email,
-      password,
-      full_name,
-      slack_handle,
-      slack_id,
+      normalizedEmail,
+      normalizedPassword,
+      normalizedFullName,
+      normalizedSlackHandle,
+      normalizedSlackId,
   );
 
   user.save()
