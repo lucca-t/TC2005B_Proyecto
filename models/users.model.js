@@ -77,11 +77,11 @@ module.exports = class User {
 
   static assignRole(userId, roleId) {
     return db.execute(
-        `UPDATE user_role SET end_date = CURDATE() WHERE user_id = ? AND end_date IS NULL`,
+        `UPDATE user_role SET end_date = CURRENT_TIMESTAMP(6) WHERE user_id = ? AND end_date IS NULL`,
         [userId],
     ).then(() => {
       return db.execute(
-          `INSERT INTO user_role (user_id, role_id, start_date) VALUES (?, ?, CURDATE())`,
+          `INSERT INTO user_role (user_id, role_id, start_date) VALUES (?, ?, CURRENT_TIMESTAMP(6))`,
           [userId, roleId],
       );
     });

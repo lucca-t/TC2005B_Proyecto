@@ -291,7 +291,7 @@ CREATE TABLE `user` (
 --
 
 INSERT INTO `user` (`user_id`, `email`, `password`, `full_name`, `slack_handle`, `slack_id`, `created_at`, `deleted_at`) VALUES
-(1, 'admin@gmail.com', '$2b$12$GfBKWs2krI3TVUMGw75oeuXLg03ZRg1Is2TsmAvtT/YL4lozTXUje', 'administrador', '@elpepe', 'Eso Thai Ling', '2026-03-26 20:15:22', NULL);
+(1, 'admin@gmail.com', '$2b$12$GfBKWs2krI3TVUMGw75oeuXLg03ZRg1Is2TsmAvtT/YL4lozTXUje', 'admin 1', '@admin1', 'U0ADU2W0AJX', '2026-03-26 20:15:22', NULL);
 
 -- --------------------------------------------------------
 
@@ -313,8 +313,8 @@ CREATE TABLE `user_report` (
 CREATE TABLE `user_role` (
   `user_id` int(11) NOT NULL,
   `role_id` int(11) NOT NULL,
-  `start_date` date DEFAULT NULL,
-  `end_date` date DEFAULT NULL
+  `start_date` timestamp(6) NOT NULL DEFAULT current_timestamp(6),
+  `end_date` timestamp(6) NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
 
 -- --------------------------------------------------------
@@ -435,7 +435,7 @@ ALTER TABLE `user_report`
 -- Indexes for table `user_role`
 --
 ALTER TABLE `user_role`
-  ADD PRIMARY KEY (`user_id`,`role_id`),
+  ADD PRIMARY KEY (`user_id`,`role_id`,`start_date`),
   ADD KEY `user_role_ibfk_2` (`role_id`);
 
 --
@@ -582,4 +582,4 @@ ALTER TABLE `user_team`
   ADD CONSTRAINT `user_team_ibfk_2` FOREIGN KEY (`team_id`) REFERENCES `team` (`team_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 COMMIT;
 
-INSERT INTO `user_role` (`user_id`, `role_id`, `start_date`, `end_date`) VALUES ('1', '1', '2026-04-01', NULL);
+INSERT INTO `user_role` (`user_id`, `role_id`, `start_date`, `end_date`) VALUES ('1', '1', '2026-04-01 00:00:00.000000', NULL);
