@@ -52,7 +52,7 @@
                                     <td><%= standup.blockers || '-' %></td>
                                     <td>
                                         <div class="buttons">
-                                            <a href="/daily_standup/report/<%= standup.standup_id %>" class="button is-small is-dark">AI Report</a>
+                                            <!-- <a href="/daily_standup/report/<%= standup.standup_id %>" class="button is-small is-dark">AI Report</a> -->
                                             <a href="/daily_standup/edit/<%= standup.standup_id %>" class="button is-small is-light">Edit</a>
                                             <form action="/daily_standup/history/<%= standup.standup_id %>" method="POST">    
                                                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
