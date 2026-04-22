@@ -24,3 +24,22 @@ input[type="checkbox"],
     cursor: pointer;
     accent-color: #ffdd57;
 }
+
+@media screen and (max-width: 1023px) {
+    /* Keep navbar usable on mobile even when JS is blocked or fails to load. */
+    .navbar-burger {
+        display: none;
+    }
+
+    .navbar-menu {
+        display: block;
+    }
+
+    .navbar-item.has-dropdown .navbar-dropdown {
+        display: block;
+        position: static;
+        border: 0;
+        box-shadow: none;
+        padding-left: 0.75rem;
+    }
+}
