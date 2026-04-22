@@ -33,6 +33,17 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
+      // On desktop, allow navigation to the list page from the main dropdown link.
+      const isMobile = window.matchMedia('(max-width: 1023px)').matches;
+      if (!isMobile) {
+        return;
+      }
+
+      // On mobile, first tap opens the dropdown and second tap follows the link.
+      if (dropdownItem.classList.contains('is-active')) {
+        return;
+      }
+
       event.preventDefault();
       const shouldOpen = !dropdownItem.classList.contains('is-active');
 
