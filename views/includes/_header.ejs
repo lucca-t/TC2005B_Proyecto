@@ -1,3 +1,8 @@
+<%
+  const userIsLoggedIn = typeof isLoggedIn !== 'undefined' ? isLoggedIn : false;
+  const userRole = typeof role !== 'undefined' ? role : null;
+%>
+
 <!DOCTYPE html>
 <html data-theme="light" lang="en">
 
@@ -29,13 +34,13 @@
 
     <div id="navbarMain" class="navbar-menu">
       <div class="navbar-start">
-        <% if (isLoggedIn) { %>
+        <% if (userIsLoggedIn) { %>
 
-        <% if (role === 'Administrador' || role === 'Lead Member' || role === 'Member') { %>
+        <% if (userRole === 'Administrador' || userRole === 'Lead Member' || userRole === 'Member') { %>
         <div class="navbar-item has-dropdown is-hoverable">
           <a href="/users/list" class="navbar-link">Users</a>
           <div class="navbar-dropdown">
-            <% if (role === 'Administrador') { %>
+            <% if (userRole === 'Administrador') { %>
             <a href="/users/add" class="navbar-item">Register New User</a>
             <% } else { %>
             <a href="#" class="navbar-item" onclick="showPermissionModal(); return false;">Register New User</a>
@@ -45,11 +50,11 @@
         </div>
         <% } %>
 
-        <% if (role === 'Administrador' || role === 'Lead Member' || role === 'Member') { %>
+        <% if (userRole === 'Administrador' || userRole === 'Lead Member' || userRole === 'Member') { %>
         <div class="navbar-item has-dropdown is-hoverable">
           <a href="/teams/list" class="navbar-link">Teams</a>
           <div class="navbar-dropdown">
-            <% if (role === 'Administrador') { %>
+            <% if (userRole === 'Administrador') { %>
             <a href="/teams/add" class="navbar-item">Register New Team</a>
             <% } else { %>
             <a href="#" class="navbar-item" onclick="showPermissionModal(); return false;">Register New Team</a>
@@ -59,11 +64,11 @@
         </div>
         <% } %>
   
-        <% if (role === 'Administrador' || role === 'Lead Member' || role === 'Member') { %>
+        <% if (userRole === 'Administrador' || userRole === 'Lead Member' || userRole === 'Member') { %>
         <div class="navbar-item has-dropdown is-hoverable">   
           <a href="/projects/list" class="navbar-link">Projects</a>
           <div class="navbar-dropdown">
-            <% if (role === 'Administrador' || role === 'Lead Member') { %>
+            <% if (userRole === 'Administrador' || userRole === 'Lead Member') { %>
             <a href="/projects/add" class="navbar-item">Register New Project</a>
             <% } else { %>
             <a href="#" class="navbar-item" onclick="showPermissionModal(); return false;">Register New Project</a>
@@ -74,13 +79,13 @@
         </div>
         <% } %>
 
-        <% if (role === 'Administrador' || role === 'Lead Member' || role === 'Member') { %>
+        <% if (userRole === 'Administrador' || userRole === 'Lead Member' || userRole === 'Member') { %>
         <div class="navbar-item has-dropdown is-hoverable">
           <a href="/daily_standup/history" class="navbar-link">Standup</a>
           <div class="navbar-dropdown">
             <a href="/daily_standup" class="navbar-item">Register Daily Standup</a>
             <a href="/daily_standup/history" class="navbar-item">Activity History</a>
-            <% if (role === 'Administrador' || role === 'Lead Member') { %>
+            <% if (userRole === 'Administrador' || userRole === 'Lead Member') { %>
             <a href="/daily_standup/history/team" class="navbar-item">Team Activity History</a>
             <% } %>
           </div>
@@ -93,7 +98,7 @@
       <div class="navbar-end">
         <div class="navbar-item">
           <div class="buttons">
-            <% if (isLoggedIn) { %>
+            <% if (userIsLoggedIn) { %>
               <a class="button is-light" href="/logout">Log out</a>
             <% } %>
           </div>
