@@ -18,7 +18,7 @@ app.use((req, res, next) => {
       'Content-Security-Policy',
       [
         "default-src 'self'",
-        "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com",
+        "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net",
         "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com",
         "img-src 'self' data: https://upload.wikimedia.org",
         "font-src 'self' data: https://cdnjs.cloudflare.com",

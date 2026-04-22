@@ -11,7 +11,12 @@
                 </h1>
             </div>
             <div class="level-right">
-                <a href="/users/list" class="button is-light">← Back</a>
+                <div class="buttons">
+                    <% if (typeof user !== 'undefined' && user) { %>
+                    <a href="/users/report/<%= user.user_id %>/history" class="button is-light">History</a>
+                    <% } %>
+                    <a href="/users/list" class="button is-light">← Back</a>
+                </div>
             </div>
         </div>
 
@@ -256,6 +261,11 @@
                         <span class="tag is-info is-light is-medium">
                             <%= (typeof startDate !== 'undefined' ? startDate : '') %> &mdash; <%= (typeof endDate !== 'undefined' ? endDate : '') %>
                         </span>
+                        <% if (typeof user !== 'undefined' && user) { %>
+                        <a href="/users/report/<%= user.user_id %>/history" class="button is-light">
+                            View History
+                        </a>
+                        <% } %>
                         <button type="button" id="copyReportButton" class="button is-light">
                             Copy Markdown
                         </button>

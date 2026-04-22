@@ -107,6 +107,10 @@
                                             class="button is-small is-dark">
                                             AI Report
                                         </a>
+                                        <a href="/users/report/<%= user.user_id %>/history"
+                                            class="button is-small is-light">
+                                            History
+                                        </a>
 
                                         <% if (typeof role !== 'undefined' && role === 'Administrador') { %>
                                         <a href="/users/edit/<%= user.email %>" 
@@ -267,6 +271,8 @@
                             ${progressBadge}
                             <a href="/users/report/${user.user_id}"
                                 class="button is-small is-dark">AI Report</a>
+                            <a href="/users/report/${user.user_id}/history"
+                                class="button is-small is-light">History</a>
                             ${editBtn}${roleBtn}${deleteBtn}
                         </div>
                     </td>
