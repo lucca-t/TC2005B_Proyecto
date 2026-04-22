@@ -4,7 +4,6 @@ require('dotenv').config();
 
 const express = require('express');
 const app = express();
-const User = require('./models/users.model');
 
 const bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({extended: false}));
@@ -24,26 +23,6 @@ app.use(session({
 
 const csrf = require('csurf');
 app.use(csrf());
-
-// Restore missing role in existing sessions (common after deploys or env/session changes).
-app.use((req, res, next) => {
-  if (!req.session || !req.session.isLoggedIn || req.session.role || !req.session.email) {
-    return next();
-  }
-
-  User.getRoleByEmail(req.session.email)
-      .then(([roleRows]) => {
-        if (roleRows.length > 0) {
-          req.session.role = roleRows[0].role_name;
-          return req.session.save(() => next());
-        }
-        return next();
-      })
-      .catch((error) => {
-        console.error('[SESSION ROLE RESTORE] Failed to resolve role:', error.message);
-        next();
-      });
-});
 
 // Expose session data to all views
 app.use((req, res, next) => {
