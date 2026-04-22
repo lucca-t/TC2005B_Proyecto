@@ -112,6 +112,17 @@ const buildTeamHistoryViewModel = async (request) => {
   };
 };
 
+const buildTeamHistoryJsonResponse = (viewModel) => {
+  return {
+    ok: !viewModel.error,
+    team: viewModel.team,
+    selectedTeamId: viewModel.selectedTeamId,
+    standups: viewModel.standups,
+    filters: viewModel.filters || {userId: '', date: ''},
+    error: viewModel.error || '',
+  };
+};
+
 exports.get_standup_form = (request, response, next) => {
   const error = request.session.error || '';
   const success = request.session.success || '';
@@ -244,6 +255,47 @@ exports.get_team_standup_history = async (request, response, next) => {
       standups: [],
       filters: {userId: '', date: ''},
       error: 'Server connection error. Please try again later.',
+    });
+  }
+};
+
+exports.get_team_standup_history_data = async (request, response, next) => {
+  if (!request.session.email) {
+    return response.status(401).json({
+      ok: false,
+      error: 'Unauthorized',
+      team: null,
+      standups: [],
+      filters: {userId: '', date: ''},
+    });
+  }
+
+  try {
+    const viewModel = await buildTeamHistoryViewModel(request);
+
+    if (viewModel.redirectToLogin) {
+      return response.status(401).json({
+        ok: false,
+        error: 'Unauthorized',
+        team: null,
+        standups: [],
+        filters: {userId: '', date: ''},
+      });
+    }
+
+    if (viewModel.error) {
+      return response.status(400).json(buildTeamHistoryJsonResponse(viewModel));
+    }
+
+    return response.json(buildTeamHistoryJsonResponse(viewModel));
+  } catch (err) {
+    console.error('Error fetching team standup history data:', err);
+    return response.status(500).json({
+      ok: false,
+      error: 'Server connection error. Please try again later.',
+      team: null,
+      standups: [],
+      filters: {userId: '', date: ''},
     });
   }
 };

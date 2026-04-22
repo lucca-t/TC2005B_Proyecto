@@ -15,6 +15,7 @@ router.get('/history', isAuth, allRoles, standupController.get_standup_history);
 
 // FR-24: Consultar actividad del equipo - Admin, Lead
 router.get('/history/team', isAuth, authorize(ROLES.ADMIN, ROLES.LEAD), standupController.get_team_standup_history);
+router.get('/history/team/data', isAuth, authorize(ROLES.ADMIN, ROLES.LEAD), standupController.get_team_standup_history_data);
 
 // FR-23: Eliminar actividad - Admin, Lead, Member
 router.post('/history/:id', isAuth, allRoles, standupController.post_deleteRegister);
