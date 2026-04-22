@@ -49,7 +49,7 @@
 
         <% if (hasBaseAccess) { %>
         <div class="navbar-item has-dropdown is-hoverable">
-          <a href="/users/list" class="navbar-link">Users</a>
+          <a href="#" class="navbar-link js-navbar-dropdown-toggle" aria-expanded="false">Users</a>
           <div class="navbar-dropdown">
             <% if (canManageUsersAndTeams) { %>
             <a href="/users/add" class="navbar-item">Register New User</a>
@@ -63,7 +63,7 @@
 
         <% if (hasBaseAccess) { %>
         <div class="navbar-item has-dropdown is-hoverable">
-          <a href="/teams/list" class="navbar-link">Teams</a>
+          <a href="#" class="navbar-link js-navbar-dropdown-toggle" aria-expanded="false">Teams</a>
           <div class="navbar-dropdown">
             <% if (canManageUsersAndTeams) { %>
             <a href="/teams/add" class="navbar-item">Register New Team</a>
@@ -77,7 +77,7 @@
   
         <% if (hasBaseAccess) { %>
         <div class="navbar-item has-dropdown is-hoverable">   
-          <a href="/projects/list" class="navbar-link">Projects</a>
+          <a href="#" class="navbar-link js-navbar-dropdown-toggle" aria-expanded="false">Projects</a>
           <div class="navbar-dropdown">
             <% if (canManageProjects) { %>
             <a href="/projects/add" class="navbar-item">Register New Project</a>
@@ -92,7 +92,7 @@
 
         <% if (hasBaseAccess) { %>
         <div class="navbar-item has-dropdown is-hoverable">
-          <a href="/daily_standup/history" class="navbar-link">Standup</a>
+          <a href="#" class="navbar-link js-navbar-dropdown-toggle" aria-expanded="false">Standup</a>
           <div class="navbar-dropdown">
             <a href="/daily_standup" class="navbar-item">Register Daily Standup</a>
             <a href="/daily_standup/history" class="navbar-item">Activity History</a>

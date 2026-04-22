@@ -25,6 +25,10 @@ input[type="checkbox"],
     accent-color: #ffdd57;
 }
 
+.navbar-item.has-dropdown.is-active .navbar-dropdown {
+    display: block;
+}
+
 @media screen and (max-width: 1023px) {
     /* Keep navbar usable on mobile even when JS is blocked or fails to load. */
     .navbar-burger {
