@@ -1,17 +1,14 @@
 <%
   const userIsLoggedIn = typeof isLoggedIn !== 'undefined' ? isLoggedIn : false;
-  const rawRole = typeof role !== 'undefined' && role !== null ? String(role).trim().toLowerCase() : '';
-  const roleAliases = {
-    administrador: 'Administrador',
-    admin: 'Administrador',
-    'lead member': 'Lead Member',
-    lead: 'Lead Member',
-    member: 'Member',
+  const defaultNavPermissions = {
+    canRegisterUsers: false,
+    canRegisterTeams: false,
+    canRegisterProjects: false,
+    canViewTeamStandups: false,
   };
-  const userRole = roleAliases[rawRole] || null;
-  const hasBaseAccess = userRole === 'Administrador' || userRole === 'Lead Member' || userRole === 'Member';
-  const canManageUsersAndTeams = userRole === 'Administrador';
-  const canManageProjects = userRole === 'Administrador' || userRole === 'Lead Member';
+  const resolvedNavPermissions = typeof navPermissions === 'object' && navPermissions
+    ? navPermissions
+    : defaultNavPermissions;
 %>
 
 <!DOCTYPE html>
@@ -50,10 +47,8 @@
         <div class="navbar-item has-dropdown is-hoverable">
           <a href="/users/list" class="navbar-link js-navbar-dropdown-toggle" aria-expanded="false">Users</a>
           <div class="navbar-dropdown">
-            <% if (canManageUsersAndTeams) { %>
+            <% if (resolvedNavPermissions.canRegisterUsers) { %>
             <a href="/users/add" class="navbar-item">Register new user</a>
-            <% } else { %>
-            <a href="#" class="navbar-item js-permission-denied">Register new user</a>
             <% } %>
             <a href="/users/list" class="navbar-item">Users list</a>
             <a href="/users/report/history" class="navbar-item">My report history</a>
@@ -63,10 +58,8 @@
         <div class="navbar-item has-dropdown is-hoverable">
           <a href="/teams/list" class="navbar-link js-navbar-dropdown-toggle" aria-expanded="false">Teams</a>
           <div class="navbar-dropdown">
-            <% if (canManageUsersAndTeams) { %>
+            <% if (resolvedNavPermissions.canRegisterTeams) { %>
             <a href="/teams/add" class="navbar-item">Register new team</a>
-            <% } else { %>
-            <a href="#" class="navbar-item js-permission-denied">Register new team</a>
             <% } %>
             <a href="/teams/list" class="navbar-item">Teams list</a>
           </div>
@@ -75,10 +68,8 @@
         <div class="navbar-item has-dropdown is-hoverable">   
           <a href="/projects/list" class="navbar-link js-navbar-dropdown-toggle" aria-expanded="false">Projects</a>
           <div class="navbar-dropdown">
-            <% if (canManageProjects) { %>
+            <% if (resolvedNavPermissions.canRegisterProjects) { %>
             <a href="/projects/add" class="navbar-item">Register new project</a>
-            <% } else { %>
-            <a href="#" class="navbar-item js-permission-denied">Register new project</a>
             <% } %>
             <a href="/projects/list" class="navbar-item">Projects list</a>
             <!-- <a href="/projects/report" class="navbar-item">Projects reports</a> -->
@@ -90,7 +81,7 @@
           <div class="navbar-dropdown">
             <a href="/daily_standup" class="navbar-item">Register daily standup</a>
             <a href="/daily_standup/history" class="navbar-item">Personal standups list</a>
-            <% if (canManageProjects) { %>
+            <% if (resolvedNavPermissions.canViewTeamStandups) { %>
             <a href="/daily_standup/history/team" class="navbar-item">Team standups list</a>
             <% } %>
           </div>

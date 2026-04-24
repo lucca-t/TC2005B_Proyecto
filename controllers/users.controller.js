@@ -1,6 +1,7 @@
 const User = require('../models/users.model');
 const Reports = require('../models/reports.model');
 const {generateUserReport} = require('../util/ai-report');
+const {ROLES, normalizeRole} = require('../util/rbac');
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -45,19 +46,91 @@ const getSessionUserId = (request) => {
       });
 };
 
+const redirectUsersPermissionDenied = (response) => {
+  return response.redirect('/users/list?permissionDenied=1');
+};
+
+const getVisibleUserIdSet = (request) => {
+  if (Object.prototype.hasOwnProperty.call(request, '_visibleUserIdSet')) {
+    return Promise.resolve(request._visibleUserIdSet);
+  }
+
+  const role = normalizeRole(request.session.role);
+  if (role === ROLES.ADMIN) {
+    request._visibleUserIdSet = null;
+    return Promise.resolve(null);
+  }
+
+  return getSessionUserId(request)
+      .then((sessionUserId) => {
+        const normalizedSessionUserId = Number(sessionUserId);
+        if (!normalizedSessionUserId) {
+          request._visibleUserIdSet = new Set();
+          return request._visibleUserIdSet;
+        }
+
+        if (role === ROLES.MEMBER) {
+          request._visibleUserIdSet = new Set([normalizedSessionUserId]);
+          return request._visibleUserIdSet;
+        }
+
+        if (role === ROLES.LEAD) {
+          return User.getVisibleUserIdsByViewer(normalizedSessionUserId)
+              .then(([rows]) => {
+                const visibleUserIdSet = new Set(
+                    (rows || [])
+                        .map((row) => Number(row.user_id))
+                        .filter((id) => !isNaN(id) && id > 0),
+                );
+                visibleUserIdSet.add(normalizedSessionUserId);
+                request._visibleUserIdSet = visibleUserIdSet;
+                return visibleUserIdSet;
+              });
+        }
+
+        request._visibleUserIdSet = new Set();
+        return request._visibleUserIdSet;
+      })
+      .catch(() => {
+        request._visibleUserIdSet = new Set();
+        return request._visibleUserIdSet;
+      });
+};
+
+const canAccessUser = (request, userId) => {
+  const normalizedTargetUserId = Number(userId);
+  if (!normalizedTargetUserId) {
+    return Promise.resolve(false);
+  }
+
+  return getVisibleUserIdSet(request)
+      .then((visibleUserIdSet) => {
+        if (visibleUserIdSet === null) {
+          return true;
+        }
+        return visibleUserIdSet.has(normalizedTargetUserId);
+      });
+};
+
 exports.get_list = (request, response, next) => {
-  User.getAllWithRoles().then(([rows, fieldData]) => {
-    const users = rows.map((row) => ({
-      ...row,
-      quarterProgress: row.quarterProgress || 0,
-    }));
-    response.render('userList', {
-      csrfToken: request.csrfToken(),
-      email: request.session.email || '',
-      role: request.session.role || '',
-      users,
-    });
-  })
+  Promise.all([User.getAllWithRoles(), getVisibleUserIdSet(request)])
+      .then(([[rows], visibleUserIdSet]) => {
+        const scopedRows = visibleUserIdSet === null
+          ? rows
+          : rows.filter((row) => visibleUserIdSet.has(Number(row.user_id)));
+
+        const users = scopedRows.map((row) => ({
+          ...row,
+          quarterProgress: row.quarterProgress || 0,
+        }));
+
+        response.render('userList', {
+          csrfToken: request.csrfToken(),
+          email: request.session.email || '',
+          role: request.session.role || '',
+          users,
+        });
+      })
       .catch((error) => {
         next(error);
       });
@@ -68,18 +141,26 @@ exports.getSearch = (request, response, next) => {
   const fetchUsers = q
     ? User.searchByNameOrEmailWithRoles(q)
     : User.getAllWithRoles();
-  fetchUsers.then(([rows]) => {
-    const users = rows.map((row) => ({
-      user_id: row.user_id,
-      email: row.email,
-      full_name: row.full_name,
-      slack_handle: row.slack_handle,
-      slack_id: row.slack_id,
-      role_name: row.role_name,
-      quarterProgress: row.quarterProgress || 0,
-    }));
-    return response.json({ users });
-  }).catch((error) => next(error));
+
+  Promise.all([fetchUsers, getVisibleUserIdSet(request)])
+      .then(([[rows], visibleUserIdSet]) => {
+        const scopedRows = visibleUserIdSet === null
+          ? rows
+          : rows.filter((row) => visibleUserIdSet.has(Number(row.user_id)));
+
+        const users = scopedRows.map((row) => ({
+          user_id: row.user_id,
+          email: row.email,
+          full_name: row.full_name,
+          slack_handle: row.slack_handle,
+          slack_id: row.slack_id,
+          role_name: row.role_name,
+          quarterProgress: row.quarterProgress || 0,
+        }));
+
+        return response.json({users});
+      })
+      .catch((error) => next(error));
 };
 
 exports.get_add = (request, response, next) => {
@@ -301,7 +382,13 @@ exports.get_report = (request, response, next) => {
   const userId = request.params.userId;
   const reportId = Number(request.query.reportId) || 0;
 
-  User.fetchById(userId)
+  canAccessUser(request, userId)
+      .then((hasAccess) => {
+        if (!hasAccess) {
+          return redirectUsersPermissionDenied(response);
+        }
+
+        return User.fetchById(userId)
       .then(([rows]) => {
         if (!rows || rows.length === 0) {
           return response.status(404).redirect('/users/list');
@@ -349,6 +436,7 @@ exports.get_report = (request, response, next) => {
                 reportType: '',
               });
             });
+      });
       })
       .catch((error) => {
         console.error(
@@ -386,7 +474,13 @@ exports.get_my_report_history = (request, response, next) => {
 exports.get_report_history = (request, response, next) => {
   const userId = request.params.userId;
 
-  User.fetchById(userId)
+  canAccessUser(request, userId)
+      .then((hasAccess) => {
+        if (!hasAccess) {
+          return redirectUsersPermissionDenied(response);
+        }
+
+        return User.fetchById(userId)
       .then(([rows]) => {
         if (!rows || rows.length === 0) {
           return response.status(404).redirect('/users/list');
@@ -402,6 +496,7 @@ exports.get_report_history = (request, response, next) => {
                 reports: reportRows || [],
               });
             });
+      });
       })
       .catch((error) => {
         console.error(
@@ -416,7 +511,13 @@ exports.post_report = (request, response, next) => {
   const userId = request.params.userId;
   const {report_type, start_date, end_date} = request.body;
 
-  User.fetchById(userId)
+  canAccessUser(request, userId)
+      .then((hasAccess) => {
+        if (!hasAccess) {
+          return redirectUsersPermissionDenied(response);
+        }
+
+        return User.fetchById(userId)
       .then(([rows]) => {
         if (!rows || rows.length === 0) {
           return response.status(404).redirect('/users/list');
@@ -582,6 +683,10 @@ exports.post_report = (request, response, next) => {
             '[POST /users/report] Failed to fetch user:',
             error.message,
         );
+        next(error);
+      });
+      })
+      .catch((error) => {
         next(error);
       });
 };

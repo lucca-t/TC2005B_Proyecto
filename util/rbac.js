@@ -23,6 +23,17 @@ const normalizeRole = (role) => {
   return ROLE_ALIASES[normalized] || null;
 };
 
+const getRolePermissions = (role) => {
+  const normalizedRole = normalizeRole(role);
+
+  return {
+    canRegisterUsers: normalizedRole === ROLES.ADMIN,
+    canRegisterTeams: normalizedRole === ROLES.ADMIN || normalizedRole === ROLES.LEAD,
+    canRegisterProjects: normalizedRole === ROLES.ADMIN || normalizedRole === ROLES.LEAD,
+    canViewTeamStandups: normalizedRole === ROLES.ADMIN || normalizedRole === ROLES.LEAD,
+  };
+};
+
 /**
  * Middleware factory that restricts access to the specified roles.
  * Usage: authorize(ROLES.ADMIN, ROLES.LEAD)
@@ -45,4 +56,4 @@ const authorize = (...allowedRoles) => {
   };
 };
 
-module.exports = {ROLES, authorize};
+module.exports = {ROLES, authorize, normalizeRole, getRolePermissions};

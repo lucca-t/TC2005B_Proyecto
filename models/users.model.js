@@ -114,6 +114,23 @@ module.exports = class User {
     );
   }
 
+  static getVisibleUserIdsByViewer(viewerUserId) {
+    return db.execute(
+        `SELECT DISTINCT u.user_id
+         FROM user u
+         LEFT JOIN user_team ut_target
+           ON u.user_id = ut_target.user_id
+           AND ut_target.date_end IS NULL
+         LEFT JOIN user_team ut_viewer
+           ON ut_target.team_id = ut_viewer.team_id
+           AND ut_viewer.user_id = ?
+           AND ut_viewer.date_end IS NULL
+         WHERE u.deleted_at IS NULL
+           AND (u.user_id = ? OR ut_viewer.user_id IS NOT NULL)`,
+        [viewerUserId, viewerUserId],
+    );
+  }
+
   static getAllWithRoles() {
     return db.execute(
         `SELECT u.user_id, u.email, u.full_name, u.slack_handle, u.slack_id,

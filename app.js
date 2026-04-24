@@ -35,6 +35,7 @@ app.set('view engine', 'ejs');
 app.set('views', 'views');
 
 const session = require('express-session');
+const {getRolePermissions} = require('./util/rbac');
 app.use(session({
   secret: process.env.SESSION_SECRET || 'mysecretkey',
   resave: false,
@@ -50,6 +51,7 @@ app.use((req, res, next) => {
   res.locals.isLoggedIn = req.session.isLoggedIn || false;
   res.locals.email = req.session.email || '';
   res.locals.role = req.session.role || null;
+  res.locals.navPermissions = getRolePermissions(req.session.role);
   next();
 });
 

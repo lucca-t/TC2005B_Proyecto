@@ -2,6 +2,7 @@ const Team = require('../models/teams.model');
 const User = require('../models/users.model');
 const Reports = require('../models/reports.model');
 const {generateTeamReport} = require('../util/ai-report');
+const {ROLES, normalizeRole} = require('../util/rbac');
 
 exports.getList = (request, response, next) => {
   const error = request.session.error || '';
@@ -17,14 +18,15 @@ exports.getList = (request, response, next) => {
       });
 
   Promise.all([Team.getAllWithMemberCount(), currentUserTeamsPromise])
-      .then(([[rows, fieldData], userTeams]) => {
+      .then(([[rows], userTeams]) => {
+        const userRole = normalizeRole(request.session.role);
         const currentUserTeamIds = new Set(
             userTeams
                 .map((team) => parseInt(team.team_id))
                 .filter((id) => !isNaN(id)),
         );
 
-        const teams = rows.map((row) => ({
+        const mappedTeams = rows.map((row) => ({
           id: row.team_id,
           name: row.team_name,
           startDate: row.team_start_date,
@@ -32,6 +34,10 @@ exports.getList = (request, response, next) => {
           quarterProgress: row.quarterProgress || 0,
           isCurrentUserTeam: currentUserTeamIds.has(parseInt(row.team_id)),
         }));
+
+        const teams = userRole === ROLES.ADMIN
+          ? mappedTeams
+          : mappedTeams.filter((team) => team.isCurrentUserTeam);
 
         response.render('teamList', {
           csrfToken: request.csrfToken(),
@@ -69,19 +75,25 @@ exports.getSearch = (request, response, next) => {
 
   Promise.all([fetchTeams, currentUserTeamsPromise])
       .then(([[rows], userTeams]) => {
+        const userRole = normalizeRole(request.session.role);
         const currentUserTeamIds = new Set(
             userTeams
                 .map((team) => parseInt(team.team_id))
                 .filter((id) => !isNaN(id)),
         );
 
-        const teams = rows.map((row) => ({
+        const mappedTeams = rows.map((row) => ({
           id: row.team_id,
           name: row.team_name,
           memberCount: row.memberCount || 0,
           quarterProgress: row.quarterProgress || 0,
           isCurrentUserTeam: currentUserTeamIds.has(parseInt(row.team_id)),
         }));
+
+        const teams = userRole === ROLES.ADMIN
+          ? mappedTeams
+          : mappedTeams.filter((team) => team.isCurrentUserTeam);
+
         return response.json({ teams });
       })
       .catch((err) => {
@@ -153,12 +165,51 @@ const getCurrentUserTeams = (request) => {
       .catch(() => []);
 };
 
+const redirectTeamsPermissionDenied = (response) => {
+  return response.redirect('/teams/list?permissionDenied=1');
+};
+
+const canAccessTeam = (request, teamId) => {
+  const normalizedRole = normalizeRole(request.session.role);
+  if (normalizedRole === ROLES.ADMIN) {
+    return Promise.resolve(true);
+  }
+
+  const normalizedTeamId = Number(teamId);
+  if (!normalizedTeamId) {
+    return Promise.resolve(false);
+  }
+
+  return getCurrentUserTeams(request)
+      .then((teams) => {
+        const currentUserTeamIds = new Set(
+            (teams || [])
+                .map((team) => Number(team.id))
+                .filter((id) => !isNaN(id) && id > 0),
+        );
+        return currentUserTeamIds.has(normalizedTeamId);
+      })
+      .catch(() => false);
+};
+
+const withTeamAccess = (request, response, teamId, onAllowed) => {
+  return canAccessTeam(request, teamId)
+      .then((hasAccess) => {
+        if (!hasAccess) {
+          return redirectTeamsPermissionDenied(response);
+        }
+
+        return onAllowed();
+      });
+};
+
 exports.getReport = (request, response, next) => {
   const teamId = request.params.teamId;
   const reportId = Number(request.query.reportId) || 0;
 
-  Promise.all([Team.getTeamWithMembers(teamId), getCurrentUserTeams(request)])
-      .then(([[rows], userTeams]) => {
+  return withTeamAccess(request, response, teamId, () => {
+    return Promise.all([Team.getTeamWithMembers(teamId), getCurrentUserTeams(request)])
+        .then(([[rows], userTeams]) => {
         if (!rows || rows.length === 0) {
           return response.status(404).redirect('/teams/list');
         }
@@ -224,7 +275,8 @@ exports.getReport = (request, response, next) => {
                 reportType: '',
               });
             });
-      })
+        });
+  })
       .catch((error) => {
         console.error(
             '[GET /teams/report] Failed to fetch team:',
@@ -238,8 +290,9 @@ exports.postReport = (request, response, next) => {
   const teamId = request.params.teamId;
   const {report_type, start_date, end_date} = request.body;
 
-  Promise.all([Team.getTeamWithMembers(teamId), getCurrentUserTeams(request)])
-      .then(([[rows], userTeams]) => {
+  return withTeamAccess(request, response, teamId, () => {
+    return Promise.all([Team.getTeamWithMembers(teamId), getCurrentUserTeams(request)])
+        .then(([[rows], userTeams]) => {
         if (!rows || rows.length === 0) {
           return response.status(404).redirect('/teams/list');
         }
@@ -410,7 +463,8 @@ exports.postReport = (request, response, next) => {
                 reportType: report_type,
               });
             });
-      })
+        });
+  })
       .catch((error) => {
         console.error(
             '[POST /teams/report] Failed to fetch team:',
@@ -430,8 +484,9 @@ exports.getEdit = (request, response, next) => {
     return response.redirect('/teams/list');
   }
 
-  Team.getTeamsDetails(teamId)
-      .then((result) => {
+  return withTeamAccess(request, response, teamId, () => {
+    return Team.getTeamsDetails(teamId)
+        .then((result) => {
         // New stored procedure returns multiple rows (one per member, or one row with NULLs if no members)
         // The structure is nested: result[0][0] contains the actual rows array
         let rows = [];
@@ -485,7 +540,8 @@ exports.getEdit = (request, response, next) => {
 
           response.render('teamEdit', viewData);
         });
-      })
+        });
+  })
       .catch((error) => {
         console.error('[GET /teams/edit] Failed to fetch team details:', error);
         request.session.error = 'Could not load team details. Please try again.';
@@ -517,8 +573,9 @@ exports.postEdit = (request, response, next) => {
   const userIdString = userIds || '';
 
   // First, check if the new team name already exists (and is different from current name)
-  Team.getTeamsDetails(teamId)
-      .then((result) => {
+  return withTeamAccess(request, response, teamId, () => {
+    return Team.getTeamsDetails(teamId)
+        .then((result) => {
         let rows = [];
         if (Array.isArray(result) && Array.isArray(result[0]) && Array.isArray(result[0][0])) {
           rows = result[0][0];
@@ -568,7 +625,7 @@ exports.postEdit = (request, response, next) => {
               return Team.updateTeamName(teamId, newTeamName)
                   .then(() => Team.updateTeamMembers(teamId, userIdString));
             });
-      })
+              })
       .then(() => {
         request.session.success = 'Team updated successfully!';
         return response.redirect('/teams/list');
@@ -579,6 +636,7 @@ exports.postEdit = (request, response, next) => {
         request.session.error = 'Could not update team members. Please try again.';
         return response.redirect(`/teams/edit/${teamId}`);
       });
+  });
 };
 
 exports.getAdd = (request, response, next) => {
@@ -749,16 +807,18 @@ exports.postDelete = (request, response, next) => {
     return response.redirect('/teams/list');
   }
 
-  Team.delete(teamId)
-      .then(() => {
+  return withTeamAccess(request, response, teamId, () => {
+    return Team.delete(teamId)
+        .then(() => {
         request.session.success = 'Team deleted successfully!';
         return response.redirect('/teams/list');
-      })
+        })
       .catch((error) => {
         console.error('[POST /teams/delete] Failed to delete team:', error.sqlMessage || error.message);
         request.session.error = 'Could not delete the team. It may be linked to active projects.';
         return response.redirect('/teams/list');
       });
+  });
 };
 
 exports.getDetails = (request, response, next) => {
@@ -771,8 +831,9 @@ exports.getDetails = (request, response, next) => {
     return response.redirect('/teams/list');
   }
 
-  Team.getTeamsDetails(teamId)
-      .then((result) => {
+  return withTeamAccess(request, response, teamId, () => {
+    return Team.getTeamsDetails(teamId)
+        .then((result) => {
         let rows = [];
         if (Array.isArray(result) && Array.isArray(result[0]) && Array.isArray(result[0][0])) {
           rows = result[0][0];
@@ -809,7 +870,8 @@ exports.getDetails = (request, response, next) => {
         };
 
         response.render('teamDetails', viewData);
-      })
+        });
+  })
       .catch((error) => {
         console.error('[GET /teams/details] Failed to fetch team details:', error);
         request.session.error = 'Could not load team details. Please try again.';
