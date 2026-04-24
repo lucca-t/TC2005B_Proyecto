@@ -115,9 +115,9 @@ const canAccessUser = (request, userId) => {
 exports.get_list = (request, response, next) => {
   Promise.all([User.getAllWithRoles(), getVisibleUserIdSet(request)])
       .then(([[rows], visibleUserIdSet]) => {
-        const scopedRows = visibleUserIdSet === null
-          ? rows
-          : rows.filter((row) => visibleUserIdSet.has(Number(row.user_id)));
+        const scopedRows = visibleUserIdSet === null ?
+          rows :
+          rows.filter((row) => visibleUserIdSet.has(Number(row.user_id)));
 
         const users = scopedRows.map((row) => ({
           ...row,
@@ -138,15 +138,15 @@ exports.get_list = (request, response, next) => {
 
 exports.getSearch = (request, response, next) => {
   const q = (request.query.q || '').trim().slice(0, 100);
-  const fetchUsers = q
-    ? User.searchByNameOrEmailWithRoles(q)
-    : User.getAllWithRoles();
+  const fetchUsers = q ?
+    User.searchByNameOrEmailWithRoles(q) :
+    User.getAllWithRoles();
 
   Promise.all([fetchUsers, getVisibleUserIdSet(request)])
       .then(([[rows], visibleUserIdSet]) => {
-        const scopedRows = visibleUserIdSet === null
-          ? rows
-          : rows.filter((row) => visibleUserIdSet.has(Number(row.user_id)));
+        const scopedRows = visibleUserIdSet === null ?
+          rows :
+          rows.filter((row) => visibleUserIdSet.has(Number(row.user_id)));
 
         const users = scopedRows.map((row) => ({
           user_id: row.user_id,
@@ -389,54 +389,54 @@ exports.get_report = (request, response, next) => {
         }
 
         return User.fetchById(userId)
-      .then(([rows]) => {
-        if (!rows || rows.length === 0) {
-          return response.status(404).redirect('/users/list');
-        }
+            .then(([rows]) => {
+              if (!rows || rows.length === 0) {
+                return response.status(404).redirect('/users/list');
+              }
 
-        const user = rows[0];
+              const user = rows[0];
 
-        if (!reportId) {
-          return response.render('userReport', {
-            csrfToken: request.csrfToken(),
-            email: request.session.email || '',
-            user: user,
-            report: null,
-            error: null,
-            startDate: '',
-            endDate: '',
-            reportType: '',
-          });
-        }
-
-        return Reports.findUserReportById(reportId, userId)
-            .then(([reportRows]) => {
-              if (!reportRows || reportRows.length === 0) {
+              if (!reportId) {
                 return response.render('userReport', {
                   csrfToken: request.csrfToken(),
                   email: request.session.email || '',
                   user: user,
                   report: null,
-                  error: 'Saved report not found for this user.',
+                  error: null,
                   startDate: '',
                   endDate: '',
                   reportType: '',
                 });
               }
 
-              const savedReport = reportRows[0];
-              return response.render('userReport', {
-                csrfToken: request.csrfToken(),
-                email: request.session.email || '',
-                user: user,
-                report: savedReport.ai_content,
-                error: null,
-                startDate: formatDateForInput(savedReport.date_beginning),
-                endDate: formatDateForInput(savedReport.date_end),
-                reportType: '',
-              });
+              return Reports.findUserReportById(reportId, userId)
+                  .then(([reportRows]) => {
+                    if (!reportRows || reportRows.length === 0) {
+                      return response.render('userReport', {
+                        csrfToken: request.csrfToken(),
+                        email: request.session.email || '',
+                        user: user,
+                        report: null,
+                        error: 'Saved report not found for this user.',
+                        startDate: '',
+                        endDate: '',
+                        reportType: '',
+                      });
+                    }
+
+                    const savedReport = reportRows[0];
+                    return response.render('userReport', {
+                      csrfToken: request.csrfToken(),
+                      email: request.session.email || '',
+                      user: user,
+                      report: savedReport.ai_content,
+                      error: null,
+                      startDate: formatDateForInput(savedReport.date_beginning),
+                      endDate: formatDateForInput(savedReport.date_end),
+                      reportType: '',
+                    });
+                  });
             });
-      });
       })
       .catch((error) => {
         console.error(
@@ -481,22 +481,22 @@ exports.get_report_history = (request, response, next) => {
         }
 
         return User.fetchById(userId)
-      .then(([rows]) => {
-        if (!rows || rows.length === 0) {
-          return response.status(404).redirect('/users/list');
-        }
+            .then(([rows]) => {
+              if (!rows || rows.length === 0) {
+                return response.status(404).redirect('/users/list');
+              }
 
-        const user = rows[0];
-        return Reports.listUserReports(userId)
-            .then(([reportRows]) => {
-              return response.render('userReportHistory', {
-                csrfToken: request.csrfToken(),
-                email: request.session.email || '',
-                user: user,
-                reports: reportRows || [],
-              });
+              const user = rows[0];
+              return Reports.listUserReports(userId)
+                  .then(([reportRows]) => {
+                    return response.render('userReportHistory', {
+                      csrfToken: request.csrfToken(),
+                      email: request.session.email || '',
+                      user: user,
+                      reports: reportRows || [],
+                    });
+                  });
             });
-      });
       })
       .catch((error) => {
         console.error(
@@ -518,173 +518,173 @@ exports.post_report = (request, response, next) => {
         }
 
         return User.fetchById(userId)
-      .then(([rows]) => {
-        if (!rows || rows.length === 0) {
-          return response.status(404).redirect('/users/list');
-        }
-        const user = rows[0];
+            .then(([rows]) => {
+              if (!rows || rows.length === 0) {
+                return response.status(404).redirect('/users/list');
+              }
+              const user = rows[0];
 
-        const renderError = (msg) => {
-          return response.status(400).render('userReport', {
-            csrfToken: request.csrfToken(),
-            email: request.session.email || '',
-            user: user,
-            report: null,
-            error: msg,
-            startDate: start_date || '',
-            endDate: end_date || '',
-            reportType: report_type || '',
-          });
-        };
-
-        if (!report_type) {
-          return renderError(
-              'Please select at least one quarter or use the ' +
-              'custom date range.',
-          );
-        }
-
-        let startDate;
-        let endDate;
-
-        if (report_type === 'custom') {
-          if (!start_date || !end_date) {
-            return renderError(
-                'Both start date and end date are required ' +
-                'for a custom report.',
-            );
-          }
-          startDate = new Date(start_date + 'T00:00:00');
-          endDate = new Date(end_date + 'T00:00:00');
-
-          if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-            return renderError('Invalid date format. Please use valid dates.');
-          }
-
-          if (startDate > endDate) {
-            return renderError('Start date cannot be after end date.');
-          }
-        } else {
-          // Quarter-based format: "2026-Q1" or "2026-Q1,2025-Q4".
-          const quarters = report_type
-              .split(',')
-              .map((q) => q.trim())
-              .filter(Boolean);
-          if (quarters.length === 0) {
-            return renderError('Please select at least one quarter.');
-          }
-
-          const parsed = [];
-          for (const q of quarters) {
-            const match = q.match(/^(\d{4})-Q([1-4])$/);
-            if (!match) {
-              return renderError('Invalid quarter format: ' + q);
-            }
-            const year = parseInt(match[1]);
-            const qNum = parseInt(match[2]);
-            parsed.push({year, quarter: qNum});
-          }
-
-          // Find the overall min start and max end from selected quarters
-          let minStart = null;
-          let maxEnd = null;
-          for (const p of parsed) {
-            const qStart = new Date(p.year, (p.quarter - 1) * 3, 1);
-            const qEnd = new Date(p.year, p.quarter * 3, 0);
-            if (!minStart || qStart < minStart) minStart = qStart;
-            if (!maxEnd || qEnd > maxEnd) maxEnd = qEnd;
-          }
-          startDate = minStart;
-          endDate = maxEnd;
-        }
-
-        const startStr = startDate.toISOString().split('T')[0];
-        const endStr = endDate.toISOString().split('T')[0];
-
-        return User.getStandupsByDateRange(userId, startStr, endStr)
-            .then(([standups]) => {
-              if (!standups || standups.length === 0) {
+              const renderError = (msg) => {
                 return response.status(400).render('userReport', {
                   csrfToken: request.csrfToken(),
                   email: request.session.email || '',
                   user: user,
                   report: null,
-                  error: 'No daily standups found for ' +
+                  error: msg,
+                  startDate: start_date || '',
+                  endDate: end_date || '',
+                  reportType: report_type || '',
+                });
+              };
+
+              if (!report_type) {
+                return renderError(
+                    'Please select at least one quarter or use the ' +
+              'custom date range.',
+                );
+              }
+
+              let startDate;
+              let endDate;
+
+              if (report_type === 'custom') {
+                if (!start_date || !end_date) {
+                  return renderError(
+                      'Both start date and end date are required ' +
+                'for a custom report.',
+                  );
+                }
+                startDate = new Date(start_date + 'T00:00:00');
+                endDate = new Date(end_date + 'T00:00:00');
+
+                if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+                  return renderError('Invalid date format. Please use valid dates.');
+                }
+
+                if (startDate > endDate) {
+                  return renderError('Start date cannot be after end date.');
+                }
+              } else {
+                // Quarter-based format: "2026-Q1" or "2026-Q1,2025-Q4".
+                const quarters = report_type
+                    .split(',')
+                    .map((q) => q.trim())
+                    .filter(Boolean);
+                if (quarters.length === 0) {
+                  return renderError('Please select at least one quarter.');
+                }
+
+                const parsed = [];
+                for (const q of quarters) {
+                  const match = q.match(/^(\d{4})-Q([1-4])$/);
+                  if (!match) {
+                    return renderError('Invalid quarter format: ' + q);
+                  }
+                  const year = parseInt(match[1]);
+                  const qNum = parseInt(match[2]);
+                  parsed.push({year, quarter: qNum});
+                }
+
+                // Find the overall min start and max end from selected quarters
+                let minStart = null;
+                let maxEnd = null;
+                for (const p of parsed) {
+                  const qStart = new Date(p.year, (p.quarter - 1) * 3, 1);
+                  const qEnd = new Date(p.year, p.quarter * 3, 0);
+                  if (!minStart || qStart < minStart) minStart = qStart;
+                  if (!maxEnd || qEnd > maxEnd) maxEnd = qEnd;
+                }
+                startDate = minStart;
+                endDate = maxEnd;
+              }
+
+              const startStr = startDate.toISOString().split('T')[0];
+              const endStr = endDate.toISOString().split('T')[0];
+
+              return User.getStandupsByDateRange(userId, startStr, endStr)
+                  .then(([standups]) => {
+                    if (!standups || standups.length === 0) {
+                      return response.status(400).render('userReport', {
+                        csrfToken: request.csrfToken(),
+                        email: request.session.email || '',
+                        user: user,
+                        report: null,
+                        error: 'No daily standups found for ' +
                     (user.full_name || user.email) +
                     ' between ' + startStr + ' and ' + endStr +
                     '. A report cannot be generated without standup data.',
-                  startDate: start_date || startStr,
-                  endDate: end_date || endStr,
-                  reportType: report_type,
-                });
-              }
-
-              return Reports.findUserReportByRange(userId, startStr, endStr)
-                  .then(([existingReports]) => {
-                    if (existingReports && existingReports.length > 0) {
-                      const existingReport = existingReports[0];
-                      return response.redirect(
-                          '/users/report/' + userId +
-                          '?reportId=' + existingReport.report_id,
-                      );
+                        startDate: start_date || startStr,
+                        endDate: end_date || endStr,
+                        reportType: report_type,
+                      });
                     }
 
-                    return generateUserReport(
-                        user,
-                        startDate,
-                        endDate,
-                        standups,
-                    )
-                        .then((reportText) => {
-                          const standupIds = standups.map(
-                              (row) => row.standup_id,
-                          );
+                    return Reports.findUserReportByRange(userId, startStr, endStr)
+                        .then(([existingReports]) => {
+                          if (existingReports && existingReports.length > 0) {
+                            const existingReport = existingReports[0];
+                            return response.redirect(
+                                '/users/report/' + userId +
+                          '?reportId=' + existingReport.report_id,
+                            );
+                          }
 
-                          return getSessionUserId(request)
-                              .then((sessionUserId) => {
-                                return Reports.createUserReport({
-                                  generatedByUserId: sessionUserId,
-                                  userAboutId: userId,
-                                  startDate: startStr,
-                                  endDate: endStr,
-                                  aiContent: reportText,
-                                  standupIds,
-                                })
-                                    .then((created) => {
-                                      return response.redirect(
-                                          '/users/report/' + userId +
+                          return generateUserReport(
+                              user,
+                              startDate,
+                              endDate,
+                              standups,
+                          )
+                              .then((reportText) => {
+                                const standupIds = standups.map(
+                                    (row) => row.standup_id,
+                                );
+
+                                return getSessionUserId(request)
+                                    .then((sessionUserId) => {
+                                      return Reports.createUserReport({
+                                        generatedByUserId: sessionUserId,
+                                        userAboutId: userId,
+                                        startDate: startStr,
+                                        endDate: endStr,
+                                        aiContent: reportText,
+                                        standupIds,
+                                      })
+                                          .then((created) => {
+                                            return response.redirect(
+                                                '/users/report/' + userId +
                                           '?reportId=' + created.report_id,
-                                      );
+                                            );
+                                          });
                                     });
                               });
                         });
+                  })
+                  .catch((aiError) => {
+                    console.error(
+                        '[POST /users/report] AI generation failed:',
+                        aiError.message,
+                    );
+                    response.render('userReport', {
+                      csrfToken: request.csrfToken(),
+                      email: request.session.email || '',
+                      user: user,
+                      report: null,
+                      error: 'Failed to generate AI report: ' +
+                  (aiError.message || 'Unknown error'),
+                      startDate: start_date || '',
+                      endDate: end_date || '',
+                      reportType: report_type,
+                    });
                   });
             })
-            .catch((aiError) => {
+            .catch((error) => {
               console.error(
-                  '[POST /users/report] AI generation failed:',
-                  aiError.message,
+                  '[POST /users/report] Failed to fetch user:',
+                  error.message,
               );
-              response.render('userReport', {
-                csrfToken: request.csrfToken(),
-                email: request.session.email || '',
-                user: user,
-                report: null,
-                error: 'Failed to generate AI report: ' +
-                  (aiError.message || 'Unknown error'),
-                startDate: start_date || '',
-                endDate: end_date || '',
-                reportType: report_type,
-              });
+              next(error);
             });
-      })
-      .catch((error) => {
-        console.error(
-            '[POST /users/report] Failed to fetch user:',
-            error.message,
-        );
-        next(error);
-      });
       })
       .catch((error) => {
         next(error);

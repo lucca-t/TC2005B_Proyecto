@@ -201,7 +201,7 @@ module.exports = class Team {
             WHERE t.deleted_at IS NULL AND t.team_name LIKE ?
             GROUP BY t.team_id, t.team_name, t.team_start_date
             ORDER BY t.team_name ASC`,
-      [`%${query}%`],
+    [`%${query}%`],
     );
   }
 };

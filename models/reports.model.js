@@ -1,22 +1,22 @@
 const db = require('../util/database');
 
 module.exports = class Reports {
-	static listUserReports(userAboutId) {
-		return db.execute(
-				`SELECT r.report_id, r.date_beginning, r.date_end,
+  static listUserReports(userAboutId) {
+    return db.execute(
+        `SELECT r.report_id, r.date_beginning, r.date_end,
 						r.date_generated, r.user_id
 				 FROM report r
 				 INNER JOIN user_report ur ON ur.report_id = r.report_id
 				 WHERE ur.user_about = ?
 					 AND r.deleted_at IS NULL
 				 ORDER BY r.date_generated DESC`,
-				[userAboutId],
-		);
-	}
+        [userAboutId],
+    );
+  }
 
-	static findUserReportByRange(userAboutId, startDate, endDate) {
-		return db.execute(
-				`SELECT r.report_id, r.date_beginning, r.date_end, r.ai_content,
+  static findUserReportByRange(userAboutId, startDate, endDate) {
+    return db.execute(
+        `SELECT r.report_id, r.date_beginning, r.date_end, r.ai_content,
 								r.date_generated
 				 FROM report r
 				 INNER JOIN user_report ur ON ur.report_id = r.report_id
@@ -26,13 +26,13 @@ module.exports = class Reports {
 					 AND r.deleted_at IS NULL
 				 ORDER BY r.date_generated DESC
 				 LIMIT 1`,
-				[userAboutId, startDate, endDate],
-		);
-	}
+        [userAboutId, startDate, endDate],
+    );
+  }
 
-	static findUserReportById(reportId, userAboutId) {
-		return db.execute(
-				`SELECT r.report_id, r.date_beginning, r.date_end, r.ai_content,
+  static findUserReportById(reportId, userAboutId) {
+    return db.execute(
+        `SELECT r.report_id, r.date_beginning, r.date_end, r.ai_content,
 								r.date_generated
 				 FROM report r
 				 INNER JOIN user_report ur ON ur.report_id = r.report_id
@@ -40,26 +40,26 @@ module.exports = class Reports {
 					 AND ur.user_about = ?
 					 AND r.deleted_at IS NULL
 				 LIMIT 1`,
-				[reportId, userAboutId],
-		);
-	}
+        [reportId, userAboutId],
+    );
+  }
 
-	static async createUserReport({
-		generatedByUserId,
-		userAboutId,
-		startDate,
-		endDate,
-		aiContent,
-		standupIds,
-	}) {
-		const connection = await db.getConnection();
-		const safeStandupIds = Array.isArray(standupIds) ? standupIds : [];
+  static async createUserReport({
+    generatedByUserId,
+    userAboutId,
+    startDate,
+    endDate,
+    aiContent,
+    standupIds,
+  }) {
+    const connection = await db.getConnection();
+    const safeStandupIds = Array.isArray(standupIds) ? standupIds : [];
 
-		try {
-			await connection.beginTransaction();
+    try {
+      await connection.beginTransaction();
 
-			const [existingRows] = await connection.execute(
-					`SELECT r.report_id
+      const [existingRows] = await connection.execute(
+          `SELECT r.report_id
 					 FROM report r
 					 INNER JOIN user_report ur ON ur.report_id = r.report_id
 					 WHERE ur.user_about = ?
@@ -69,62 +69,62 @@ module.exports = class Reports {
 					 ORDER BY r.date_generated DESC
 					 LIMIT 1
 					 FOR UPDATE`,
-					[userAboutId, startDate, endDate],
-			);
+          [userAboutId, startDate, endDate],
+      );
 
-			if (existingRows.length > 0) {
-				await connection.commit();
-				return {report_id: existingRows[0].report_id};
-			}
+      if (existingRows.length > 0) {
+        await connection.commit();
+        return {report_id: existingRows[0].report_id};
+      }
 
-			const [insertResult] = await connection.execute(
-					`INSERT INTO report(date_beginning, date_end, ai_content, user_id)
+      const [insertResult] = await connection.execute(
+          `INSERT INTO report(date_beginning, date_end, ai_content, user_id)
 					 VALUES (?, ?, ?, ?)`,
-					[startDate, endDate, aiContent, generatedByUserId || null],
-			);
+          [startDate, endDate, aiContent, generatedByUserId || null],
+      );
 
-			const reportId = insertResult.insertId;
+      const reportId = insertResult.insertId;
 
-			await connection.execute(
-					`INSERT INTO user_report(report_id, user_about)
+      await connection.execute(
+          `INSERT INTO user_report(report_id, user_about)
 					 VALUES (?, ?)`,
-					[reportId, userAboutId],
-			);
+          [reportId, userAboutId],
+      );
 
-			for (const standupId of safeStandupIds) {
-				await connection.execute(
-						`INSERT INTO report_standup(report_id, standup_id)
+      for (const standupId of safeStandupIds) {
+        await connection.execute(
+            `INSERT INTO report_standup(report_id, standup_id)
 						 VALUES (?, ?)`,
-						[reportId, standupId],
-				);
-			}
+            [reportId, standupId],
+        );
+      }
 
-			await connection.commit();
-			return {report_id: reportId};
-		} catch (error) {
-			await connection.rollback();
-			throw error;
-		} finally {
-			connection.release();
-		}
-	}
+      await connection.commit();
+      return {report_id: reportId};
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
 
-	static listTeamReports(teamId) {
-		return db.execute(
-				`SELECT r.report_id, r.date_beginning, r.date_end,
+  static listTeamReports(teamId) {
+    return db.execute(
+        `SELECT r.report_id, r.date_beginning, r.date_end,
 				        r.date_generated, r.user_id
 				 FROM report r
 				 INNER JOIN team_report tr ON tr.report_id = r.report_id
 				 WHERE tr.team_about = ?
 				   AND r.deleted_at IS NULL
 				 ORDER BY r.date_generated DESC`,
-				[teamId],
-		);
-	}
+        [teamId],
+    );
+  }
 
-	static findTeamReportByRange(teamId, startDate, endDate) {
-		return db.execute(
-				`SELECT r.report_id, r.date_beginning, r.date_end,
+  static findTeamReportByRange(teamId, startDate, endDate) {
+    return db.execute(
+        `SELECT r.report_id, r.date_beginning, r.date_end,
 				        r.ai_content, r.date_generated
 				 FROM report r
 				 INNER JOIN team_report tr ON tr.report_id = r.report_id
@@ -134,13 +134,13 @@ module.exports = class Reports {
 				   AND r.deleted_at IS NULL
 				 ORDER BY r.date_generated DESC
 				 LIMIT 1`,
-				[teamId, startDate, endDate],
-		);
-	}
+        [teamId, startDate, endDate],
+    );
+  }
 
-	static findTeamReportById(reportId, teamId) {
-		return db.execute(
-				`SELECT r.report_id, r.date_beginning, r.date_end,
+  static findTeamReportById(reportId, teamId) {
+    return db.execute(
+        `SELECT r.report_id, r.date_beginning, r.date_end,
 				        r.ai_content, r.date_generated
 				 FROM report r
 				 INNER JOIN team_report tr ON tr.report_id = r.report_id
@@ -148,26 +148,26 @@ module.exports = class Reports {
 				   AND tr.team_about = ?
 				   AND r.deleted_at IS NULL
 				 LIMIT 1`,
-				[reportId, teamId],
-		);
-	}
+        [reportId, teamId],
+    );
+  }
 
-	static async createTeamReport({
-		generatedByUserId,
-		teamId,
-		startDate,
-		endDate,
-		aiContent,
-		standupIds,
-	}) {
-		const connection = await db.getConnection();
-		const safeStandupIds = Array.isArray(standupIds) ? standupIds : [];
+  static async createTeamReport({
+    generatedByUserId,
+    teamId,
+    startDate,
+    endDate,
+    aiContent,
+    standupIds,
+  }) {
+    const connection = await db.getConnection();
+    const safeStandupIds = Array.isArray(standupIds) ? standupIds : [];
 
-		try {
-			await connection.beginTransaction();
+    try {
+      await connection.beginTransaction();
 
-			const [existingRows] = await connection.execute(
-					`SELECT r.report_id
+      const [existingRows] = await connection.execute(
+          `SELECT r.report_id
 					 FROM report r
 					 INNER JOIN team_report tr ON tr.report_id = r.report_id
 					 WHERE tr.team_about = ?
@@ -177,43 +177,43 @@ module.exports = class Reports {
 					 ORDER BY r.date_generated DESC
 					 LIMIT 1
 					 FOR UPDATE`,
-					[teamId, startDate, endDate],
-			);
+          [teamId, startDate, endDate],
+      );
 
-			if (existingRows.length > 0) {
-				await connection.commit();
-				return {report_id: existingRows[0].report_id};
-			}
+      if (existingRows.length > 0) {
+        await connection.commit();
+        return {report_id: existingRows[0].report_id};
+      }
 
-			const [insertResult] = await connection.execute(
-					`INSERT INTO report(date_beginning, date_end, ai_content, user_id)
+      const [insertResult] = await connection.execute(
+          `INSERT INTO report(date_beginning, date_end, ai_content, user_id)
 					 VALUES (?, ?, ?, ?)`,
-					[startDate, endDate, aiContent, generatedByUserId || null],
-			);
+          [startDate, endDate, aiContent, generatedByUserId || null],
+      );
 
-			const reportId = insertResult.insertId;
+      const reportId = insertResult.insertId;
 
-			await connection.execute(
-					`INSERT INTO team_report(report_id, team_about)
+      await connection.execute(
+          `INSERT INTO team_report(report_id, team_about)
 					 VALUES (?, ?)`,
-					[reportId, teamId],
-			);
+          [reportId, teamId],
+      );
 
-			for (const standupId of safeStandupIds) {
-				await connection.execute(
-						`INSERT INTO report_standup(report_id, standup_id)
+      for (const standupId of safeStandupIds) {
+        await connection.execute(
+            `INSERT INTO report_standup(report_id, standup_id)
 						 VALUES (?, ?)`,
-						[reportId, standupId],
-				);
-			}
+            [reportId, standupId],
+        );
+      }
 
-			await connection.commit();
-			return {report_id: reportId};
-		} catch (error) {
-			await connection.rollback();
-			throw error;
-		} finally {
-			connection.release();
-		}
-	}
+      await connection.commit();
+      return {report_id: reportId};
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
 };

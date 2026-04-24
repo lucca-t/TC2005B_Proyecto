@@ -8,11 +8,11 @@ const ROLES = {
 };
 
 const ROLE_ALIASES = {
-  administrador: ROLES.ADMIN,
-  admin: ROLES.ADMIN,
+  'administrador': ROLES.ADMIN,
+  'admin': ROLES.ADMIN,
   'lead member': ROLES.LEAD,
-  lead: ROLES.LEAD,
-  member: ROLES.MEMBER,
+  'lead': ROLES.LEAD,
+  'member': ROLES.MEMBER,
 };
 
 const normalizeRole = (role) => {
