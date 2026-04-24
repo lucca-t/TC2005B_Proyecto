@@ -123,6 +123,65 @@ const buildTeamHistoryJsonResponse = (viewModel) => {
   };
 };
 
+const isValidDateInput = (value) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false;
+  }
+
+  const [year, month, day] = value.split('-').map(Number);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+
+  return parsed.getUTCFullYear() === year &&
+    parsed.getUTCMonth() === month - 1 &&
+    parsed.getUTCDate() === day;
+};
+
+exports.get_standup_duplicate_validation = async (request, response, next) => {
+  if (!request.session.email) {
+    return response.status(401).json({
+      ok: false,
+      duplicate: false,
+      error: 'Unauthorized',
+    });
+  }
+
+  const selectedDate = (request.query.date || '').trim();
+  if (!isValidDateInput(selectedDate)) {
+    return response.status(400).json({
+      ok: false,
+      duplicate: false,
+      error: 'Invalid date value',
+    });
+  }
+
+  try {
+    const [rows] = await Standup.getUserId(request.session.email);
+    if (!rows || rows.length === 0) {
+      return response.status(404).json({
+        ok: false,
+        duplicate: false,
+        error: 'User not found',
+      });
+    }
+
+    const userId = rows[0].user_id;
+    const [existing] = await Standup.checkDuplicate(userId, selectedDate);
+
+    return response.json({
+      ok: true,
+      duplicate: existing.length > 0,
+      date: selectedDate,
+    });
+  } catch (err) {
+    console.error('Error validating standup duplicate date:', err);
+    return response.status(500).json({
+      ok: false,
+      duplicate: false,
+      error: 'Server connection error. Please try again later.',
+    });
+  }
+};
+
 exports.get_standup_form = (request, response, next) => {
   const error = request.session.error || '';
   const success = request.session.success || '';
