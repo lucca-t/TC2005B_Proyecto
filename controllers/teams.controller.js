@@ -879,4 +879,5 @@ exports.getDetails = (request, response, next) => {
         request.session.error = 'Could not load team details. Please try again.';
         return response.redirect('/teams/list');
       });
+  });
 };
