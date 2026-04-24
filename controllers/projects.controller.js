@@ -33,6 +33,25 @@ const isEndDateBeforeStartDate = (startDate, endDate) => {
   return endDate < startDate;
 };
 
+const resolveDefaultTeamId = (request, teams) => {
+  const requestedTeamId = (request.query.team_id || '').trim();
+  if (requestedTeamId) {
+    const requestedTeam = (teams || []).find(
+        (team) => String(team.team_id) === String(requestedTeamId),
+    );
+
+    if (requestedTeam) {
+      return String(requestedTeam.team_id);
+    }
+  }
+
+  if (teams && teams.length === 1) {
+    return String(teams[0].team_id);
+  }
+
+  return '';
+};
+
 // Helper to get current user ID from session email
 const getCurrentUserId = async (request) => {
   const email = request.session.email;
@@ -87,6 +106,7 @@ exports.get_add = async (request, response, next) => {
     }
 
     const [rows] = await Project.getTeamsByUser(userId);
+    const defaultTeamId = resolveDefaultTeamId(request, rows);
 
     return response.render('projectsAdd', {
       csrfToken: request.csrfToken(),
@@ -95,7 +115,7 @@ exports.get_add = async (request, response, next) => {
       formData: {
         name: '',
         description: '',
-        team_id: '',
+        team_id: defaultTeamId,
         status: 'active',
         start_date: '',
         end_date: '',
