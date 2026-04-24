@@ -21,7 +21,7 @@
                 <div class="field">
                     <label class="label">Email</label>
                     <div class="control">
-                        <input class="input is-medium" type="email" name="email" maxlength="50" value="<%= user.email %>" autocomplete="email" pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$" required>
+                        <input class="input is-medium" type="email" name="email" data-live-email-validate="true" maxlength="50" value="<%= user.email %>" autocomplete="email" pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$" required>
                     </div>
                 </div>
 
@@ -66,3 +66,5 @@
 
     </div>
 </section>
+
+<script src="/js/user-email-validation.js" defer></script>

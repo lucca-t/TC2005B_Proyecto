@@ -1,5 +1,10 @@
 <%- include('includes/_header') %>
 
+<%
+    const safeFormData =
+        (typeof formData !== 'undefined' && formData) ? formData : {};
+%>
+
 <section class="section">
     <div class="container">
         <div class="level mb-4">
@@ -28,14 +33,14 @@
                     <div class="field">
                         <label class="label">Email</label>
                         <div class="control">
-                            <input class="input" type="email" name="email" maxlength="50" value="<%= formData && formData.email ? formData.email : '' %>" placeholder="email@example.com" autocomplete="email" pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$" required>
+                            <input class="input" type="email" name="email" data-live-email-validate="true" maxlength="50" value="<%= safeFormData.email ? safeFormData.email : '' %>" placeholder="email@example.com" autocomplete="email" pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$" required>
                         </div>
                     </div>
 
                     <div class="field">
                         <label class="label">Full Name</label>
                         <div class="control">
-                            <input class="input" type="text" name="full_name" maxlength="150" value="<%= formData && formData.full_name ? formData.full_name : '' %>" placeholder="John Appleseed" required>
+                            <input class="input" type="text" name="full_name" maxlength="150" value="<%= safeFormData.full_name ? safeFormData.full_name : '' %>" placeholder="John Appleseed" required>
                         </div>
                     </div>
 
@@ -49,7 +54,7 @@
                     <div class="field">
                         <label class="label">Slack Handle</label>
                         <div class="control">
-                            <input class="input" type="text" name="slack_handle" maxlength="100" value="<%= formData && formData.slack_handle ? formData.slack_handle : '' %>" placeholder="membername or @membername" required>
+                            <input class="input" type="text" name="slack_handle" maxlength="100" value="<%= safeFormData.slack_handle ? safeFormData.slack_handle : '' %>" placeholder="membername or @membername" required>
                         </div>
                         <p class="help">You can enter it with or without @. Example: membername or @membername.</p>
                     </div>
@@ -57,7 +62,7 @@
                     <div class="field">
                         <label class="label">Slack ID</label>
                         <div class="control">
-                            <input class="input" type="text" name="slack_id" maxlength="50" value="<%= formData && formData.slack_id ? formData.slack_id : '' %>" placeholder="U012AB345CD" required>
+                            <input class="input" type="text" name="slack_id" maxlength="50" value="<%= safeFormData.slack_id ? safeFormData.slack_id : '' %>" placeholder="U012AB345CD" required>
                         </div>
                     </div>
 
@@ -76,5 +81,7 @@
 </div>
 
 </section>
+
+<script src="/js/user-email-validation.js" defer></script>
 
 <%- include('includes/_footer') %>
