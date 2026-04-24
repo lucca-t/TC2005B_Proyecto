@@ -28,7 +28,10 @@
 				<input type="hidden" name="_csrf" value="<%= csrfToken %>">
 
 				<div class="field">
-					<label class="label">Project name</label>
+					<label class="label">
+						Project name
+						<span class="has-text-danger">*</span>
+					</label>
 					<div class="control">
 						<input
 							class="input"
@@ -42,7 +45,10 @@
 				</div>
 
 				<div class="field">
-					<label class="label">Description</label>
+					<label class="label">
+						Description
+						<span class="has-text-danger">*</span>
+					</label>
 					<div class="control">
 						<textarea
 							class="textarea"
@@ -54,7 +60,10 @@
 				</div>
 
 				<div class="field">
-					<label class="label">Start date</label>
+					<label class="label">
+						Start date
+						<span class="has-text-danger">*</span>
+					</label>
 					<div class="control">
 						<input
 							class="input"
@@ -70,7 +79,10 @@
 				<div class="columns">
 					<div class="column is-6">
 						<div class="field">
-							<label class="label">Team</label>
+							<label class="label">
+								Team
+								<span class="has-text-danger">*</span>
+							</label>
 							<div class="control">
 								<div class="select is-fullwidth">
 									<select name="team_id" required>
