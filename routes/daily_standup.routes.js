@@ -8,6 +8,7 @@ const allRoles = authorize(ROLES.ADMIN, ROLES.LEAD, ROLES.MEMBER);
 
 // FR-22: Registrar actividad - Admin, Lead, Member
 router.get('/', isAuth, allRoles, standupController.get_standup_form);
+router.get('/validate-date', isAuth, allRoles, standupController.get_standup_duplicate_validation);
 router.post('/', isAuth, allRoles, standupController.post_standup);
 
 // FR-24: Consultar actividad - Admin, Lead, Member
