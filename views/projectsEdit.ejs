@@ -33,12 +33,15 @@
 						<input
 							class="input"
 							type="text"
+							id="name"
 							name="name"
 							placeholder="Enter project name"
+							maxlength="150"
 							required
 							value="<%= formData && formData.name ? formData.name : (project && project.name ? project.name : '') %>"
 						>
 					</div>
+					<p class="help" id="nameCharCounter">0/150</p>
 				</div>
 
 				<div class="field">
@@ -46,11 +49,14 @@
 					<div class="control">
 						<textarea
 							class="textarea"
+							id="description"
 							name="description"
 							placeholder="Describe project scope"
+							maxlength="65535"
 							required
 						><%= formData && formData.description ? formData.description : (project && project.description ? project.description : '') %></textarea>
 					</div>
+					<p class="help" id="descriptionCharCounter">0/65535</p>
 				</div>
 
 				<div class="field">
@@ -133,9 +139,29 @@
 
 <script>
 	document.addEventListener('DOMContentLoaded', () => {
+		const nameInput = document.getElementById('name');
+		const descriptionInput = document.getElementById('description');
+		const nameCounter = document.getElementById('nameCharCounter');
+		const descriptionCounter = document.getElementById('descriptionCharCounter');
 		const startDateInput = document.querySelector('input[name="start_date"]');
 		const endDateInput = document.querySelector('input[name="end_date"]');
 		const statusSelect = document.querySelector('select[name="status"]');
+
+		const updateCounter = (input, counter) => {
+			if (!input || !counter) return;
+			const max = input.getAttribute('maxlength') || 0;
+			counter.textContent = `${input.value.length}/${max}`;
+		};
+
+		if (nameInput && nameCounter) {
+			nameInput.addEventListener('input', () => updateCounter(nameInput, nameCounter));
+			updateCounter(nameInput, nameCounter);
+		}
+
+		if (descriptionInput && descriptionCounter) {
+			descriptionInput.addEventListener('input', () => updateCounter(descriptionInput, descriptionCounter));
+			updateCounter(descriptionInput, descriptionCounter);
+		}
 
 		const setTodayOnCompleted = () => {
 			if (!endDateInput || !statusSelect || statusSelect.value !== 'completed') {

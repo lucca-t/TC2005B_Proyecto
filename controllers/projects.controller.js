@@ -4,6 +4,17 @@
 const Project = require('../models/projects.model');
 const User = require('../models/users.model');
 
+const PROJECT_NAME_MAX_LENGTH = 150;
+const PROJECT_DESCRIPTION_MAX_LENGTH = 65535;
+
+const isDataTooLongError = (error) => {
+  return error && (
+    error.code === 'ER_DATA_TOO_LONG' ||
+    error.errno === 1406 ||
+    error.sqlState === '22001'
+  );
+};
+
 const formatDateForInput = (value) => {
   if (!value) return '';
 
@@ -174,6 +185,18 @@ exports.post_add = async (request, response, next) => {
       });
     }
 
+    if (normalizedName.length > PROJECT_NAME_MAX_LENGTH) {
+      return await renderForm({
+        error: `Project name cannot exceed ${PROJECT_NAME_MAX_LENGTH} characters.`,
+      });
+    }
+
+    if (normalizedDescription.length > PROJECT_DESCRIPTION_MAX_LENGTH) {
+      return await renderForm({
+        error: `Project description cannot exceed ${PROJECT_DESCRIPTION_MAX_LENGTH} characters.`,
+      });
+    }
+
     const [allowedTeams] = await Project.getTeamsByUser(userId);
     const canUseTeam = allowedTeams.some(
         (team) => String(team.team_id) === String(normalizedTeamId),
@@ -225,6 +248,12 @@ exports.post_add = async (request, response, next) => {
         error.sqlMessage || error.message,
     );
     try {
+      if (isDataTooLongError(error)) {
+        return await renderForm({
+          error: `Project text is too long. Name max: ${PROJECT_NAME_MAX_LENGTH} characters, description max: ${PROJECT_DESCRIPTION_MAX_LENGTH} characters.`,
+        });
+      }
+
       return await renderForm({
         msg: 'Could not save the project.',
       });
@@ -370,6 +399,18 @@ exports.post_edit = async (request, response, next) => {
       });
     }
 
+    if (normalizedName.length > PROJECT_NAME_MAX_LENGTH) {
+      return await renderForm({
+        error: `Project name cannot exceed ${PROJECT_NAME_MAX_LENGTH} characters.`,
+      });
+    }
+
+    if (normalizedDescription.length > PROJECT_DESCRIPTION_MAX_LENGTH) {
+      return await renderForm({
+        error: `Project description cannot exceed ${PROJECT_DESCRIPTION_MAX_LENGTH} characters.`,
+      });
+    }
+
     const [[projectRows], [allowedTeams]] = await Promise.all([
       Project.fetchOneByUserTeams(projectId, userId),
       Project.getTeamsByUser(userId),
@@ -427,6 +468,12 @@ exports.post_edit = async (request, response, next) => {
   } catch (error) {
     console.error('[POST /projects/edit] Failed to update project:', error.sqlMessage || error.message);
     try {
+      if (isDataTooLongError(error)) {
+        return await renderForm({
+          error: `Project text is too long. Name max: ${PROJECT_NAME_MAX_LENGTH} characters, description max: ${PROJECT_DESCRIPTION_MAX_LENGTH} characters.`,
+        });
+      }
+
       return await renderForm({
         msg: 'Could not update the project.',
       });
