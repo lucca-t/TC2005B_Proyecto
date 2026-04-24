@@ -253,15 +253,19 @@ exports.get_standup_history = (request, response, next) => {
 
   const email = request.session.email;
 
-  Standup.getHistory(email)
-      .then(([rows]) => {
-        response.render('standup_history', {
-          csrfToken: request.csrfToken(),
-          title: 'Activity History - Daily Standup+',
-          email: email,
-          standups: rows,
-
-        });
+  Standup.getUserId(email)
+      .then(([userRows]) => {
+        const userId = userRows.length > 0 ? userRows[0].user_id : null;
+        return Standup.getHistory(email)
+            .then(([rows]) => {
+              response.render('standup_history', {
+                csrfToken: request.csrfToken(),
+                title: 'Activity History - Daily Standup+',
+                email: email,
+                standups: rows,
+                userId: userId,
+              });
+            });
       })
       .catch((err) => {
         console.error('Error fetching standup history:', err);
@@ -270,6 +274,7 @@ exports.get_standup_history = (request, response, next) => {
           title: 'Activity History - Daily Standup+',
           email: email,
           standups: [],
+          userId: null,
           error: 'Server connection error. Please try again later.',
         });
       });

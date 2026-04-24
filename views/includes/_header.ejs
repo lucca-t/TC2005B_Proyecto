@@ -50,8 +50,8 @@
             <% if (resolvedNavPermissions.canRegisterUsers) { %>
             <a href="/users/add" class="navbar-item">Register new user</a>
             <% } %>
-            <a href="/users/list" class="navbar-item">Users list</a>
-            <a href="/users/report/history" class="navbar-item">My report history</a>
+            <a href="/users/report/history" class="navbar-item">Users List</a>
+            <a href="/daily_standup/history" class="navbar-item">My Standup History</a>
           </div>
         </div>
 
@@ -61,29 +61,28 @@
             <% if (resolvedNavPermissions.canRegisterTeams) { %>
             <a href="/teams/add" class="navbar-item">Register new team</a>
             <% } %>
-            <a href="/teams/list" class="navbar-item">Teams list</a>
+            <a href="/teams/list" class="navbar-item">Teams List</a>
           </div>
         </div>
   
         <div class="navbar-item has-dropdown is-hoverable">   
           <a href="/projects/list" class="navbar-link js-navbar-dropdown-toggle" aria-expanded="false">Projects</a>
           <div class="navbar-dropdown">
-            <% if (resolvedNavPermissions.canRegisterProjects) { %>
-            <a href="/projects/add" class="navbar-item">Register new project</a>
+            <% if (role === 'Administrador' || role === 'Lead Member') { %>
+            <a href="/projects/add" class="navbar-item">Register New Project</a>
+            <% } else { %>
+            <a href="#" class="navbar-item" onclick="showPermissionModal(); return false;">Register New Project</a>
+            <a href="/projects/list" class="navbar-item">Projects List</a>
+            <a href="/projects/report" class="navbar-item">Projects Reports</a>
             <% } %>
-            <a href="/projects/list" class="navbar-item">Projects list</a>
-            <!-- <a href="/projects/report" class="navbar-item">Projects reports</a> -->
           </div>
         </div>
 
         <div class="navbar-item has-dropdown is-hoverable">
           <a href="/daily_standup/history" class="navbar-link js-navbar-dropdown-toggle" aria-expanded="false">Standup</a>
           <div class="navbar-dropdown">
-            <a href="/daily_standup" class="navbar-item">Register daily standup</a>
-            <a href="/daily_standup/history" class="navbar-item">Personal standups list</a>
-            <% if (resolvedNavPermissions.canViewTeamStandups) { %>
-            <a href="/daily_standup/history/team" class="navbar-item">Team standups list</a>
-            <% } %>
+            <a href="/daily_standup" class="navbar-item">Register New Daily Standup</a>
+            <a href="/daily_standup/history" class="navbar-item">Activity History List</a>
           </div>
         </div>
 

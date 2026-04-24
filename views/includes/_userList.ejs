@@ -5,11 +5,17 @@
                 <h1 class="title">User Management</h1>
             </div>
             <div class="level-right">
-                <% if (typeof role !== 'undefined' && role === 'Administrador') { %>
-                <a href="/users/add" class="button is-primary">
-                    <strong>+ New User</strong>
-                </a>
-                <% } %>
+                <div class="buttons">
+                    <a href="/daily_standup/history" class="button is-light">
+                        <span class="icon"><i class="fas fa-history"></i></span>
+                        <span>My Standup History</span>
+                    </a>
+                    <% if (typeof role !== 'undefined' && role === 'Administrador') { %>
+                    <a href="/users/add" class="button is-primary">
+                        <strong>+ New User</strong>
+                    </a>
+                    <% } %>
+                </div>
             </div>
         </div>
 
