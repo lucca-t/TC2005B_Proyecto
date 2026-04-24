@@ -10,6 +10,12 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
+  const shouldValidateDuplicate =
+    form.getAttribute('data-validate-duplicate') === 'true';
+  if (!shouldValidateDuplicate) {
+    return;
+  }
+
   const validateUrl =
     form.getAttribute('data-validate-url') || '/daily_standup/validate-date';
 

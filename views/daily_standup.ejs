@@ -30,7 +30,13 @@
                 <% } %>
 
                 <div class="box">
-                    <form action="<%= editMode ? '/daily_standup/edit/' + standup.standup_id : '/daily_standup' %>" method="POST">
+                    <form
+                        id="standup-form"
+                        action="<%= editMode ? '/daily_standup/edit/' + standup.standup_id : '/daily_standup' %>"
+                        method="POST"
+                        data-validate-url="/daily_standup/validate-date"
+                        data-validate-duplicate="<%= editMode ? 'false' : 'true' %>"
+                    >
                         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
 
                         <div class="field">
@@ -85,15 +91,16 @@
                                     class="input"
                                     type="date"
                                     name="date"
-                                    id="fecha_blocker"
+                                    id="standup-date"
                                     value="<%= editMode ? standup.date.toISOString().split('T')[0] : new Date().toLocaleDateString('en-CA') %>"
                                 >
                             </div>
+                            <p id="duplicate-date-feedback" class="help"></p>
                         </div>
 
                         <div class="field">
                             <div class="control">
-                                <button type="submit" class="button is-primary is-fullwidth">
+                                <button id="standup-submit" type="submit" class="button is-primary is-fullwidth">
                                     <%= editMode ? 'Save Changes' : 'Submit' %>
                                 </button>
                                 <div class="has-text-centered mt-3">
@@ -115,5 +122,6 @@
     </div>
 </section>
 
+<script src="/js/daily-standup-form.js" defer></script>
+
 <%- include('includes/_footer') %>
-git
