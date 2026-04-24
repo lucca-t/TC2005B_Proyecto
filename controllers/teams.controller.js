@@ -859,21 +859,6 @@ exports.getDetails = (request, response, next) => {
               }))
               .sort(compareUsersByNameThenEmail);
 
-<<<<<<< HEAD
-          const viewData = {
-            csrfToken: request.csrfToken(),
-            error: error,
-            email: request.session.email || '',
-            teamId: teamId,
-            teamName: teamName,
-            members: members,
-            reports: [],
-          };
-
-          response.render('teamDetails', viewData);
-        });
-  })
-=======
         return Team.selectLast3reports(teamId)
             .then(([reportRows]) => {
               const viewData = {
@@ -889,10 +874,10 @@ exports.getDetails = (request, response, next) => {
               response.render('teamDetails', viewData);
             });
       })
->>>>>>> 534b7f2 (Fix: Heuristic Reports problems from TA01 - TA05, for more information research the documentation)
       .catch((error) => {
         console.error('[GET /teams/details] Failed to fetch team details:', error);
         request.session.error = 'Could not load team details. Please try again.';
         return response.redirect('/teams/list');
       });
+  });
 };
