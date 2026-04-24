@@ -23,6 +23,13 @@ module.exports = class Standup {
     );
   }
 
+  static getUserIdBySlackId(slackId) {
+    return db.execute(
+        'SELECT user_id FROM user WHERE slack_id = ? AND deleted_at IS NULL',
+        [slackId],
+    );
+  }
+
   static checkDuplicate(user_id, date) {
     return db.execute(
         'SELECT standup_id FROM standup WHERE user_id = ? AND date = ?',

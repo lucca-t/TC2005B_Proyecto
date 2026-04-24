@@ -628,18 +628,17 @@ exports.post_report = (request, response, next) => {
                           '?reportId=' + existingReport.report_id,
                             );
                           }
-
-                    return generateUserReport(
-                        user,
-                        startDate,
-                        endDate,
-                        standups,
-                        request.session.role || '',
-                    )
-                        .then((reportText) => {
-                          const standupIds = standups.map(
-                              (row) => row.standup_id,
-                          );
+                          return generateUserReport(
+                              user,
+                              startDate,
+                              endDate,
+                              standups,
+                              request.session.role || '',
+                          )
+                              .then((reportText) => {
+                                const standupIds = standups.map(
+                                    (row) => row.standup_id,
+                                );
 
                                 return getSessionUserId(request)
                                     .then((sessionUserId) => {

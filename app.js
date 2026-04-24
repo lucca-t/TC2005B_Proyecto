@@ -34,6 +34,11 @@ app.use((req, res, next) => {
 app.set('view engine', 'ejs');
 app.set('views', 'views');
 
+const route_standup_api = require('./routes/standup_api.routes');
+
+// External integrations (e.g., Slack) post JSON here.
+app.use('/api/standups', express.json({limit: '1mb'}), route_standup_api);
+
 const session = require('express-session');
 const {getRolePermissions} = require('./util/rbac');
 app.use(session({
