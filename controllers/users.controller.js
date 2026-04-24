@@ -619,6 +619,7 @@ exports.post_report = (request, response, next) => {
                       });
                     }
 
+<<<<<<< HEAD
                     return Reports.findUserReportByRange(userId, startStr, endStr)
                         .then(([existingReports]) => {
                           if (existingReports && existingReports.length > 0) {
@@ -628,6 +629,19 @@ exports.post_report = (request, response, next) => {
                           '?reportId=' + existingReport.report_id,
                             );
                           }
+=======
+                    return generateUserReport(
+                        user,
+                        startDate,
+                        endDate,
+                        standups,
+                        request.session.role || '',
+                    )
+                        .then((reportText) => {
+                          const standupIds = standups.map(
+                              (row) => row.standup_id,
+                          );
+>>>>>>> 534b7f2 (Fix: Heuristic Reports problems from TA01 - TA05, for more information research the documentation)
 
                           return generateUserReport(
                               user,
