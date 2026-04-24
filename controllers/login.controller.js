@@ -29,7 +29,12 @@ exports.post_login = (request, response, next) => {
       return User.getRoleByEmail(request.body.email).then(([roleRows]) => {
         request.session.role = roleRows.length > 0 ? roleRows[0].role_name : null;
         return request.session.save(() => {
-          return response.redirect('/users/list');
+          const normalizedRole = String(request.session.role || '').trim().toLowerCase();
+          if (normalizedRole === 'member') {
+            return response.redirect('/daily_standup');
+          }
+
+          return response.redirect('/teams/list');
         });
       });
     }).catch((error) => {
