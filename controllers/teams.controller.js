@@ -684,14 +684,14 @@ exports.postAdd = (request, response, next) => {
               if (memberArray.length === 0) {
                 console.log(`[POST /teams/add] No members added to team ${teamId}`);
                 request.session.success = 'Team created successfully!';
-                return response.redirect('/teams/list');
+                return response.redirect(`/teams/details/${teamId}`);
               }
 
               return Team.addMembersToTeam(teamId, memberArray)
                   .then(() => {
                     console.log(`[POST /teams/add] Successfully added ${memberArray.length} members to team ${teamId}`);
                     request.session.success = 'Team created successfully!';
-                    return response.redirect('/teams/list');
+                    return response.redirect(`/teams/details/${teamId}`);
                   })
                   .catch((error) => {
                     console.error('[POST /teams/add] Failed to add members:', error.sqlMessage || error.message);
