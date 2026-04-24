@@ -518,6 +518,7 @@ exports.post_report = (request, response, next) => {
                         startDate,
                         endDate,
                         standups,
+                        request.session.role || '',
                     )
                         .then((reportText) => {
                           const standupIds = standups.map(

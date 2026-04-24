@@ -709,17 +709,20 @@ exports.getDetails = (request, response, next) => {
               slack_handle: row.slack_handle,
             }));
 
-        const viewData = {
-          csrfToken: request.csrfToken(),
-          error: error,
-          email: request.session.email || '',
-          teamId: teamId,
-          teamName: teamName,
-          members: members,
-          reports: [],
-        };
+        return Team.selectLast3reports(teamId)
+            .then(([reportRows]) => {
+              const viewData = {
+                csrfToken: request.csrfToken(),
+                error: error,
+                email: request.session.email || '',
+                teamId: teamId,
+                teamName: teamName,
+                members: members,
+                reports: reportRows || [],
+              };
 
-        response.render('teamDetails', viewData);
+              response.render('teamDetails', viewData);
+            });
       })
       .catch((error) => {
         console.error('[GET /teams/details] Failed to fetch team details:', error);

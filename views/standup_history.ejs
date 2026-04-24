@@ -10,7 +10,15 @@
                 </div>
             </div>
             <div class="level-right">
-                <a href="/daily_standup" class="button is-primary"><strong>+ New Standup</strong></a>
+                <div class="buttons">
+                    <% if (typeof userId !== 'undefined' && userId) { %>
+                    <a href="/users/report/<%= userId %>" class="button is-light">
+                        <span class="icon"><i class="fas fa-file-alt"></i></span>
+                        <span>Generate Report</span>
+                    </a>
+                    <% } %>
+                    <a href="/daily_standup" class="button is-primary"><strong>+ New Standup</strong></a>
+                </div>
             </div>
         </div>
     </div>
@@ -25,7 +33,26 @@
                 <%= error %>
             </div>
         <% } %>
-        
+
+        <div class="box mb-4">
+            <div class="field is-grouped is-grouped-multiline">
+                <div class="control">
+                    <label class="label is-small">From</label>
+                    <input id="filterFrom" class="input" type="date" style="min-width:160px;">
+                </div>
+                <div class="control">
+                    <label class="label is-small">To</label>
+                    <input id="filterTo" class="input" type="date" style="min-width:160px;">
+                </div>
+                <div class="control" style="align-self:flex-end;">
+                    <button id="filterClear" class="button is-light" type="button">Clear</button>
+                </div>
+            </div>
+            <p id="filterDateError" class="help is-danger" style="display:none;">
+                "From" date cannot be later than "To" date.
+            </p>
+        </div>
+
         <div class="box">
             <% if (standups.length === 0) { %>
                 <div class="notification is-warning is-light">
@@ -72,5 +99,76 @@
         </div>
     </div>
 </section>
+
+<script>
+(function () {
+    const fromInput = document.getElementById('filterFrom');
+    const toInput = document.getElementById('filterTo');
+    const clearBtn = document.getElementById('filterClear');
+    const tbody = document.querySelector('tbody');
+
+    if (!fromInput || !toInput || !tbody) return;
+
+    const errorMsg = document.getElementById('filterDateError');
+
+    function validateRange() {
+        if (fromInput.value && toInput.value && fromInput.value > toInput.value) {
+            errorMsg.style.display = '';
+            fromInput.classList.add('is-danger');
+            toInput.classList.add('is-danger');
+            return false;
+        }
+        errorMsg.style.display = 'none';
+        fromInput.classList.remove('is-danger');
+        toInput.classList.remove('is-danger');
+        return true;
+    }
+
+    function filterRows() {
+        if (!validateRange()) return;
+        const from = fromInput.value ? new Date(fromInput.value + 'T00:00:00') : null;
+        const to = toInput.value ? new Date(toInput.value + 'T23:59:59') : null;
+        const rows = tbody.querySelectorAll('tr');
+
+        rows.forEach(function (row) {
+            const dateCell = row.querySelector('td:first-child');
+            if (!dateCell) return;
+            const cellDate = new Date(dateCell.textContent.trim() + 'T00:00:00');
+            const afterFrom = !from || cellDate >= from;
+            const beforeTo = !to || cellDate <= to;
+            row.style.display = afterFrom && beforeTo ? '' : 'none';
+        });
+    }
+
+    fromInput.addEventListener('change', function () {
+        if (toInput.value && fromInput.value > toInput.value) {
+            toInput.value = fromInput.value;
+        }
+        toInput.min = fromInput.value || '';
+        filterRows();
+    });
+
+    toInput.addEventListener('change', function () {
+        if (fromInput.value && toInput.value < fromInput.value) {
+            fromInput.value = toInput.value;
+        }
+        fromInput.max = toInput.value || '';
+        filterRows();
+    });
+
+    clearBtn.addEventListener('click', function () {
+        fromInput.value = '';
+        toInput.value = '';
+        fromInput.min = '';
+        fromInput.max = '';
+        toInput.min = '';
+        toInput.max = '';
+        errorMsg.style.display = 'none';
+        fromInput.classList.remove('is-danger');
+        toInput.classList.remove('is-danger');
+        filterRows();
+    });
+})();
+</script>
 
 <%- include('includes/_footer') %>

@@ -1,11 +1,11 @@
 const {generateText} = require('ai');
 const {openai} = require('@ai-sdk/openai');
 
-async function generateUserReport(user, startDate, endDate, standupData) {
+async function generateUserReport(user, startDate, endDate, standupData, role) {
   const start = startDate.toISOString().split('T')[0];
   const end = endDate.toISOString().split('T')[0];
 
-  const systemPrompt = [
+  const systemPromptLines = [
     'You are an expert engineering manager\'s assistant designed to',
     'synthesize daily engineering standup data into a structured',
     'Quarterly Performance Review Self-Evaluation.',
@@ -47,10 +47,17 @@ async function generateUserReport(user, startDate, endDate, standupData) {
     '  * [Why blockers persisted]',
     '* **Team & Culture connection:**',
     '  * [Collaboration consistency or isolation signals]',
-    '',
-    '#### What feedback do you have for me as your manager?',
-    '*',
-  ].join('\n');
+  ];
+
+  if (role !== 'Member') {
+    systemPromptLines.push(
+        '',
+        '#### What feedback do you have for me as your manager?',
+        '*',
+    );
+  }
+
+  const systemPrompt = systemPromptLines.join('\n');
 
   const userPrompt = [
     `Generate a report for user: ${user.full_name} (${user.email})`,

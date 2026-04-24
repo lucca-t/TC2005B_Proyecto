@@ -276,6 +276,16 @@
         <% } %>
 
         <% if (typeof report !== 'undefined' && report) { %>
+        <div class="notification is-success is-light mb-4" id="reportSavedNotification">
+            <button class="delete" onclick="this.parentElement.remove()"></button>
+            <i class="fas fa-check-circle"></i> <strong>Report generated and saved successfully.</strong>
+        </div>
+        <script>
+            setTimeout(function() {
+                var n = document.getElementById('reportSavedNotification');
+                if (n) n.remove();
+            }, 5000);
+        </script>
         <div class="box">
             <div class="level mb-2">
                 <div class="level-left">
