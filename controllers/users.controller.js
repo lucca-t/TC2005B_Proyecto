@@ -628,7 +628,6 @@ exports.post_report = (request, response, next) => {
                           '?reportId=' + existingReport.report_id,
                             );
                           }
-
                           return generateUserReport(
                               user,
                               startDate,
