@@ -4,6 +4,46 @@ const {generateUserReport} = require('../util/ai-report');
 const {ROLES, normalizeRole} = require('../util/rbac');
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const SLACK_HANDLE_REGEX = /^@?[a-zA-Z0-9._-]+$/;
+const USER_MAX_LENGTH = {
+  email: 50,
+  full_name: 150,
+  slack_handle: 100,
+  slack_id: 50,
+};
+
+const MSG_REQUIRED = 'All fields are required.';
+const MSG_INVALID_EMAIL =
+  'Email format is invalid. Please use a valid email address.';
+const MSG_INVALID_SLACK =
+  'Slack handle is invalid. Use letters, numbers, dot, dash, or underscore.';
+const MSG_DUPLICATE_EMAIL =
+  'A user with this email already exists. Please use another email.';
+const MSG_TOO_LONG =
+  'One or more fields are too long. Please review the form and try again.';
+const MSG_CREATE_FAILED =
+  'Could not create the user right now. Please try again.';
+const MSG_UPDATE_FAILED =
+  'Could not update the user right now. Please try again.';
+
+const isDataTooLongError = (error) => {
+  return error && (
+    error.code === 'ER_DATA_TOO_LONG' ||
+    error.errno === 1406 ||
+    error.sqlState === '22001'
+  );
+};
+
+const isDuplicateEntryError = (error) => {
+  return error && (
+    error.code === 'ER_DUP_ENTRY' ||
+    error.errno === 1062
+  );
+};
+
+const maxLengthMessage = (fieldLabel, maxLength) => {
+  return `${fieldLabel} cannot exceed ${maxLength} characters.`;
+};
 
 const normalizeSlackHandle = (value) => {
   const trimmedValue = (value || '').trim();
@@ -167,6 +207,12 @@ exports.get_add = (request, response, next) => {
   response.render('userAdd', {
     csrfToken: request.csrfToken(),
     email: request.session.email || '',
+    formData: {
+      email: '',
+      full_name: '',
+      slack_handle: '',
+      slack_id: '',
+    },
   });
 };
 
@@ -199,12 +245,59 @@ exports.post_add = (request, response, next) => {
   const normalizedSlackHandle = normalizeSlackHandle(slack_handle);
   const normalizedSlackId = (slack_id || '').trim();
 
-  if (!EMAIL_REGEX.test(normalizedEmail)) {
+  const formData = {
+    email: normalizedEmail,
+    full_name: normalizedFullName,
+    slack_handle: normalizedSlackHandle,
+    slack_id: normalizedSlackId,
+  };
+
+  const renderAddError = (message) => {
     return response.status(400).render('userAdd', {
       csrfToken: request.csrfToken(),
       email: request.session.email || '',
-      error: 'Email format is invalid. Please use a valid email address.',
+      formData,
+      error: message,
     });
+  };
+
+  if (
+    !normalizedEmail || !normalizedPassword || !normalizedFullName ||
+    !normalizedSlackHandle || !normalizedSlackId
+  ) {
+    return renderAddError(MSG_REQUIRED);
+  }
+
+  if (!EMAIL_REGEX.test(normalizedEmail)) {
+    return renderAddError(MSG_INVALID_EMAIL);
+  }
+
+  if (!SLACK_HANDLE_REGEX.test(normalizedSlackHandle)) {
+    return renderAddError(MSG_INVALID_SLACK);
+  }
+
+  if (normalizedEmail.length > USER_MAX_LENGTH.email) {
+    return renderAddError(
+        maxLengthMessage('Email', USER_MAX_LENGTH.email),
+    );
+  }
+
+  if (normalizedFullName.length > USER_MAX_LENGTH.full_name) {
+    return renderAddError(
+        maxLengthMessage('Full name', USER_MAX_LENGTH.full_name),
+    );
+  }
+
+  if (normalizedSlackHandle.length > USER_MAX_LENGTH.slack_handle) {
+    return renderAddError(
+        maxLengthMessage('Slack handle', USER_MAX_LENGTH.slack_handle),
+    );
+  }
+
+  if (normalizedSlackId.length > USER_MAX_LENGTH.slack_id) {
+    return renderAddError(
+        maxLengthMessage('Slack ID', USER_MAX_LENGTH.slack_id),
+    );
   }
 
   const user = new User(
@@ -224,12 +317,16 @@ exports.post_add = (request, response, next) => {
             '[POST /users/add] Failed to save user:',
             error.sqlMessage || error.message,
         );
-        response.status(400).render('userAdd', {
-          csrfToken: request.csrfToken(),
-          email: request.session.email || '',
-          error: 'Error creating user: ' +
-            (error.sqlMessage || error.message || 'Unknown error'),
-        });
+
+        if (isDuplicateEntryError(error)) {
+          return renderAddError(MSG_DUPLICATE_EMAIL);
+        }
+
+        if (isDataTooLongError(error)) {
+          return renderAddError(MSG_TOO_LONG);
+        }
+
+        return renderAddError(MSG_CREATE_FAILED);
       });
 };
 
@@ -244,7 +341,7 @@ exports.post_edit = (request, response, next) => {
 
   const normalizedEmail = (email || '').trim();
   const normalizedFullName = (full_name || '').trim();
-  const normalizedSlackHandle = (slack_handle || '').trim();
+  const normalizedSlackHandle = normalizeSlackHandle(slack_handle);
   const normalizedSlackId = (slack_id || '').trim();
 
   if (
@@ -260,7 +357,7 @@ exports.post_edit = (request, response, next) => {
       },
       csrfToken: request.csrfToken(),
       email: request.session.email || '',
-      error: 'All fields are required. None can be empty.',
+      error: MSG_REQUIRED,
     });
   }
 
@@ -274,7 +371,77 @@ exports.post_edit = (request, response, next) => {
       },
       csrfToken: request.csrfToken(),
       email: request.session.email || '',
-      error: 'Email format is invalid. Please use a valid email address.',
+      error: MSG_INVALID_EMAIL,
+    });
+  }
+
+  if (!SLACK_HANDLE_REGEX.test(normalizedSlackHandle)) {
+    return response.status(400).render('userEdit', {
+      user: {
+        email: normalizedEmail,
+        full_name: normalizedFullName,
+        slack_handle: normalizedSlackHandle,
+        slack_id: normalizedSlackId,
+      },
+      csrfToken: request.csrfToken(),
+      email: request.session.email || '',
+      error: MSG_INVALID_SLACK,
+    });
+  }
+
+  if (normalizedEmail.length > USER_MAX_LENGTH.email) {
+    return response.status(400).render('userEdit', {
+      user: {
+        email: normalizedEmail,
+        full_name: normalizedFullName,
+        slack_handle: normalizedSlackHandle,
+        slack_id: normalizedSlackId,
+      },
+      csrfToken: request.csrfToken(),
+      email: request.session.email || '',
+      error: maxLengthMessage('Email', USER_MAX_LENGTH.email),
+    });
+  }
+
+  if (normalizedFullName.length > USER_MAX_LENGTH.full_name) {
+    return response.status(400).render('userEdit', {
+      user: {
+        email: normalizedEmail,
+        full_name: normalizedFullName,
+        slack_handle: normalizedSlackHandle,
+        slack_id: normalizedSlackId,
+      },
+      csrfToken: request.csrfToken(),
+      email: request.session.email || '',
+      error: maxLengthMessage('Full name', USER_MAX_LENGTH.full_name),
+    });
+  }
+
+  if (normalizedSlackHandle.length > USER_MAX_LENGTH.slack_handle) {
+    return response.status(400).render('userEdit', {
+      user: {
+        email: normalizedEmail,
+        full_name: normalizedFullName,
+        slack_handle: normalizedSlackHandle,
+        slack_id: normalizedSlackId,
+      },
+      csrfToken: request.csrfToken(),
+      email: request.session.email || '',
+      error: maxLengthMessage('Slack handle', USER_MAX_LENGTH.slack_handle),
+    });
+  }
+
+  if (normalizedSlackId.length > USER_MAX_LENGTH.slack_id) {
+    return response.status(400).render('userEdit', {
+      user: {
+        email: normalizedEmail,
+        full_name: normalizedFullName,
+        slack_handle: normalizedSlackHandle,
+        slack_id: normalizedSlackId,
+      },
+      csrfToken: request.csrfToken(),
+      email: request.session.email || '',
+      error: maxLengthMessage('Slack ID', USER_MAX_LENGTH.slack_id),
     });
   }
 
@@ -295,6 +462,14 @@ exports.post_edit = (request, response, next) => {
             '[POST /users/edit] Failed to update user:',
             error.sqlMessage || error.message,
         );
+
+        let errorMessage = MSG_UPDATE_FAILED;
+        if (isDuplicateEntryError(error)) {
+          errorMessage = MSG_DUPLICATE_EMAIL;
+        } else if (isDataTooLongError(error)) {
+          errorMessage = MSG_TOO_LONG;
+        }
+
         response.status(400).render('userEdit', {
           user: {
             email: normalizedEmail,
@@ -304,8 +479,7 @@ exports.post_edit = (request, response, next) => {
           },
           csrfToken: request.csrfToken(),
           email: request.session.email || '',
-          error: 'Error updating user: ' +
-            (error.sqlMessage || error.message || 'Unknown error'),
+          error: errorMessage,
         });
       });
 };
