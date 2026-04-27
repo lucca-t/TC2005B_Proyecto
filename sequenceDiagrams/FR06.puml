@@ -1,0 +1,104 @@
+@startuml DeleteUserSequence
+
+actor "User" as user
+boundary "Browser" as browser
+boundary "userList.ejs" as view
+control "users.routes.js" as routes
+control "users.controller.js" as controller
+entity "users.model.js" as model
+database "MySQL" as db
+
+== Confirm Deletion ==
+
+activate user
+user -> browser: 1. Click "Delete" on a user row
+deactivate user
+activate browser
+
+browser -> user: 2. Show confirm("Delete this user?")
+activate user
+
+alt User confirms deletion
+
+    user -> browser: 3b. Click "OK"
+    deactivate user
+    browser -> routes: 4b. POST /users/delete/:userId\n(_csrf)
+    deactivate browser
+    activate routes
+
+    routes -> controller: 5b. post_delete(request, response)
+    deactivate routes
+    activate controller
+
+    controller -> controller: 6b. Read userId from params
+
+    controller ->> model: 7b. async User.softDelete(userId)
+    activate model
+
+    model ->> db: 8b. UPDATE user\nSET deleted_at = NOW()\nWHERE user_id = ? AND deleted_at IS NULL
+    activate db
+    db -->> model: 9b. {affectedRows}
+    deactivate db
+
+    model -->> controller: 10b. result
+    deactivate model
+
+    alt Delete successful
+
+        controller -> controller: 11b. session.success = "User deleted successfully!"
+        controller -> browser: 12b. redirect('/users/list')
+        deactivate controller
+        activate browser
+
+    else Database error while deleting
+
+        controller -> controller: 11c. log error
+        controller -> routes: 12c. next(error)
+        deactivate controller
+        activate routes
+        routes -> view: 13c. render error page
+        deactivate routes
+        activate view
+        view -> browser: 14c. Display error
+        deactivate view
+
+    end
+
+else User cancels deletion
+    user -> browser: 3a. Click "Cancel"
+    deactivate user
+    browser -> user: 4a. List remains unchanged
+    deactivate browser
+end
+
+== Redirect to User List ==
+
+browser -> routes: 13. GET /users/list
+activate browser
+activate routes
+deactivate browser
+routes -> controller: 14. get_list(request, response)
+deactivate routes
+activate controller
+
+controller ->> model: 15. async User.getAllWithRoles()
+activate model
+model ->> db: 16. SELECT u.*, r.role_name, ...\nFROM user u LEFT JOIN user_role ur ...\nWHERE u.deleted_at IS NULL
+activate db
+db -->> model: 17. User rows with roles
+deactivate db
+model -->> controller: 18. [rows]
+deactivate model
+
+controller -> view: 19. render("userList", {users, success})
+deactivate controller
+activate view
+view -> browser: 20. HTML user list
+deactivate view
+activate browser
+activate user
+browser -> user: 21. Updated user list displayed
+deactivate browser
+deactivate user
+
+@enduml
