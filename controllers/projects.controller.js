@@ -601,6 +601,7 @@ exports.get_details = (request, response, next) => {
           },
           members: members,
           reports: reports,
+          latestReport: reports && reports.length > 0 ? reports[0] : null,
         };
 
         response.render('projectDetails', viewData);
@@ -646,21 +647,48 @@ exports.getReport = (request, response, next) => {
           end_date: projectRows[0].end_date,
         };
 
+        console.log('[GET /projects/report] Project data retrieved:');
+        console.log('  - project_id:', project.project_id);
+        console.log('  - name:', project.name);
+        console.log('  - start_date (raw):', project.start_date);
+        console.log('  - start_date (type):', typeof project.start_date);
+        console.log('  - end_date (raw):', project.end_date);
+        console.log('  - end_date (type):', typeof project.end_date);
+
         if (!reportId) {
-          return response.render('projectReport', {
-            csrfToken: request.csrfToken(),
-            email: request.session.email || '',
-            role: request.session.role || '',
-            project,
-            report: null,
-            error: null,
-            startDate: formatDateForInput(project.start_date),
-            endDate: formatDateForInput(project.end_date),
-          });
+          console.log('[GET /projects/report] No reportId, showing form');
+          console.log('  - startDate formatted:', formatDateForInput(project.start_date));
+          console.log('  - endDate formatted:', formatDateForInput(project.end_date));
+          
+          // Check if a report already exists for this project
+          const startStr = formatDateForInput(project.start_date);
+          const endStr = formatDateForInput(project.end_date);
+          
+          return Reports.findProjectReportByRange(project.project_id, startStr, endStr)
+              .then(([existingReports]) => {
+                console.log('[GET /projects/report] Check for existing reports:', existingReports ? existingReports.length : 0);
+                
+                return response.render('projectReport', {
+                  csrfToken: request.csrfToken(),
+                  email: request.session.email || '',
+                  role: request.session.role || '',
+                  project,
+                  report: null,
+                  error: null,
+                  startDate: startStr,
+                  endDate: endStr,
+                  existingReportId: (existingReports && existingReports.length > 0) ? existingReports[0].report_id : null,
+                });
+              });
         }
 
         return Reports.findProjectReportById(reportId, projectId)
             .then(([reportRows]) => {
+              console.log('[GET /projects/report] Query result for reportId:', reportId);
+              console.log('  - Found rows:', reportRows ? reportRows.length : 0);
+              if (reportRows && reportRows.length > 0) {
+                console.log('  - First report:', reportRows[0]);
+              }
               if (!reportRows || reportRows.length === 0) {
                 return response.render('projectReport', {
                   csrfToken: request.csrfToken(),
@@ -684,14 +712,15 @@ exports.getReport = (request, response, next) => {
                 error: null,
                 startDate: formatDateForInput(saved.date_beginning),
                 endDate: formatDateForInput(saved.date_end),
+                reportId: reportId,
               });
             });
       })
       .catch((error) => {
-        console.error(
-            '[GET /projects/report] Failed to fetch project:',
-            error.message,
-        );
+        console.error('[GET /projects/report] Error:');
+        console.error('  - Error message:', error.message);
+        console.error('  - Error stack:', error.stack);
+        console.error('  - Full error object:', error);
         next(error);
       });
 };
@@ -727,6 +756,15 @@ exports.postReport = (request, response, next) => {
           end_date: projectRows[0].end_date,
         };
 
+        // Log detailed information about the project for debugging
+        console.log('[POST /projects/report] Project data retrieved:');
+        console.log('  - project_id:', project.project_id);
+        console.log('  - name:', project.name);
+        console.log('  - start_date (raw):', project.start_date);
+        console.log('  - start_date (type):', typeof project.start_date);
+        console.log('  - end_date (raw):', project.end_date);
+        console.log('  - end_date (type):', typeof project.end_date);
+
         const renderError = (msg) => {
           return response.status(400).render('projectReport', {
             csrfToken: request.csrfToken(),
@@ -740,34 +778,92 @@ exports.postReport = (request, response, next) => {
           });
         };
 
+        // Validate that project has a start_date
+        if (!project.start_date) {
+          console.error('[POST /projects/report] Error: Project has no start_date');
+          return renderError(
+              'Project does not have a start date. ' +
+              'Please set a start date for the project before generating a report.',
+          );
+        }
+
         // Use project start_date and end_date
-        const startDate = new Date(project.start_date + 'T00:00:00');
+        // Handle both string and Date object formats from the database
+        let startDate;
+        if (project.start_date instanceof Date) {
+          console.log('[POST /projects/report] start_date is a Date object, using directly');
+          startDate = new Date(project.start_date);
+          startDate.setHours(0, 0, 0, 0);
+        } else if (typeof project.start_date === 'string') {
+          console.log('[POST /projects/report] start_date is a string, parsing');
+          startDate = new Date(project.start_date + 'T00:00:00');
+        } else {
+          console.error('[POST /projects/report] start_date is unexpected type:', typeof project.start_date);
+          startDate = new Date(project.start_date);
+        }
+        
+        console.log('[POST /projects/report] Final startDate:', startDate);
+        console.log('[POST /projects/report] startDate.getTime():', startDate.getTime());
+        console.log('[POST /projects/report] isNaN(startDate.getTime()):', isNaN(startDate.getTime()));
+        
         if (isNaN(startDate.getTime())) {
+          console.error('[POST /projects/report] Error: Invalid startDate after parsing');
+          console.error('  - Input was:', project.start_date);
+          console.error('  - Input type was:', typeof project.start_date);
+          console.error('  - Parsed Date object:', startDate);
           return renderError('Invalid project start date.');
         }
 
         // Use project end_date if available, otherwise use today
         let endDate;
         if (project.end_date) {
-          endDate = new Date(project.end_date + 'T00:00:00');
+          if (project.end_date instanceof Date) {
+            console.log('[POST /projects/report] end_date is a Date object, using directly');
+            endDate = new Date(project.end_date);
+            endDate.setHours(0, 0, 0, 0);
+          } else if (typeof project.end_date === 'string') {
+            console.log('[POST /projects/report] end_date is a string, parsing');
+            endDate = new Date(project.end_date + 'T00:00:00');
+          } else {
+            console.error('[POST /projects/report] end_date is unexpected type:', typeof project.end_date);
+            endDate = new Date(project.end_date);
+          }
+          console.log('[POST /projects/report] Parsed endDate:', endDate);
+          console.log('[POST /projects/report] isNaN(endDate.getTime()):', isNaN(endDate.getTime()));
           if (isNaN(endDate.getTime())) {
+            console.error('[POST /projects/report] Error: Invalid endDate after parsing');
             return renderError('Invalid project end date.');
           }
         } else {
+          console.log('[POST /projects/report] No end_date set, using today');
           endDate = new Date();
           endDate.setHours(0, 0, 0, 0);
+          console.log('[POST /projects/report] Set endDate to today:', endDate);
         }
 
+        console.log('[POST /projects/report] Final dates for standup query:');
+        console.log('  - startDate:', startDate.toISOString());
+        console.log('  - endDate:', endDate.toISOString());
+
         if (startDate > endDate) {
+          console.error('[POST /projects/report] Error: startDate is after endDate');
           return renderError('Project start date cannot be after end date.');
         }
 
         const startStr = startDate.toISOString().split('T')[0];
         const endStr = endDate.toISOString().split('T')[0];
 
+        console.log('[POST /projects/report] Querying standups with:');
+        console.log('  - startStr:', startStr);
+        console.log('  - endStr:', endStr);
+        console.log('  - projectId:', projectId);
+
         return Project.getStandupsByDateRange(startStr, endStr)
             .then(([standups]) => {
+              console.log('[POST /projects/report] Standups query result:');
+              console.log('  - Found standups:', standups ? standups.length : 0);
               if (!standups || standups.length === 0) {
+                console.log('[POST /projects/report] Error: No standups found');
                 return renderError(
                     'No daily standups found for the project\'s date range ' +
                     'between ' + startStr + ' and ' + endStr +
@@ -778,14 +874,30 @@ exports.postReport = (request, response, next) => {
               return Reports.findProjectReportByRange(
                   projectId, startStr, endStr,
               )
-                  .then(([existing]) => {
-                    if (existing && existing.length > 0) {
+                  .then(async (existing) => {
+                    console.log('[POST /projects/report] Checking for existing reports:');
+                    console.log('  - Found existing reports:', existing && existing[0] ? existing[0].length : 0);
+                    
+                    const regenerate = request.body.regenerate === 'true' || request.body.regenerate === true;
+                    
+                    if (existing && existing[0] && existing[0].length > 0 && regenerate) {
+                      console.log('[POST /projects/report] Regenerate requested, deleting old report:', existing[0][0].report_id);
+                      try {
+                        await Reports.deleteProjectReport(existing[0][0].report_id);
+                        console.log('[POST /projects/report] Old report deleted successfully');
+                      } catch (deleteError) {
+                        console.error('[POST /projects/report] Error deleting old report:', deleteError);
+                        return renderError('Failed to delete previous report: ' + (deleteError.message || 'Unknown error'));
+                      }
+                    } else if (existing && existing[0] && existing[0].length > 0 && !regenerate) {
+                      console.log('[POST /projects/report] Redirecting to existing report:', existing[0][0].report_id);
                       return response.redirect(
                           '/projects/report/' + projectId +
-                          '?reportId=' + existing[0].report_id,
+                          '?reportId=' + existing[0][0].report_id,
                       );
                     }
 
+                    console.log('[POST /projects/report] Generating new AI report');
                     return generateProjectReport(
                         project,
                         startDate,
@@ -793,6 +905,7 @@ exports.postReport = (request, response, next) => {
                         standups,
                     )
                         .then((reportText) => {
+                          console.log('[POST /projects/report] AI report generated, saving to database');
                           const standupIds = standups.map(
                               (r) => r.standup_id,
                           );
@@ -806,6 +919,7 @@ exports.postReport = (request, response, next) => {
                           });
                         })
                         .then((created) => {
+                          console.log('[POST /projects/report] Report saved successfully:', created.report_id);
                           return response.redirect(
                               '/projects/report/' + projectId +
                               '?reportId=' + created.report_id,
@@ -814,10 +928,10 @@ exports.postReport = (request, response, next) => {
                   });
             })
             .catch((aiError) => {
-              console.error(
-                  '[POST /projects/report] AI generation failed:',
-                  aiError.message,
-              );
+              console.error('[POST /projects/report] Error during report generation:');
+              console.error('  - Error message:', aiError.message);
+              console.error('  - Error stack:', aiError.stack);
+              console.error('  - Full error object:', aiError);
               return response.render('projectReport', {
                 csrfToken: request.csrfToken(),
                 email: request.session.email || '',
@@ -832,10 +946,10 @@ exports.postReport = (request, response, next) => {
             });
       })
       .catch((error) => {
-        console.error(
-            '[POST /projects/report] Failed to fetch project:',
-            error.message,
-        );
+        console.error('[POST /projects/report] Outer error:');
+        console.error('  - Error message:', error.message);
+        console.error('  - Error stack:', error.stack);
+        console.error('  - Full error object:', error);
         next(error);
       });
 };

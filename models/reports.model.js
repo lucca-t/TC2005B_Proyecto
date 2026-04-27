@@ -311,4 +311,11 @@ module.exports = class Reports {
       connection.release();
     }
   }
+
+  static deleteProjectReport(reportId) {
+    return db.execute(
+        `UPDATE report SET deleted_at = NOW() WHERE report_id = ?`,
+        [reportId],
+    );
+  }
 };
