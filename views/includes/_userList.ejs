@@ -48,7 +48,6 @@
                         <th>Full Name</th>
                         <th>Role</th>
                         <th>Slack Handle</th>
-                        <th>Slack ID</th>
                         <th class="has-text-right">Actions</th>
                     </tr>
                 </thead>
@@ -78,16 +77,6 @@
                                     <% if (user.slack_handle) { %>
                                         <span class="tag is-link is-light">
                                             <%= user.slack_handle %>
-                                        </span>
-                                    <% } else { %>
-                                        <span class="has-text-grey">—</span>
-                                    <% } %>
-                                </td>
-
-                                <td class="is-vcentered">
-                                    <% if (user.slack_id) { %>
-                                        <span class="tag is-link is-light">
-                                            <%= user.slack_id %>
                                         </span>
                                     <% } else { %>
                                         <span class="has-text-grey">—</span>
