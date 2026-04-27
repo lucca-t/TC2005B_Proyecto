@@ -613,8 +613,21 @@ exports.getReport = (request, response, next) => {
   const projectId = request.params.projectId;
   const reportId = Number(request.query.reportId) || 0;
 
-  Project.fetchOneByUserTeams(projectId, request.session.userId || 0)
-      .then(([rows]) => {
+  getCurrentUserId(request)
+      .then((userId) => {
+        if (!userId) {
+          response.redirect('/login');
+          return null;
+        }
+
+        return Project.fetchOneByUserTeams(projectId, userId);
+      })
+      .then((result) => {
+        if (!result) {
+          return;
+        }
+
+        const [rows] = result;
         if (!rows || rows.length === 0) {
           return response.status(404).redirect('/projects/list');
         }
@@ -678,8 +691,21 @@ exports.postReport = (request, response, next) => {
   const projectId = request.params.projectId;
   const {report_type, start_date, end_date} = request.body;
 
-  Project.fetchOneByUserTeams(projectId, request.session.userId || 0)
-      .then(([rows]) => {
+  getCurrentUserId(request)
+      .then((userId) => {
+        if (!userId) {
+          response.redirect('/login');
+          return null;
+        }
+
+        return Project.fetchOneByUserTeams(projectId, userId);
+      })
+      .then((result) => {
+        if (!result) {
+          return;
+        }
+
+        const [rows] = result;
         if (!rows || rows.length === 0) {
           return response.status(404).redirect('/projects/list');
         }
@@ -768,10 +794,11 @@ exports.postReport = (request, response, next) => {
             .then(([standups]) => {
               if (!standups || standups.length === 0) {
                 return renderError(
-                    'No daily standups found for ' +
+                    'No daily standups were found for ' +
                     project.name +
                     ' between ' + startStr + ' and ' + endStr +
-                    '. A report cannot be generated without standup data.',
+                    '. Please verify that standups are linked to this project ' +
+                    'and choose a valid date range.',
                 );
               }
 

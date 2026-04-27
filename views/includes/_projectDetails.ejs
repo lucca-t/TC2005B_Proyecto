@@ -6,8 +6,8 @@
             </div>
             <div class="level-right">
                 <a href="/projects/list" class="button is-light"><strong>← Back</strong></a>
-                <a href="/projects/report/<%= projectId %>" class="button is-dark"><strong>AI Report</strong></a>
-                <a href="/projects/edit/<%= projectId %>" class="button is-primary"><strong>Edit Project</strong></a>
+                <a href="/projects/report/<%= project.project_id || projectId %>" class="button is-dark"><strong>AI Report</strong></a>
+                <a href="/projects/edit/<%= project.project_id || projectId %>" class="button is-primary"><strong>Edit Project</strong></a>
             </div>
         </div>
 

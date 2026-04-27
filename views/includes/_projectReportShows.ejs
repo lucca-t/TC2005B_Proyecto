@@ -163,58 +163,52 @@ document.addEventListener('DOMContentLoaded', function() {
     const reportForm = document.getElementById('report-form');
     const loadingOverlay = document.getElementById('reportLoadingOverlay');
 
+    let activeQuarter = null;
+
+    function pad(n) { return n < 10 ? '0' + n : '' + n; }
+
+    function formatDate(d) {
+        return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+    }
+
+    function getQuarterDates(year, q) {
+        const startMonth = (q - 1) * 3;
+        const start = new Date(year, startMonth, 1);
+        const end = new Date(year, startMonth + 3, 0);
+        return { start: start, end: end };
+    }
+
+    function deselectAll() {
+        quarterButtons.forEach(btn => {
+            btn.classList.remove('is-selected');
+            btn.classList.add('is-outlined');
+        });
+        activeQuarter = null;
+    }
+
     quarterButtons.forEach(button => {
         button.addEventListener('click', function() {
-            const isSelected = this.classList.contains('is-primary');
+            const key = this.getAttribute('data-quarter');
+            const year = parseInt(this.getAttribute('data-year'));
+            const q = parseInt(this.getAttribute('data-q'));
 
-            // Deselect all buttons
-            quarterButtons.forEach(btn => {
-                btn.classList.remove('is-primary');
-                btn.classList.add('is-outlined');
-            });
-
-            if (!isSelected) {
-                this.classList.add('is-primary');
+            if (activeQuarter === key) {
+                deselectAll();
+                startDateInput.value = '';
+                endDateInput.value = '';
+                reportTypeInput.value = '';
+            } else {
+                deselectAll();
+                activeQuarter = key;
+                this.classList.add('is-selected');
                 this.classList.remove('is-outlined');
+                const dates = getQuarterDates(year, q);
+                startDateInput.value = formatDate(dates.start);
+                endDateInput.value = formatDate(dates.end);
+                reportTypeInput.value = key;
             }
-
-            updateDateRange();
         });
     });
-
-    function updateDateRange() {
-        const selectedButtons = document.querySelectorAll('.quarter-btn.is-primary');
-        const quarters = Array.from(selectedButtons).map(btn => btn.dataset.quarter);
-
-        if (quarters.length === 0) {
-            reportTypeInput.value = '';
-            return;
-        }
-
-        reportTypeInput.value = quarters.join(',');
-
-        // Calculate date range
-        let minStart = null;
-        let maxEnd = null;
-
-        quarters.forEach(quarter => {
-            const match = quarter.match(/^(\d{4})-Q([1-4])$/);
-            if (match) {
-                const year = parseInt(match[1]);
-                const q = parseInt(match[2]);
-                const qStart = new Date(year, (q - 1) * 3, 1);
-                const qEnd = new Date(year, q * 3, 0);
-
-                if (!minStart || qStart < minStart) minStart = qStart;
-                if (!maxEnd || qEnd > maxEnd) maxEnd = qEnd;
-            }
-        });
-
-        if (minStart && maxEnd) {
-            startDateInput.value = minStart.toISOString().split('T')[0];
-            endDateInput.value = maxEnd.toISOString().split('T')[0];
-        }
-    }
 
     // Handle date input changes
     startDateInput.addEventListener('change', function() {
@@ -238,7 +232,48 @@ document.addEventListener('DOMContentLoaded', function() {
     reportForm.addEventListener('submit', function(e) {
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<span class="icon"><i class="fas fa-spinner fa-pulse"></i></span><span>Generating...</span>';
+        loadingOverlay.classList.add('is-active');
         loadingOverlay.setAttribute('aria-hidden', 'false');
+    });
+
+    function restoreSelectedQuarter() {
+    function restoreSelectedQuarter() {
+        const reportType = reportTypeInput.value;
+        if (!reportType || reportType === 'custom') {
+            return;
+        }
+
+        const match = reportType.match(/^(\d{4})-Q([1-4])$/);
+        if (!match) {
+            return;
+        }
+
+        const key = reportType;
+
+        quarterButtons.forEach(button => {
+            const buttonQuarter = button.getAttribute('data-quarter');
+            if (buttonQuarter === key) {
+                button.classList.add('is-selected');
+                button.classList.remove('is-outlined');
+                activeQuarter = key;
+            } else {
+                button.classList.remove('is-selected');
+                button.classList.add('is-outlined');
+            }
+        });
+    }
+    }
+
+    restoreSelectedQuarter();
+
+    window.addEventListener('pageshow', function() {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+        }
+        if (loadingOverlay) {
+            loadingOverlay.classList.remove('is-active');
+            loadingOverlay.setAttribute('aria-hidden', 'true');
+        }
     });
 });
 </script>
@@ -251,10 +286,14 @@ document.addEventListener('DOMContentLoaded', function() {
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
+    display: none;
     justify-content: center;
     align-items: center;
     z-index: 9999;
+}
+
+.report-loading-overlay.is-active {
+    display: flex;
 }
 
 .report-loading-card {
@@ -265,25 +304,30 @@ document.addEventListener('DOMContentLoaded', function() {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.report-content {
-    max-width: none;
-}
+    .quarter-btn {
+        color: #000000 !important;
+    }
 
-.report-content h1,
-.report-content h2,
-.report-content h3,
-.report-content h4,
-.report-content h5,
-.report-content h6 {
-    margin-top: 1.5em;
-    margin-bottom: 0.5em;
-}
+    .quarter-btn.is-selected {
+        background-color: #ffe08a !important;
+        border-color: #ffd257 !important;
+        color: #000000 !important;
+    }
 
-.report-content ul {
-    margin-left: 1em;
-}
+    .report-content {
+        max-width: none;
+        white-space: pre-wrap;
+        word-break: break-word;
+        line-height: 1.6;
+    }
 
-.report-content li {
-    margin-bottom: 0.25em;
-}
+    .report-content h1,
+    .report-content h2,
+    .report-content h3,
+    .report-content h4,
+    .report-content h5,
+    .report-content h6 {
+        margin-top: 1.5em;
+        margin-bottom: 0.5em;
+    }
 </style>
