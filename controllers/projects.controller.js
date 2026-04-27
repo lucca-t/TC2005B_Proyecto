@@ -660,43 +660,38 @@ exports.getReport = (request, response, next) => {
           console.log('  - startDate formatted:', formatDateForInput(project.start_date));
           console.log('  - endDate formatted:', formatDateForInput(project.end_date));
           
-          // Check if a report already exists for this project
           const startStr = formatDateForInput(project.start_date);
           const endStr = formatDateForInput(project.end_date);
           
-          return Reports.findProjectReportByRange(project.project_id, startStr, endStr)
-              .then(([existingReports]) => {
-                console.log('[GET /projects/report] Check for existing reports:', existingReports ? existingReports.length : 0);
-                
-                return response.render('projectReport', {
-                  csrfToken: request.csrfToken(),
-                  email: request.session.email || '',
-                  role: request.session.role || '',
-                  project,
-                  report: null,
-                  error: null,
-                  startDate: startStr,
-                  endDate: endStr,
-                  existingReportId: (existingReports && existingReports.length > 0) ? existingReports[0].report_id : null,
-                });
-              });
+          return response.render('projectReport', {
+            csrfToken: request.csrfToken(),
+            email: request.session.email || '',
+            role: request.session.role || '',
+            project,
+            report: null,
+            error: null,
+            startDate: startStr,
+            endDate: endStr,
+          });
         }
 
         return Reports.findProjectReportById(reportId, projectId)
             .then(([reportRows]) => {
               console.log('[GET /projects/report] Query result for reportId:', reportId);
-              console.log('  - Found rows:', reportRows ? reportRows.length : 0);
+              console.log('[GET /projects/report] Query result for projectId:', projectId);
+              console.log('[GET /projects/report] Found rows:', reportRows ? reportRows.length : 0);
               if (reportRows && reportRows.length > 0) {
-                console.log('  - First report:', reportRows[0]);
+                console.log('[GET /projects/report] First report:', reportRows[0]);
               }
               if (!reportRows || reportRows.length === 0) {
+                console.log('[GET /projects/report] ERROR - No report found. Checking database...');
                 return response.render('projectReport', {
                   csrfToken: request.csrfToken(),
                   email: request.session.email || '',
                   role: request.session.role || '',
                   project,
                   report: null,
-                  error: 'Saved report not found for this project.',
+                  error: 'Saved report not found for this project. (reportId: ' + reportId + ', projectId: ' + projectId + ')',
                   startDate: formatDateForInput(project.start_date),
                   endDate: formatDateForInput(project.end_date),
                 });
@@ -878,18 +873,8 @@ exports.postReport = (request, response, next) => {
                     console.log('[POST /projects/report] Checking for existing reports:');
                     console.log('  - Found existing reports:', existing && existing[0] ? existing[0].length : 0);
                     
-                    const regenerate = request.body.regenerate === 'true' || request.body.regenerate === true;
-                    
-                    if (existing && existing[0] && existing[0].length > 0 && regenerate) {
-                      console.log('[POST /projects/report] Regenerate requested, deleting old report:', existing[0][0].report_id);
-                      try {
-                        await Reports.deleteProjectReport(existing[0][0].report_id);
-                        console.log('[POST /projects/report] Old report deleted successfully');
-                      } catch (deleteError) {
-                        console.error('[POST /projects/report] Error deleting old report:', deleteError);
-                        return renderError('Failed to delete previous report: ' + (deleteError.message || 'Unknown error'));
-                      }
-                    } else if (existing && existing[0] && existing[0].length > 0 && !regenerate) {
+                    if (existing && existing[0] && existing[0].length > 0) {
+                      console.log('[POST /projects/report] Report already exists for this date range');
                       console.log('[POST /projects/report] Redirecting to existing report:', existing[0][0].report_id);
                       return response.redirect(
                           '/projects/report/' + projectId +
@@ -897,6 +882,7 @@ exports.postReport = (request, response, next) => {
                       );
                     }
 
+                    console.log('[POST /projects/report] >>> Creating NEW report - DELETED_AT will NOT be set');
                     console.log('[POST /projects/report] Generating new AI report');
                     return generateProjectReport(
                         project,
