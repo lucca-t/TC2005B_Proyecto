@@ -147,4 +147,91 @@ async function generateTeamReport(team, startDate, endDate, standupData) {
   return text;
 }
 
-module.exports = {generateUserReport, generateTeamReport};
+async function generateProjectReport(project, startDate, endDate, standupData) {
+  const start = startDate.toISOString().split('T')[0];
+  const end = endDate.toISOString().split('T')[0];
+
+  const systemPrompt = [
+    'You are an expert project manager\'s assistant designed to',
+    'synthesize daily engineering standup data from team members',
+    'into a structured Project Progress Report.',
+    '',
+    'CONTEXT & TASK:',
+    'Analyze standup logs in JSON format. Each entry contains the user\'s name,',
+    'email, date, \'did_today\', \'do_tomorrow\', and \'blockers\'.',
+    'Your task is to extract and analyze all entries that mention or relate to',
+    'the project. Look for project name mentions, feature work, bug fixes,',
+    'blockers, and deliverables specifically tied to this project.',
+    'The team works at Change.org.',
+    '',
+    'INSTRUCTIONS:',
+    '1. Carefully analyze all standup data to identify entries related to the project.',
+    '2. Extract work completed, planned work, and blockers specific to this project.',
+    '3. Synthesize findings into the exact Markdown structure below.',
+    '4. Identify actionable next steps and recommendations to move the project forward.',
+    '5. Keep bullets short and focused on project-level narrative.',
+    '6. Output ONLY raw Markdown.',
+    '',
+    'REQUIRED MARKDOWN OUTPUT FORMAT:',
+    '',
+    '### Project Progress Report',
+    '',
+    '#### Project Overview',
+    '* **Current Status:**',
+    '  * [Active progress, on track, facing challenges, etc.]',
+    '',
+    '#### What has been completed?',
+    '* **Delivered Features & Fixes:**',
+    '  * [Major features shipped, bug fixes, completed tasks]',
+    '* **Work in Progress:**',
+    '  * [Tasks currently being worked on by team members]',
+    '* **Quality & Outcomes:**',
+    '  * [Quality improvements, testing, deployments]',
+    '',
+    '#### What are the current blockers?',
+    '* **Technical Blockers:**',
+    '  * [Technical challenges, dependencies, infrastructure issues]',
+    '* **Process/Team Blockers:**',
+    '  * [Communication issues, resource constraints, coordination gaps]',
+    '* **External Blockers:**',
+    '  * [Dependencies on other teams, blocked by external factors]',
+    '',
+    '#### Team Coordination & Collaboration',
+    '* **Cross-functional Collaboration:**',
+    '  * [How team members are working together on the project]',
+    '* **Handoffs & Dependencies:**',
+    '  * [Key handoffs between team members, inter-dependencies]',
+    '',
+    '#### Recommended Actions (Project To-Do List)',
+    '* **High Priority - Next Steps:**',
+    '  * [Critical actions needed to unblock or accelerate the project]',
+    '* **Medium Priority:**',
+    '  * [Important tasks that should be addressed soon]',
+    '* **Technical Improvements:**',
+    '  * [Refactoring, testing gaps, or infrastructure improvements]',
+    '* **Team Recommendations:**',
+    '  * [Process improvements or collaboration enhancements]',
+  ].join('\n');
+
+  const userPrompt = [
+    `Generate a project progress report for: ${project.name}`,
+    `from ${start} to ${end}.`,
+    '',
+    'Analyze the standup data below and extract entries related to this project.',
+    'Focus on work completed, work in progress, blockers, and recommendations.',
+    '',
+    'Here is all the daily standup data to analyze:',
+    JSON.stringify(standupData),
+  ].join('\n');
+
+  const {text} = await generateText({
+    model: openai('gpt-4o-mini'),
+    system: systemPrompt,
+    prompt: userPrompt,
+    temperature: 0.2,
+  });
+
+  return text;
+}
+
+module.exports = {generateUserReport, generateTeamReport, generateProjectReport};

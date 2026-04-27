@@ -250,4 +250,17 @@ module.exports = class Project {
 
     return rows[0];
   }
+
+  static getStandupsByDateRange(startDate, endDate) {
+    return db.execute(
+        `SELECT
+            s.standup_id, s.date, s.did_today, s.do_tomorrow, s.blockers,
+            u.user_id, u.full_name, u.email
+         FROM standup s
+         JOIN user u ON s.user_id = u.user_id AND u.deleted_at IS NULL
+         WHERE s.date >= ? AND s.date <= ?
+         ORDER BY s.date ASC, u.full_name ASC`,
+        [startDate, endDate],
+    );
+  }
 };

@@ -11,6 +11,8 @@ const allRoles = authorize(ROLES.ADMIN, ROLES.LEAD, ROLES.MEMBER);
 // FR-03: Consultar Proyecto - Admin, Lead, Member
 router.get('/list', isAuth, allRoles, projectsController.get_list);
 router.get('/details/:projectId', isAuth, allRoles, projectsController.get_details);
+router.get('/report/:projectId', isAuth, allRoles, projectsController.getReport);
+router.post('/report/:projectId', isAuth, allRoles, projectsController.postReport);
 
 // FR-01: Registrar Proyecto - Admin, Lead
 router.get('/add', isAuth, adminOrLead, projectsController.get_add);

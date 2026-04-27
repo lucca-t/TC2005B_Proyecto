@@ -1,0 +1,129 @@
+<section class="section">
+    <div class="container">
+        <div class="level">
+            <div class="level-left">
+                <h1 class="title">
+                    <% if (typeof project !== 'undefined' && project) { %>
+                        AI Report &mdash; <%= project.name %>
+                    <% } else { %>
+                        AI Project Report
+                    <% } %>
+                </h1>
+            </div>
+            <div class="level-right">
+                <a href="/projects/list" class="button is-light">← Back</a>
+            </div>
+        </div>
+
+        <% if (typeof error !== 'undefined' && error) { %>
+        <div class="notification is-danger is-light">
+            <button class="delete" onclick="this.parentElement.remove()"></button>
+            <strong><i class="fas fa-exclamation-triangle"></i> Error:</strong>
+            <%= error %>
+        </div>
+        <% } %>
+
+        <% if (!(typeof report !== 'undefined' && report)) { %>
+        <div class="box">
+            <h2 class="subtitle">Generate Project Report</h2>
+            <p class="mb-4">This report will analyze standups from 
+                <strong><%= (typeof startDate !== 'undefined' && startDate) ? startDate : 'project start' %></strong> 
+                to 
+                <strong><%= (typeof endDate !== 'undefined' && endDate) ? endDate : 'today' %></strong>.
+                All standups that mention this project will be included in the analysis.</p>
+            
+            <% if (typeof project !== 'undefined' && project) { %>
+            <div class="tags mb-4">
+                <span class="tag is-light is-medium">Project Period:</span>
+                <span class="tag is-info is-light">
+                    <%= (typeof startDate !== 'undefined' && startDate) ? startDate : 'N/A' %> 
+                    <% if ((typeof endDate !== 'undefined' && endDate) || (typeof startDate !== 'undefined' && startDate)) { %>
+                        to <%= (typeof endDate !== 'undefined' && endDate) ? endDate : 'Today' %>
+                    <% } %>
+                </span>
+            </div>
+            <% } %>
+
+            <form id="report-form"
+                action="/projects/report/<%= project.project_id %>"
+                method="POST">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+                <div class="field mt-4">
+                    <div class="control">
+                        <button type="submit" class="button is-primary"
+                            id="submit-btn">
+                            <span class="icon">
+                                <i class="fas fa-file-alt"></i>
+                            </span>
+                            <span>Generate Project Report</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div id="reportLoadingOverlay"
+            class="report-loading-overlay" aria-hidden="true">
+            <div class="report-loading-card">
+                <span class="icon is-large">
+                    <i class="fas fa-spinner fa-pulse fa-2x"></i>
+                </span>
+                <p class="title is-6 mt-4 mb-2">Generating project report...</p>
+                <p class="has-text-grey is-size-7">
+                    Analyzing standups related to this project.
+                </p>
+            </div>
+        </div>
+
+        <style>
+            .report-loading-overlay {
+                position: fixed;
+                inset: 0;
+                z-index: 9999;
+                display: none;
+                align-items: center;
+                justify-content: center;
+                background: rgba(255, 255, 255, 0.8);
+                backdrop-filter: blur(1px);
+            }
+            .report-loading-overlay.is-active { display: flex; }
+            .report-loading-card {
+                min-width: 280px;
+                padding: 1.5rem 1.75rem;
+                border: 1px solid #dbdbdb;
+                border-radius: 10px;
+                background: #fff;
+                text-align: center;
+                box-shadow: 0 12px 30px rgba(10, 10, 10, 0.15);
+            }
+        </style>
+
+        <script>
+        (function() {
+            var form = document.getElementById('report-form');
+            var submitButton = document.getElementById('submit-btn');
+            var loadingOverlay =
+                document.getElementById('reportLoadingOverlay');
+
+            if (form) {
+                form.addEventListener('submit', function() {
+                    if (submitButton) {
+                        submitButton.disabled = true;
+                    }
+                    if (loadingOverlay) {
+                        loadingOverlay.classList.add('is-active');
+                    }
+                });
+            }
+        })();
+        </script>
+        <% } else { %>
+        <div class="box">
+            <div class="content is-medium">
+                <%- report %>
+            </div>
+        </div>
+        <% } %>
+    </div>
+</section>
