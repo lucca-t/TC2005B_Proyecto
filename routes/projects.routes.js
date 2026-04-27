@@ -27,4 +27,8 @@ router.post('/delete/:id', isAuth, adminOrLead, projectsController.post_delete);
 router.get('/link/:id', isAuth, adminOrLead, projectsController.get_link);
 router.post('/link/:id', isAuth, adminOrLead, projectsController.post_link);
 
+// FR-20: Reporte de proyecto - Admin, Lead, Member
+router.get('/report/:projectId', isAuth, allRoles, projectsController.getReport);
+router.post('/report/:projectId', isAuth, allRoles, projectsController.postReport);
+
 module.exports = router;

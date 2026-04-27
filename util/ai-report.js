@@ -140,4 +140,74 @@ async function generateTeamReport(team, startDate, endDate, standupData) {
   return text;
 }
 
-module.exports = {generateUserReport, generateTeamReport};
+async function generateProjectReport(project, startDate, endDate, standupData) {
+  const start = startDate.toISOString().split('T')[0];
+  const end = endDate.toISOString().split('T')[0];
+
+  const systemPrompt = [
+    'You are an expert engineering manager\'s assistant designed to',
+    'synthesize daily engineering standup data related to a specific project',
+    'into a structured Project Quarterly Performance Review.',
+    '',
+    'CONTEXT & VALUES:',
+    'Analyze standup logs in JSON format. Each entry has a user name,',
+    'email, date, \'did_today\', \'do_tomorrow\', and \'blockers\'.',
+    'The team works at Change.org on this project. Look for alignment with',
+    'fairness, equality, justice, empowerment, transparency, and social impact.',
+    '',
+    'INSTRUCTIONS:',
+    '1. Analyze the provided standup data related to the project.',
+    '2. Synthesize it into the exact Markdown structure below.',
+    '3. Highlight project-level patterns, progress towards goals,',
+    '   shared blockers, and collective achievements.',
+    '4. Keep bullets short and focused on quarter-level narrative.',
+    '5. Output ONLY raw Markdown.',
+    '',
+    'REQUIRED MARKDOWN OUTPUT FORMAT:',
+    '',
+    '### Project Quarterly Performance Review',
+    '',
+    '#### What went well on the project?',
+    '* **Project wins:**',
+    '  * [Major shipped features, resolved bugs, consistent outputs]',
+    '* **Progress highlights:**',
+    '  * [Milestones achieved, tasks completed, project advancement]',
+    '* **Team collaboration:**',
+    '  * [Cross-member support, unblocking patterns, team synergy]',
+    '* **Cultural Contributions:**',
+    '  * [Alignment with public good, fairness, equality, justice]',
+    '',
+    '#### What could be improved on the project?',
+    '* **Recurring project blockers:**',
+    '  * [Shared blockers, delayed tasks, technical struggles]',
+    '* **Coordination gaps:**',
+    '  * [Where communication or handoffs fell short]',
+    '* **Ongoing challenges:**',
+    '  * [Why blockers persisted across the project]',
+    '',
+    '#### Key contributors',
+    '* [Brief per-member summary of standout contributions to the project]',
+    '',
+    '#### Recommendations for the project',
+    '*',
+  ].join('\n');
+
+  const userPrompt = [
+    `Generate a project report for: ${project.name}`,
+    `from ${start} to ${end}.`,
+    '',
+    'Here is the daily standup data related to the project:',
+    JSON.stringify(standupData),
+  ].join('\n');
+
+  const {text} = await generateText({
+    model: openai('gpt-4o-mini'),
+    system: systemPrompt,
+    prompt: userPrompt,
+    temperature: 0.2,
+  });
+
+  return text;
+}
+
+module.exports = {generateUserReport, generateTeamReport, generateProjectReport};

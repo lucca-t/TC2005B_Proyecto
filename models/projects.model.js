@@ -211,6 +211,34 @@ module.exports = class Project {
     );
   }
 
+  static getProjectBlockersCount(projectId) {
+    return db.execute(
+        `SELECT
+            COUNT(*) AS blocker_count,
+            COUNT(DISTINCT s.user_id) AS users_with_blockers
+         FROM standup_project sp
+         INNER JOIN standup s ON sp.standup_id = s.standup_id
+         WHERE sp.project_id = ?
+           AND TRIM(s.blockers) <> ''`,
+        [projectId],
+    );
+  }
+
+  static getProjectStandupsByDateRange(projectId, startDate, endDate) {
+    return db.execute(
+        `SELECT
+            s.standup_id, s.date, s.did_today, s.do_tomorrow, s.blockers,
+            u.user_id, u.full_name, u.email
+         FROM standup s
+         JOIN user u ON s.user_id = u.user_id AND u.deleted_at IS NULL
+         JOIN standup_project sp ON s.standup_id = sp.standup_id
+         WHERE sp.project_id = ?
+           AND s.date >= ? AND s.date <= ?
+         ORDER BY s.date ASC, u.full_name ASC`,
+        [projectId, startDate, endDate],
+    );
+  }
+
   static async insert(projectData) {
     const {
       name,

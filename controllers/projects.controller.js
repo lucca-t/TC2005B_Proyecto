@@ -3,6 +3,8 @@
 
 const Project = require('../models/projects.model');
 const User = require('../models/users.model');
+const Reports = require('../models/reports.model');
+const {generateProjectReport} = require('../util/ai-report');
 
 const formatDateForInput = (value) => {
   if (!value) return '';
@@ -472,10 +474,12 @@ exports.get_details = (request, response, next) => {
   Promise.all([
     Project.getProjectDetails(projectId),
     Project.selectLast3reports(projectId),
+    Project.getProjectBlockersCount(projectId),
   ])
-      .then(([projectResult, reportsResult]) => {
+      .then(([projectResult, reportsResult, blockersResult]) => {
         console.log(`[GET /projects/details] Project query result structure:`, projectResult);
         console.log(`[GET /projects/details] Reports query result structure:`, reportsResult);
+        console.log(`[GET /projects/details] Blockers query result structure:`, blockersResult);
 
         let rows = [];
         if (Array.isArray(projectResult) && Array.isArray(projectResult[0]) && Array.isArray(projectResult[0][0])) {
@@ -489,6 +493,13 @@ exports.get_details = (request, response, next) => {
           reports = reportsResult[0];
         } else if (Array.isArray(reportsResult)) {
           reports = reportsResult;
+        }
+
+        let blockers = { blocker_count: 0, users_with_blockers: 0 };
+        if (Array.isArray(blockersResult) && Array.isArray(blockersResult[0]) && blockersResult[0].length > 0) {
+          blockers = blockersResult[0][0] || blockers;
+        } else if (Array.isArray(blockersResult) && blockersResult.length > 0) {
+          blockers = blockersResult[0] || blockers;
         }
 
         console.log(`[GET /projects/details] Extracted rows:`, rows);
@@ -530,6 +541,7 @@ exports.get_details = (request, response, next) => {
             end_date: firstRow.end_date || null,
             team_name: firstRow.team_name || '',
           },
+          blockers: blockers,
           members: members,
           reports: reports,
         };
@@ -595,4 +607,238 @@ exports.post_link = async (request, response, next) => {
     request.session.error = 'Error linking project to team: ' + (error.sqlMessage || error.message || 'Unknown error');
     return response.redirect(`/projects/link/${projectId}`);
   }
+};
+
+exports.getReport = (request, response, next) => {
+  const projectId = request.params.projectId;
+  const reportId = Number(request.query.reportId) || 0;
+
+  Project.fetchOneByUserTeams(projectId, request.session.userId || 0)
+      .then(([rows]) => {
+        if (!rows || rows.length === 0) {
+          return response.status(404).redirect('/projects/list');
+        }
+
+        const project = rows[0];
+
+        if (!reportId) {
+          return response.render('projectReport', {
+            csrfToken: request.csrfToken(),
+            email: request.session.email || '',
+            role: request.session.role || '',
+            project,
+            report: null,
+            error: null,
+            startDate: '',
+            endDate: '',
+            reportType: '',
+          });
+        }
+
+        return Reports.findProjectReportById(reportId, projectId)
+            .then(([reportRows]) => {
+              if (!reportRows || reportRows.length === 0) {
+                return response.render('projectReport', {
+                  csrfToken: request.csrfToken(),
+                  email: request.session.email || '',
+                  role: request.session.role || '',
+                  project,
+                  report: null,
+                  error: 'Saved report not found for this project.',
+                  startDate: '',
+                  endDate: '',
+                  reportType: '',
+                });
+              }
+
+              const saved = reportRows[0];
+              return response.render('projectReport', {
+                csrfToken: request.csrfToken(),
+                email: request.session.email || '',
+                role: request.session.role || '',
+                project,
+                report: saved.ai_content,
+                error: null,
+                startDate: formatDateForInput(saved.date_beginning),
+                endDate: formatDateForInput(saved.date_end),
+                reportType: '',
+              });
+            });
+      })
+      .catch((error) => {
+        console.error(
+            '[GET /projects/report] Failed to fetch project:',
+            error.message,
+        );
+        next(error);
+      });
+};
+
+exports.postReport = (request, response, next) => {
+  const projectId = request.params.projectId;
+  const {report_type, start_date, end_date} = request.body;
+
+  Project.fetchOneByUserTeams(projectId, request.session.userId || 0)
+      .then(([rows]) => {
+        if (!rows || rows.length === 0) {
+          return response.status(404).redirect('/projects/list');
+        }
+
+        const project = rows[0];
+
+        const renderError = (msg) => {
+          return response.status(400).render('projectReport', {
+            csrfToken: request.csrfToken(),
+            email: request.session.email || '',
+            role: request.session.role || '',
+            project,
+            report: null,
+            error: msg,
+            startDate: start_date || '',
+            endDate: end_date || '',
+            reportType: report_type || '',
+          });
+        };
+
+        if (!report_type) {
+          return renderError(
+              'Please select at least one quarter or use the ' +
+              'custom date range.',
+          );
+        }
+
+        let startDate;
+        let endDate;
+
+        if (report_type === 'custom') {
+          if (!start_date || !end_date) {
+            return renderError(
+                'Both start date and end date are required ' +
+                'for a custom report.',
+            );
+          }
+          startDate = new Date(start_date + 'T00:00:00');
+          endDate = new Date(end_date + 'T00:00:00');
+
+          if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+            return renderError(
+                'Invalid date format. Please use valid dates.',
+            );
+          }
+          if (startDate > endDate) {
+            return renderError('Start date cannot be after end date.');
+          }
+        } else {
+          const quarters = report_type
+              .split(',')
+              .map((q) => q.trim())
+              .filter(Boolean);
+          if (quarters.length === 0) {
+            return renderError('Please select at least one quarter.');
+          }
+
+          const parsed = [];
+          for (const q of quarters) {
+            const match = q.match(/^(\d{4})-Q([1-4])$/);
+            if (!match) {
+              return renderError('Invalid quarter format: ' + q);
+            }
+            parsed.push({
+              year: parseInt(match[1]),
+              quarter: parseInt(match[2]),
+            });
+          }
+
+          let minStart = null;
+          let maxEnd = null;
+          for (const p of parsed) {
+            const qStart = new Date(p.year, (p.quarter - 1) * 3, 1);
+            const qEnd = new Date(p.year, p.quarter * 3, 0);
+            if (!minStart || qStart < minStart) minStart = qStart;
+            if (!maxEnd || qEnd > maxEnd) maxEnd = qEnd;
+          }
+          startDate = minStart;
+          endDate = maxEnd;
+        }
+
+        const startStr = startDate.toISOString().split('T')[0];
+        const endStr = endDate.toISOString().split('T')[0];
+
+        return Project.getProjectStandupsByDateRange(projectId, startStr, endStr)
+            .then(([standups]) => {
+              if (!standups || standups.length === 0) {
+                return renderError(
+                    'No daily standups found for ' +
+                    project.name +
+                    ' between ' + startStr + ' and ' + endStr +
+                    '. A report cannot be generated without standup data.',
+                );
+              }
+
+              return Reports.findProjectReportByRange(
+                  projectId, startStr, endStr,
+              )
+                  .then(([existing]) => {
+                    if (existing && existing.length > 0) {
+                      return response.redirect(
+                          '/projects/report/' + projectId +
+                          '?reportId=' + existing[0].report_id,
+                      );
+                    }
+
+                    return generateProjectReport(
+                        project,
+                        startDate,
+                        endDate,
+                        standups,
+                    )
+                        .then((reportText) => {
+                          const standupIds = standups.map(
+                              (r) => r.standup_id,
+                          );
+                          return getCurrentUserId(request)
+                              .then((sessionUserId) => {
+                                return Reports.createProjectReport({
+                                  generatedByUserId: sessionUserId,
+                                  projectId,
+                                  startDate: startStr,
+                                  endDate: endStr,
+                                  aiContent: reportText,
+                                  standupIds,
+                                });
+                              })
+                              .then((created) => {
+                                return response.redirect(
+                                    '/projects/report/' + projectId +
+                                    '?reportId=' + created.report_id,
+                                );
+                              });
+                        });
+                  });
+            })
+            .catch((aiError) => {
+              console.error(
+                  '[POST /projects/report] AI generation failed:',
+                  aiError.message,
+              );
+              return response.render('projectReport', {
+                csrfToken: request.csrfToken(),
+                email: request.session.email || '',
+                role: request.session.role || '',
+                project,
+                report: null,
+                error: 'Failed to generate report: ' + (aiError.message || 'Unknown error'),
+                startDate: startStr,
+                endDate: endStr,
+                reportType: report_type || '',
+              });
+            });
+      })
+      .catch((error) => {
+        console.error(
+            '[POST /projects/report] Failed to fetch project:',
+            error.message,
+        );
+        next(error);
+      });
 };
