@@ -1,0 +1,184 @@
+@startuml LinkProjectToTeamSequence
+
+actor "User" as user
+boundary "Browser" as browser
+boundary "projectShow.ejs" as listView
+boundary "projectLink.ejs" as linkView
+control "projects.routes.js" as routes
+control "projects.controller.js" as controller
+entity "projects.model.js" as model
+entity "users.model.js" as usersModel
+database "MySQL" as db
+
+== Load Link Project Form ==
+
+activate user
+user -> browser: 1. Click "Link to Team" on a project
+deactivate user
+activate browser
+
+browser -> routes: 2. GET /projects/link/:id
+deactivate browser
+activate routes
+
+routes -> controller: 3. get_link(request, response)
+deactivate routes
+activate controller
+
+controller -> controller: 4. Validate projectId param
+
+alt projectId is missing
+    controller -> controller: 5a. session.error = "Project ID is required."
+    controller -> browser: 6a. redirect('/projects/list')
+    activate browser
+    deactivate browser
+else projectId is valid
+
+    controller ->> usersModel: 5b. async User.fetchOne(session.email)
+    activate usersModel
+    usersModel ->> db: 6b. SELECT * FROM user\nWHERE email = ? AND deleted_at IS NULL
+    activate db
+    db -->> usersModel: 7b. [rows]
+    deactivate db
+    usersModel -->> controller: 8b. user_id
+    deactivate usersModel
+
+    controller ->> model: 9b. async Project.fetchOneByUserTeams(projectId, userId)
+    activate model
+    model ->> db: 10b. SELECT p.*, t.team_name\nFROM project p\nINNER JOIN user_team ut ON p.team_id = ut.team_id\nLEFT JOIN team t ON p.team_id = t.team_id\nWHERE p.project_id = ? AND ut.user_id = ? ...
+    activate db
+    db -->> model: 11b. [projectRows]
+    deactivate db
+    model -->> controller: 12b. [projectRows]
+    deactivate model
+
+    controller ->> model: 13b. async Project.getTeamsByUser(userId)
+    activate model
+    model ->> db: 14b. SELECT t.team_id, t.team_name\nFROM team t\nINNER JOIN user_team ut ON t.team_id = ut.team_id\nWHERE ut.user_id = ? AND ut.date_end IS NULL
+    activate db
+    db -->> model: 15b. [teamRows]
+    deactivate db
+    model -->> controller: 16b. [teamRows]
+    deactivate model
+
+    alt Project not found or access denied
+        controller -> controller: 17a. session.error = "Project not found or access denied."
+        controller -> browser: 18a. redirect('/projects/list')
+        activate browser
+        deactivate browser
+    else Project found
+        controller -> linkView: 17b. render("projectLink",\n{project, teams, csrfToken})
+        deactivate controller
+        activate linkView
+        linkView -> browser: 18b. HTML form with team list
+        deactivate linkView
+        activate browser
+        browser -> user: 19b. Form displayed
+        activate user
+    end
+end
+
+== Submit Link to Team ==
+
+user -> browser: 20. Select team, Click "Link"
+deactivate user
+browser -> routes: 21. POST /projects/link/:id\n(team_id, _csrf)
+deactivate browser
+activate routes
+
+routes -> controller: 22. post_link(request, response)
+deactivate routes
+activate controller
+
+controller -> controller: 23. Validate projectId and team_id
+
+alt team_id is empty
+    controller -> controller: 24a. session.error = "Please select a team."
+    controller -> browser: 25a. redirect('/projects/link/:id')
+    activate browser
+    deactivate browser
+else team_id provided
+
+    controller ->> usersModel: 24b. async User.fetchOne(session.email)
+    activate usersModel
+    usersModel ->> db: 25b. SELECT * FROM user WHERE email = ?
+    activate db
+    db -->> usersModel: 26b. [rows]
+    deactivate db
+    usersModel -->> controller: 27b. user_id
+    deactivate usersModel
+
+    controller ->> model: 28b. async Project.fetchOneByUserTeams(projectId, userId)
+    activate model
+    model ->> db: 29b. SELECT ... FROM project p\nINNER JOIN user_team ut ...\nWHERE p.project_id = ? AND ut.user_id = ?
+    activate db
+    db -->> model: 30b. [projectRows]
+    deactivate db
+    model -->> controller: 31b. [projectRows]
+    deactivate model
+
+    controller ->> model: 32b. async Project.getTeamsByUser(userId)
+    activate model
+    model ->> db: 33b. SELECT t.team_id, t.team_name FROM team t ...
+    activate db
+    db -->> model: 34b. [allowedTeams]
+    deactivate db
+    model -->> controller: 35b. [allowedTeams]
+    deactivate model
+
+    alt Project not found OR team not in allowedTeams
+        controller -> controller: 36a. session.error = "Invalid team selection..."
+        controller -> browser: 37a. redirect('/projects/link/:id')
+        activate browser
+        deactivate browser
+    else Valid project and team
+
+        controller ->> model: 36b. async Project.updateTeam(projectId, teamId)
+        activate model
+        model ->> db: 37b. UPDATE project SET team_id = ?\nWHERE project_id = ?
+        activate db
+        db -->> model: 38b. {affectedRows}
+        deactivate db
+        model -->> controller: 39b. result
+        deactivate model
+
+        controller -> controller: 40b. session.success = "Project linked to team successfully!"
+        controller -> browser: 41b. redirect('/projects/list')
+        activate browser
+        deactivate browser
+    end
+end
+deactivate controller
+
+== Redirect to Project List ==
+
+browser -> routes: 42. GET /projects/list
+activate browser
+activate routes
+deactivate browser
+
+routes -> controller: 43. get_list(request, response)
+deactivate routes
+activate controller
+
+controller ->> model: 44. async Project.getAllByUserTeams(userId)
+activate model
+model ->> db: 45. SELECT DISTINCT p.*, t.team_name\nFROM project p\nINNER JOIN user_team ut ON p.team_id = ut.team_id\nLEFT JOIN team t ON p.team_id = t.team_id\nWHERE p.status != 'deleted' AND ut.user_id = ?
+activate db
+db -->> model: 46. Project rows
+deactivate db
+model -->> controller: 47. [rows]
+deactivate model
+
+controller -> listView: 48. render("projectShow",\n{projects, success, error})
+deactivate controller
+activate listView
+listView -> browser: 49. HTML project list
+deactivate listView
+activate browser
+activate user
+browser -> user: 50. Updated project list displayed
+deactivate browser
+deactivate user
+
+@enduml

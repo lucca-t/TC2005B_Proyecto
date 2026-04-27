@@ -1,0 +1,99 @@
+@startuml ReadUserSequence
+
+actor "User" as user
+boundary "Browser" as browser
+boundary "userList.ejs" as view
+control "users.routes.js" as routes
+control "users.controller.js" as controller
+entity "users.model.js" as model
+database "MySQL" as db
+
+== Load User List ==
+
+activate user
+user -> browser: 1. Click "Users" in navbar
+deactivate user
+activate browser
+
+browser -> routes: 2. GET /users/list
+deactivate browser
+activate routes
+
+routes -> controller: 3. get_list(request, response)
+deactivate routes
+activate controller
+
+controller -> controller: 4. Read session.success / session.error\nand clear them
+
+controller ->> model: 5. async User.getAllWithRoles()
+activate model
+
+model ->> db: 6. SELECT u.user_id, u.email, u.full_name,\nu.slack_handle, u.slack_id, r.role_name,\n(SELECT COUNT(...) AS quarterProgress)\nFROM user u\nLEFT JOIN user_role ur ON u.user_id = ur.user_id\n  AND ur.end_date IS NULL\nLEFT JOIN role r ON ur.role_id = r.role_id\nWHERE u.deleted_at IS NULL
+activate db
+db -->> model: 7. User rows
+deactivate db
+
+model -->> controller: 8. [rows, fieldData]
+deactivate model
+
+controller -> controller: 9. Map rows → users[]\n(quarterProgress default 0)
+
+controller -> view: 10. render("userList",\n{users, csrfToken, email, role, success, error})
+deactivate controller
+activate view
+
+view -> browser: 11. HTML user list
+deactivate view
+activate browser
+
+browser -> user: 12. User list displayed
+activate user
+
+== Search Users (optional, AJAX) ==
+
+user -> browser: 13. Type query in search box
+deactivate user
+
+browser -> routes: 14. GET /users/search?q=...
+deactivate browser
+activate routes
+
+routes -> controller: 15. getSearch(request, response)
+deactivate routes
+activate controller
+
+controller -> controller: 16. const q = (req.query.q || '').trim().slice(0,100)
+
+alt q is not empty
+    controller ->> model: 17b. async User.searchByNameOrEmailWithRoles(q)
+    activate model
+    model ->> db: 18b. SELECT ... FROM user u ...\nWHERE u.deleted_at IS NULL\nAND (u.email LIKE ? OR u.full_name LIKE ?)
+    activate db
+    db -->> model: 19b. Filtered user rows
+    deactivate db
+    model -->> controller: 20b. [rows]
+    deactivate model
+else q is empty
+    controller ->> model: 17a. async User.getAllWithRoles()
+    activate model
+    model ->> db: 18a. SELECT ... FROM user u ...\nWHERE u.deleted_at IS NULL
+    activate db
+    db -->> model: 19a. User rows
+    deactivate db
+    model -->> controller: 20a. [rows]
+    deactivate model
+end
+
+controller -> controller: 21. Map rows → users[] (JSON-safe shape)
+
+controller -> browser: 22. response.json({users})
+deactivate controller
+activate browser
+
+browser -> browser: 23. Update user list in DOM
+browser -> user: 24. Filtered list displayed
+activate user
+deactivate browser
+deactivate user
+
+@enduml
