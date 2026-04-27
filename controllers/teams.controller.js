@@ -865,6 +865,7 @@ exports.getDetails = (request, response, next) => {
                 csrfToken: request.csrfToken(),
                 error: error,
                 email: request.session.email || '',
+                role: request.session.role || '',
                 teamId: teamId,
                 teamName: teamName,
                 members: members,

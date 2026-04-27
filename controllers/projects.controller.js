@@ -242,7 +242,7 @@ exports.post_add = async (request, response, next) => {
       created_at: createdAt,
     });
 
-    request.session.success = 'Project created successfully.';
+    request.session.success = 'Project registered successfully!';
     return response.redirect('/projects/list');
   } catch (error) {
     console.error(

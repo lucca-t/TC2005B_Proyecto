@@ -13,12 +13,34 @@
         </h1>
       </div>
       <div class="level-right">
-        <a href="/users/list" class="button is-light">Back to Users</a>
+        <div class="buttons">
+          <% if (typeof user !== 'undefined' && user && (typeof role === 'undefined' || role === 'Administrador' || role === 'Lead Member')) { %>
+          <a href="/users/report/<%= user.user_id %>" class="button is-dark">
+            <span class="icon"><i class="fas fa-file-alt"></i></span>
+            <span>Generate New Report</span>
+          </a>
+          <% } %>
+          <a href="/users/list" class="button is-light">← Back</a>
+        </div>
       </div>
     </div>
 
+    <% if (typeof success !== 'undefined' && success) { %>
+    <div class="notification is-success is-light" id="successNotification">
+      <button class="delete" onclick="this.parentElement.remove()"></button>
+      <strong><%= success %></strong>
+    </div>
+    <% } %>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+    <div class="notification is-danger is-light">
+      <button class="delete" onclick="this.parentElement.remove()"></button>
+      <strong><%= error %></strong>
+    </div>
+    <% } %>
+
     <div class="box">
-      <h2 class="subtitle">Saved Reports</h2>
+      <h2 class="subtitle">Saved AI Reports</h2>
 
       <% if (reports && reports.length > 0) { %>
       <table class="table is-fullwidth is-striped is-hoverable">
@@ -53,7 +75,53 @@
       <p class="has-text-grey">No saved reports yet for this user.</p>
       <% } %>
     </div>
+
+    <div class="box">
+      <h2 class="subtitle">Daily Standup History</h2>
+
+      <% if (typeof standups !== 'undefined' && standups && standups.length > 0) { %>
+      <div class="table-container">
+        <table class="table is-fullwidth is-striped is-hoverable">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>What did you do?</th>
+              <th>What will you do tomorrow?</th>
+              <th>Blockers</th>
+              <% if (typeof role !== 'undefined' && (role === 'Administrador' || role === 'Lead Member')) { %>
+              <th>Actions</th>
+              <% } %>
+            </tr>
+          </thead>
+          <tbody>
+            <% standups.forEach((standup) => { %>
+            <tr>
+              <td><%= new Date(standup.date).toISOString().split('T')[0] %></td>
+              <td><%= standup.did_today %></td>
+              <td><%= standup.do_tomorrow %></td>
+              <td><%= standup.blockers || '—' %></td>
+              <% if (typeof role !== 'undefined' && (role === 'Administrador' || role === 'Lead Member')) { %>
+              <td>
+                <form action="/users/report/<%= user.user_id %>/standup/<%= standup.standup_id %>/delete" method="POST" style="display:inline;">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <button type="submit" class="button is-small is-light"
+                    onclick="return confirm('Are you sure you want to delete this standup?');">
+                    Delete
+                  </button>
+                </form>
+              </td>
+              <% } %>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+      <% } else { %>
+      <p class="has-text-grey">No daily standups registered for this user.</p>
+      <% } %>
+    </div>
   </div>
 </section>
 
 <%- include('includes/_footer') %>
+
