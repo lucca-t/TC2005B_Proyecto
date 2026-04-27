@@ -1,5 +1,6 @@
 const User = require('../models/users.model');
 const Reports = require('../models/reports.model');
+const Standup = require('../models/standup.model');
 const {generateUserReport} = require('../util/ai-report');
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -37,6 +38,11 @@ const getSessionUserId = (request) => {
 };
 
 exports.get_list = (request, response, next) => {
+  const success = request.session.success || '';
+  const error = request.session.error || '';
+  request.session.success = '';
+  request.session.error = '';
+
   User.getAllWithRoles().then(([rows, fieldData]) => {
     const users = rows.map((row) => ({
       ...row,
@@ -46,6 +52,8 @@ exports.get_list = (request, response, next) => {
       csrfToken: request.csrfToken(),
       email: request.session.email || '',
       role: request.session.role || '',
+      success,
+      error,
       users,
     });
   })
@@ -121,6 +129,7 @@ exports.post_add = (request, response, next) => {
 
   user.save()
       .then(() => {
+        request.session.success = 'User registered successfully!';
         return response.redirect('/users/list');
       })
       .catch((error) => {
@@ -219,6 +228,7 @@ exports.post_delete = (request, response, next) => {
 
   User.softDelete(userId)
       .then(() => {
+        request.session.success = 'User deleted successfully!';
         return response.redirect('/users/list');
       })
       .catch((error) => {
@@ -227,6 +237,24 @@ exports.post_delete = (request, response, next) => {
             error.sqlMessage || error.message,
         );
         next(error);
+      });
+};
+
+exports.post_delete_standup = (request, response, next) => {
+  const {userId, standupId} = request.params;
+
+  Standup.deleteRegister(standupId)
+      .then(() => {
+        request.session.success = 'Standup deleted successfully';
+        return response.redirect(`/users/report/${userId}/history`);
+      })
+      .catch((error) => {
+        console.error(
+            '[POST /users/report/standup/delete] Failed to delete standup:',
+            error.message,
+        );
+        request.session.error = 'Error deleting standup. Please try again.';
+        return response.redirect(`/users/report/${userId}/history`);
       });
 };
 
@@ -370,6 +398,8 @@ exports.get_my_report_history = (request, response, next) => {
 
 exports.get_report_history = (request, response, next) => {
   const userId = request.params.userId;
+  const success = request.session.success || '';
+  request.session.success = '';
 
   User.fetchById(userId)
       .then(([rows]) => {
@@ -378,15 +408,20 @@ exports.get_report_history = (request, response, next) => {
         }
 
         const user = rows[0];
-        return Reports.listUserReports(userId)
-            .then(([reportRows]) => {
-              return response.render('userReportHistory', {
-                csrfToken: request.csrfToken(),
-                email: request.session.email || '',
-                user: user,
-                reports: reportRows || [],
-              });
-            });
+        return Promise.all([
+          Reports.listUserReports(userId),
+          Standup.getHistoryByUserId(userId),
+        ]).then(([[reportRows], [standupRows]]) => {
+          return response.render('userReportHistory', {
+            csrfToken: request.csrfToken(),
+            email: request.session.email || '',
+            role: request.session.role || '',
+            user: user,
+            reports: reportRows || [],
+            standups: standupRows || [],
+            success,
+          });
+        });
       })
       .catch((error) => {
         console.error(

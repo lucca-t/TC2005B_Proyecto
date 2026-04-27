@@ -1,5 +1,30 @@
 <section class="section">
     <div class="container">
+        <% if (typeof success !== 'undefined' && success) { %>
+            <div class="notification is-success is-light" id="successNotification">
+                <button class="delete"></button>
+                <strong><%= success %></strong>
+            </div>
+            <script>
+                setTimeout(() => {
+                    const n = document.getElementById('successNotification');
+                    if (n) n.remove();
+                }, 3000);
+                document.addEventListener('DOMContentLoaded', () => {
+                    document.querySelectorAll('.notification .delete').forEach(btn => {
+                        btn.addEventListener('click', () => btn.parentElement.remove());
+                    });
+                });
+            </script>
+        <% } %>
+
+        <% if (typeof error !== 'undefined' && error) { %>
+            <div class="notification is-danger is-light" id="errorNotification">
+                <button class="delete"></button>
+                <strong><%= error %></strong>
+            </div>
+        <% } %>
+
         <div class="level mb-4">
             <div class="level-left">
                 <h1 class="title">User Management</h1>
@@ -109,10 +134,12 @@
                                             <span style="font-size:0.72rem;color:#555;
                                                 margin-left:4px;"><%= qp %>/3</span>
                                         </span>
-                                        <a href="/users/report/<%= user.user_id %>"
+                                        <% if (typeof role !== 'undefined' && (role === 'Administrador' || role === 'Lead Member')) { %>
+                                        <a href="/users/report/<%= user.user_id %>/history"
                                             class="button is-small is-dark">
                                             AI Report
                                         </a>
+                                        <% } %>
 
                                         <% if (typeof role !== 'undefined' && role === 'Administrador') { %>
                                         <a href="/users/edit/<%= user.email %>" 

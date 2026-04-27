@@ -28,6 +28,8 @@ router.post('/role/:userId', isAuth, adminOnly, usersController.post_role);
 router.post('/delete/:userId', isAuth, adminOnly, usersController.post_delete);
 
 // FR-18: Register member report - Admin, Lead, Member
+router.get('/report/:userId/history', isAuth, adminAndLead, usersController.get_report_history);
+router.post('/report/:userId/standup/:standupId/delete', isAuth, adminAndLead, usersController.post_delete_standup);
 router.get('/report/:userId', isAuth, allRoles, usersController.get_report);
 router.post('/report/:userId', isAuth, allRoles, usersController.post_report);
 

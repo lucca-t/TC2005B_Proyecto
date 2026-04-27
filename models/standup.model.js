@@ -33,11 +33,21 @@ module.exports = class Standup {
   static getHistory(email) {
     return db.execute(
         `SELECT s.standup_id, s.date, s.did_today, s.do_tomorrow, s.blockers
-             FROM standup s
-             INNER JOIN user u ON s.user_id = u.user_id
-             WHERE u.email = ? AND u.deleted_at IS NULL
-             ORDER BY s.date DESC`,
+            FROM standup s
+            INNER JOIN user u ON s.user_id = u.user_id
+            WHERE u.email = ? AND u.deleted_at IS NULL
+            ORDER BY s.date DESC`,
         [email],
+    );
+  }
+
+  static getHistoryByUserId(userId) {
+    return db.execute(
+        `SELECT s.standup_id, s.date, s.did_today, s.do_tomorrow, s.blockers
+            FROM standup s
+            WHERE s.user_id = ?
+            ORDER BY s.date DESC`,
+        [userId],
     );
   }
 

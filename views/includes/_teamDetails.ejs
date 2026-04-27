@@ -41,6 +41,11 @@
                                 <p class="title is-6"><%= member.slack_handle %></p>
                                 <p class="subtitle is-7 has-text-grey"><%= member.email %></p>
                             </div>
+                            <% if (typeof role !== 'undefined' && (role === 'Administrador' || role === 'Lead Member')) { %>
+                            <div class="media-right">
+                                <a href="/users/report/<%= member.user_id %>/history" class="button is-small is-dark">Standup History</a>
+                            </div>
+                            <% } %>
                         </div>
                     <% }) %>
                 <% } else { %>

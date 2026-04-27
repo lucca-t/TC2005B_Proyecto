@@ -53,8 +53,8 @@ exports.post_standup = (request, response, next) => {
               const standup = new Standup(selectedDate, did_today.trim(), do_tomorrow.trim(), (blockers || '').trim(), user_id);
               return standup.save()
                   .then(() => {
-                    request.session.success = 'Process completed. Your daily activity has been successfully registered';
-                    return response.redirect('/daily_standup');
+                    request.session.success = 'Daily standup registered successfully!';
+                    return response.redirect('/daily_standup/history');
                   });
             });
       })
@@ -71,6 +71,8 @@ exports.get_standup_history = (request, response, next) => {
   }
 
   const email = request.session.email;
+  const success = request.session.success || '';
+  request.session.success = '';
 
   Standup.getUserId(email)
       .then(([userRows]) => {
@@ -83,6 +85,7 @@ exports.get_standup_history = (request, response, next) => {
                 email: email,
                 standups: rows,
                 userId: userId,
+                success: success,
               });
             });
       })
@@ -108,7 +111,7 @@ exports.post_deleteRegister = (request, response, next) => {
 
   Standup.deleteRegister(standupId)
       .then(() => {
-        request.session.success = 'Record deleted successfully';
+        request.session.success = 'Daily standup deleted successfully!';
         return response.redirect('/daily_standup/history');
       })
       .catch((err) => {
