@@ -618,6 +618,7 @@ exports.get_details = (request, response, next) => {
 exports.getReport = (request, response, next) => {
   const projectId = request.params.projectId;
   const reportId = Number(request.query.reportId) || 0;
+  const isNewReport = request.query.newReport === 'true';
 
   if (!projectId) {
     request.session.error = 'Project ID is required.';
@@ -708,6 +709,7 @@ exports.getReport = (request, response, next) => {
                 startDate: formatDateForInput(saved.date_beginning),
                 endDate: formatDateForInput(saved.date_end),
                 reportId: reportId,
+                isNewReport: isNewReport,
               });
             });
       })
@@ -866,24 +868,8 @@ exports.postReport = (request, response, next) => {
                 );
               }
 
-              return Reports.findProjectReportByRange(
-                  projectId, startStr, endStr,
-              )
-                  .then(async (existing) => {
-                    console.log('[POST /projects/report] Checking for existing reports:');
-                    console.log('  - Found existing reports:', existing && existing[0] ? existing[0].length : 0);
-                    
-                    if (existing && existing[0] && existing[0].length > 0) {
-                      console.log('[POST /projects/report] Report already exists for this date range');
-                      console.log('[POST /projects/report] Redirecting to existing report:', existing[0][0].report_id);
-                      return response.redirect(
-                          '/projects/report/' + projectId +
-                          '?reportId=' + existing[0][0].report_id,
-                      );
-                    }
-
-                    console.log('[POST /projects/report] >>> Creating NEW report - DELETED_AT will NOT be set');
-                    console.log('[POST /projects/report] Generating new AI report');
+              console.log('[POST /projects/report] >>> Creating NEW report - DELETED_AT will NOT be set');
+              console.log('[POST /projects/report] Generating new AI report');
                     return generateProjectReport(
                         project,
                         startDate,
@@ -908,10 +894,9 @@ exports.postReport = (request, response, next) => {
                           console.log('[POST /projects/report] Report saved successfully:', created.report_id);
                           return response.redirect(
                               '/projects/report/' + projectId +
-                              '?reportId=' + created.report_id,
+                              '?reportId=' + created.report_id + '&newReport=true',
                           );
                         });
-                  });
             })
             .catch((aiError) => {
               console.error('[POST /projects/report] Error during report generation:');

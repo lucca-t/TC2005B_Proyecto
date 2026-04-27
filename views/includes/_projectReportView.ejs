@@ -23,7 +23,7 @@
     </div>
     <% } %>
 
-    <% if (typeof report !== 'undefined' && report) { %>
+    <% if (typeof isNewReport !== 'undefined' && isNewReport) { %>
     <div class="notification is-success is-light mb-4" id="reportSavedNotification">
       <button class="delete" onclick="this.parentElement.remove()"></button>
       <i class="fas fa-check-circle"></i> <strong>Report generated and saved successfully.</strong>
@@ -34,6 +34,7 @@
         if (n) n.remove();
       }, 5000);
     </script>
+    <% } %>
     <div class="box">
       <div class="level mb-2">
         <div class="level-left">
@@ -115,7 +116,6 @@
         <span>Generate Another Report</span>
       </a>
     </div>
-    <% } %>
 
   </div>
 </section>

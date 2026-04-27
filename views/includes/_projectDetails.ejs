@@ -6,11 +6,7 @@
             </div>
         <div class="level-right">
                 <a href="/projects/list" class="button is-light"><strong>← Back</strong></a>
-                <% if (typeof latestReport !== 'undefined' && latestReport) { %>
-                    <a href="/projects/report/<%= projectId %>" class="button is-info"><strong>View Report</strong></a>
-                <% } else { %>
-                    <a href="/projects/report/<%= projectId %>" class="button is-dark"><strong>Generate Report</strong></a>
-                <% } %>
+                <a href="/projects/report/<%= projectId %>" class="button is-dark"><strong>Generate Report</strong></a>
                 <a href="/projects/edit/<%= projectId %>" class="button is-primary"><strong>Edit Project</strong></a>
             </div>
         </div>
@@ -107,9 +103,14 @@
                                 <b>to</b> <%= formatDate(report.date_end) %>
                             </p>
                             <p><strong>Summary:</strong></p>
-                            <p class="has-text-grey">
-                                <%= report.ai_content ? (report.ai_content.length > 220 ? report.ai_content.substring(0, 220) + '...' : report.ai_content) : 'No summary available.' %>
-                            </p>
+                            <% if (report.ai_content) { %>
+                                <div class="has-text-grey" style="max-height: 200px; overflow: hidden; position: relative;">
+                                    <%- report.ai_content %>
+                                    <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 50px; background: linear-gradient(to bottom, transparent, #f8f9fa);"></div>
+                                </div>
+                            <% } else { %>
+                                <p class="has-text-grey">No summary available.</p>
+                            <% } %>
                         </div>
                     </div>
                 <% }) %>
