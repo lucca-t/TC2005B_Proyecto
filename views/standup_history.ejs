@@ -34,6 +34,13 @@
             </div>
         <% } %>
 
+        <% if (typeof success !== 'undefined' && success.length > 0) { %>
+            <div class="notification is-success is-light">
+                <button class="delete" onclick="this.parentElement.remove()"></button>
+                <%= success %>
+            </div>
+        <% } %>
+
         <div class="box mb-4">
             <div class="field is-grouped is-grouped-multiline">
                 <div class="control">

@@ -235,7 +235,7 @@ exports.post_standup = (request, response, next) => {
               return standup.save()
                   .then(() => {
                     request.session.success = 'Process completed. Your daily activity has been successfully registered';
-                    return response.redirect('/daily_standup');
+                    return response.redirect('/daily_standup/history');
                   });
             });
       })
@@ -252,6 +252,10 @@ exports.get_standup_history = (request, response, next) => {
   }
 
   const email = request.session.email;
+  const error = request.session.error || '';
+  const success = request.session.success || '';
+  request.session.error = '';
+  request.session.success = '';
 
   Standup.getUserId(email)
       .then(([userRows]) => {
@@ -264,6 +268,8 @@ exports.get_standup_history = (request, response, next) => {
                 email: email,
                 standups: rows,
                 userId: userId,
+                error: error,
+                success: success,
               });
             });
       })
@@ -275,7 +281,8 @@ exports.get_standup_history = (request, response, next) => {
           email: email,
           standups: [],
           userId: null,
-          error: 'Server connection error. Please try again later.',
+          error: error || 'Server connection error. Please try again later.',
+          success: success,
         });
       });
 };
