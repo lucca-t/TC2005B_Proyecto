@@ -81,6 +81,7 @@
 
         <div id="teamSearchMeta"
             data-role="<%= typeof role !== 'undefined' ? role : '' %>"
+            data-can-view-team-standups="<%= (typeof navPermissions !== 'undefined' && navPermissions && navPermissions.canViewTeamStandups) ? 'true' : 'false' %>"
             data-csrf="<%= csrfToken %>"
             style="display:none;"></div>
 
@@ -133,7 +134,7 @@
                                             <span style="font-size:0.72rem;color:#555;margin-left:4px;"><%= qp %>/3</span>
                                         </span>
                                         <a href="/teams/details/<%= team.id %>" class="button is-small is-info is-light">Team Details</a>
-                                        <% if (typeof role !== 'undefined' && (role === 'Administrador' || role === 'Lead Member')) { %>
+                                        <% if (typeof navPermissions !== 'undefined' && navPermissions && navPermissions.canViewTeamStandups) { %>
                                         <a href="/daily_standup/history/team?team_id=<%= team.id %>" class="button is-small is-light">Team Standups</a>
                                         <% } %>
                                         <a href="/teams/report/<%= team.id %>" class="button is-small is-dark">AI Report</a>
@@ -176,6 +177,7 @@
 
             const userRole = meta.dataset.role;
             const csrfToken = meta.dataset.csrf;
+            const canViewTeamStandups = meta.dataset.canViewTeamStandups === 'true';
             const isAdminOrLead = userRole === 'Administrador' || userRole === 'Lead Member';
             const originalRows = tbody.innerHTML;
 
@@ -234,7 +236,7 @@
                         <div class="buttons is-right">
                             ${progressBadge}
                             <a href="/teams/details/${team.id}" class="button is-small is-info is-light">Team Details</a>
-                            ${isAdminOrLead ? `<a href="/daily_standup/history/team?team_id=${escapeHtml(team.id)}" class="button is-small is-light">Team Standups</a>` : ''}
+                            ${canViewTeamStandups ? `<a href="/daily_standup/history/team?team_id=${escapeHtml(team.id)}" class="button is-small is-light">Team Standups</a>` : ''}
                             <a href="/teams/report/${team.id}" class="button is-small is-dark">AI Report</a>
                             ${adminActions}
                         </div>
