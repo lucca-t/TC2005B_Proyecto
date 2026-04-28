@@ -40,7 +40,7 @@ const route_standup_api = require('./routes/standup_api.routes');
 app.use('/api/standups', express.json({limit: '1mb'}), route_standup_api);
 
 const session = require('express-session');
-const {getRolePermissions} = require('./util/rbac');
+const {getRolePermissions, normalizeRole} = require('./util/rbac');
 app.use(session({
   secret: process.env.SESSION_SECRET || 'mysecretkey',
   resave: false,
@@ -52,11 +52,12 @@ app.use(csrf());
 
 // Expose session data to all views
 app.use((req, res, next) => {
+  const normalizedRole = normalizeRole(req.session.role) || req.session.role || null;
   res.locals.urlActual = req.path;
   res.locals.isLoggedIn = req.session.isLoggedIn || false;
   res.locals.email = req.session.email || '';
-  res.locals.role = req.session.role || null;
-  res.locals.navPermissions = getRolePermissions(req.session.role);
+  res.locals.role = normalizedRole;
+  res.locals.navPermissions = getRolePermissions(normalizedRole);
   next();
 });
 

@@ -577,6 +577,7 @@ exports.post_role = (request, response, next) => {
 exports.get_report = (request, response, next) => {
   const userId = request.params.userId;
   const reportId = Number(request.query.reportId) || 0;
+  const viewRole = normalizeRole(request.session.role) || request.session.role || '';
 
   canAccessUser(request, userId)
       .then((hasAccess) => {
@@ -596,6 +597,7 @@ exports.get_report = (request, response, next) => {
                 return response.render('userReport', {
                   csrfToken: request.csrfToken(),
                   email: request.session.email || '',
+                  role: viewRole,
                   user: user,
                   report: null,
                   error: null,
@@ -611,6 +613,7 @@ exports.get_report = (request, response, next) => {
                       return response.render('userReport', {
                         csrfToken: request.csrfToken(),
                         email: request.session.email || '',
+                        role: viewRole,
                         user: user,
                         report: null,
                         error: 'Saved report not found for this user.',
@@ -624,6 +627,7 @@ exports.get_report = (request, response, next) => {
                     return response.render('userReport', {
                       csrfToken: request.csrfToken(),
                       email: request.session.email || '',
+                      role: viewRole,
                       user: user,
                       report: savedReport.ai_content,
                       error: null,
@@ -671,6 +675,7 @@ exports.get_report_history = (request, response, next) => {
   const userId = request.params.userId;
   const success = request.session.success || '';
   request.session.success = '';
+  const viewRole = normalizeRole(request.session.role) || request.session.role || '';
 
   User.fetchById(userId)
       .then(([rows]) => {
@@ -686,7 +691,7 @@ exports.get_report_history = (request, response, next) => {
           return response.render('userReportHistory', {
             csrfToken: request.csrfToken(),
             email: request.session.email || '',
-            role: request.session.role || '',
+            role: viewRole,
             user: user,
             reports: reportRows || [],
             standups: standupRows || [],
@@ -706,6 +711,7 @@ exports.get_report_history = (request, response, next) => {
 exports.post_report = (request, response, next) => {
   const userId = request.params.userId;
   const {report_type, start_date, end_date} = request.body;
+  const viewRole = normalizeRole(request.session.role) || request.session.role || '';
 
   canAccessUser(request, userId)
       .then((hasAccess) => {
@@ -724,6 +730,7 @@ exports.post_report = (request, response, next) => {
                 return response.status(400).render('userReport', {
                   csrfToken: request.csrfToken(),
                   email: request.session.email || '',
+                  role: viewRole,
                   user: user,
                   report: null,
                   error: msg,
@@ -803,6 +810,7 @@ exports.post_report = (request, response, next) => {
                       return response.status(400).render('userReport', {
                         csrfToken: request.csrfToken(),
                         email: request.session.email || '',
+                        role: viewRole,
                         user: user,
                         report: null,
                         error: 'No daily standups found for ' +
@@ -864,6 +872,7 @@ exports.post_report = (request, response, next) => {
                     response.render('userReport', {
                       csrfToken: request.csrfToken(),
                       email: request.session.email || '',
+                      role: viewRole,
                       user: user,
                       report: null,
                       error: 'Failed to generate AI report: ' +

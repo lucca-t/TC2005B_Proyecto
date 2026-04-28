@@ -14,7 +14,7 @@
       </div>
       <div class="level-right">
         <div class="buttons">
-          <% if (typeof user !== 'undefined' && user && (typeof role === 'undefined' || role === 'Administrador' || role === 'Lead Member')) { %>
+          <% if (typeof user !== 'undefined' && user) { %>
           <a href="/users/report/<%= user.user_id %>" class="button is-dark">
             <span class="icon"><i class="fas fa-file-alt"></i></span>
             <span>Generate New Report</span>

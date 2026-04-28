@@ -9,6 +9,7 @@ exports.getList = (request, response, next) => {
   const success = request.session.success || '';
   request.session.error = '';
   request.session.success = '';
+  const viewRole = normalizeRole(request.session.role) || request.session.role || '';
 
   const currentUserTeamsPromise = getSessionUserId(request)
       .then((sessionUserId) => {
@@ -44,6 +45,7 @@ exports.getList = (request, response, next) => {
           error: error,
           success: success,
           email: request.session.email || '',
+          role: viewRole,
           teams: teams,
         });
       })
@@ -54,6 +56,7 @@ exports.getList = (request, response, next) => {
           error: 'Error loading teams.',
           success: '',
           email: request.session.email || '',
+          role: viewRole,
           teams: [],
         });
       });
@@ -76,6 +79,7 @@ exports.getSearch = (request, response, next) => {
   Promise.all([fetchTeams, currentUserTeamsPromise])
       .then(([[rows], userTeams]) => {
         const userRole = normalizeRole(request.session.role);
+        const viewRole = normalizeRole(request.session.role) || request.session.role || '';
         const currentUserTeamIds = new Set(
             userTeams
                 .map((team) => parseInt(team.team_id))
@@ -206,6 +210,7 @@ const withTeamAccess = (request, response, teamId, onAllowed) => {
 exports.getReport = (request, response, next) => {
   const teamId = request.params.teamId;
   const reportId = Number(request.query.reportId) || 0;
+  const viewRole = normalizeRole(request.session.role) || request.session.role || '';
 
   return withTeamAccess(request, response, teamId, () => {
     return Promise.all([Team.getTeamWithMembers(teamId), getCurrentUserTeams(request)])
@@ -232,7 +237,7 @@ exports.getReport = (request, response, next) => {
             return response.render('teamReport', {
               csrfToken: request.csrfToken(),
               email: request.session.email || '',
-              role: request.session.role || '',
+                role: viewRole,
               team,
               userTeams,
               selectedTeamId,
@@ -250,7 +255,7 @@ exports.getReport = (request, response, next) => {
                   return response.render('teamReport', {
                     csrfToken: request.csrfToken(),
                     email: request.session.email || '',
-                    role: request.session.role || '',
+                      role: viewRole,
                     team,
                     report: null,
                     error: 'Saved report not found for this team.',
@@ -264,7 +269,7 @@ exports.getReport = (request, response, next) => {
                 return response.render('teamReport', {
                   csrfToken: request.csrfToken(),
                   email: request.session.email || '',
-                  role: request.session.role || '',
+                    role: viewRole,
                   team,
                   userTeams,
                   selectedTeamId,
@@ -289,6 +294,7 @@ exports.getReport = (request, response, next) => {
 exports.postReport = (request, response, next) => {
   const teamId = request.params.teamId;
   const {report_type, start_date, end_date} = request.body;
+    const viewRole = normalizeRole(request.session.role) || request.session.role || '';
 
   return withTeamAccess(request, response, teamId, () => {
     return Promise.all([Team.getTeamWithMembers(teamId), getCurrentUserTeams(request)])
@@ -315,7 +321,7 @@ exports.postReport = (request, response, next) => {
             return response.status(400).render('teamReport', {
               csrfToken: request.csrfToken(),
               email: request.session.email || '',
-              role: request.session.role || '',
+                role: viewRole,
               team,
               userTeams,
               selectedTeamId,
@@ -451,7 +457,7 @@ exports.postReport = (request, response, next) => {
                 return response.render('teamReport', {
                   csrfToken: request.csrfToken(),
                   email: request.session.email || '',
-                  role: request.session.role || '',
+                    role: viewRole,
                   team,
                   userTeams,
                   selectedTeamId,
@@ -825,6 +831,7 @@ exports.getDetails = (request, response, next) => {
   const teamId = request.params.teamId;
   const error = request.session.error || '';
   request.session.error = '';
+  const viewRole = normalizeRole(request.session.role) || request.session.role || '';
 
   if (!teamId) {
     request.session.error = 'Team ID is required.';
@@ -865,7 +872,7 @@ exports.getDetails = (request, response, next) => {
                 csrfToken: request.csrfToken(),
                 error: error,
                 email: request.session.email || '',
-                role: request.session.role || '',
+                role: viewRole,
                 teamId: teamId,
                 teamName: teamName,
                 members: members,
