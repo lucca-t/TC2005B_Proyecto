@@ -30,6 +30,20 @@ module.exports = class Standup {
     );
   }
 
+  static getUserIdByDisplayName(displayName) {
+    return db.execute(
+        `SELECT user_id
+         FROM user
+         WHERE deleted_at IS NULL
+           AND (
+             LOWER(REPLACE(COALESCE(slack_handle, ''), '@', '')) = LOWER(?)
+             OR LOWER(COALESCE(full_name, '')) = LOWER(?)
+           )
+         LIMIT 1`,
+        [displayName, displayName],
+    );
+  }
+
   static checkDuplicate(user_id, date) {
     return db.execute(
         'SELECT standup_id FROM standup WHERE user_id = ? AND date = ?',

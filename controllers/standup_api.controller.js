@@ -1,7 +1,5 @@
 const Standup = require('../models/standup.model');
 
-const getTodayDateString = () => new Date().toISOString().split('T')[0];
-
 const isValidDateInput = (value) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
     return false;
@@ -26,46 +24,40 @@ const getApiTokenFromRequest = (request) => {
   return apiKeyHeader;
 };
 
-const getStandupPayload = (body) => {
-  if (body && typeof body.standup === 'object' && body.standup !== null) {
-    return body.standup;
-  }
-
-  return body || {};
+const getNormalizedDisplayName = (value) => {
+  return (value || '').trim().replace(/^@/, '');
 };
 
-const getUserIdentifiers = (body) => {
-  const nestedUser = body && typeof body.user === 'object' ? body.user : {};
+const parseSlackWorkflowPayload = (body) => {
+  const payload = body && typeof body === 'object' ? body : {};
+  const team = payload.team && typeof payload.team === 'object' ? payload.team : {};
+  const user = payload.user && typeof payload.user === 'object' ? payload.user : {};
+  const standup = payload.standup && typeof payload.standup === 'object' ? payload.standup : {};
 
-  const slackId = (
-    nestedUser.slack_id ||
-    nestedUser.slackId ||
-    body.slack_id ||
-    body.slackId ||
-    ''
-  ).trim();
-
-  const email = (
-    nestedUser.email ||
-    body.email ||
-    ''
-  ).trim().toLowerCase();
-
-  return {slackId, email};
+  return {
+    source: (payload.source || '').trim(),
+    teamName: (team.name || '').trim(),
+    slackUserId: (user.slackUserId || '').trim(),
+    displayName: getNormalizedDisplayName(user.displayName),
+    date: (payload.date || '').trim(),
+    didToday: (standup.didToday || '').trim(),
+    doingTomorrow: (standup.doingTomorrow || '').trim(),
+    blockers: (standup.blockers || '').trim(),
+  };
 };
 
-const resolveUserId = async (slackId, email) => {
-  if (slackId) {
-    const [slackRows] = await Standup.getUserIdBySlackId(slackId);
+const resolveUserId = async (slackUserId, displayName) => {
+  if (slackUserId) {
+    const [slackRows] = await Standup.getUserIdBySlackId(slackUserId);
     if (slackRows && slackRows.length > 0) {
       return slackRows[0].user_id;
     }
   }
 
-  if (email) {
-    const [emailRows] = await Standup.getUserId(email);
-    if (emailRows && emailRows.length > 0) {
-      return emailRows[0].user_id;
+  if (displayName) {
+    const [displayRows] = await Standup.getUserIdByDisplayName(displayName);
+    if (displayRows && displayRows.length > 0) {
+      return displayRows[0].user_id;
     }
   }
 
@@ -90,55 +82,70 @@ exports.post_slack_standup = async (request, response, next) => {
     });
   }
 
-  const payload = request.body && typeof request.body === 'object' ?
-    request.body : {};
-  const standupPayload = getStandupPayload(payload);
+  const parsedPayload = parseSlackWorkflowPayload(request.body);
 
-  const didToday = (
-    standupPayload.did_today ||
-    standupPayload.didToday ||
-    ''
-  ).trim();
-  const doTomorrow = (
-    standupPayload.do_tomorrow ||
-    standupPayload.doTomorrow ||
-    ''
-  ).trim();
-  const blockers = (standupPayload.blockers || '').trim();
-  const date = (standupPayload.date || '').trim() || getTodayDateString();
-
-  if (!didToday || !doTomorrow) {
+  if (parsedPayload.source !== 'slack_workflow') {
     return response.status(400).json({
       ok: false,
-      error: 'Missing required fields: did_today and do_tomorrow.',
+      error: 'Invalid source. Expected source: slack_workflow.',
     });
   }
 
-  if (!isValidDateInput(date)) {
+  if (!parsedPayload.teamName) {
+    return response.status(400).json({
+      ok: false,
+      error: 'Missing required field: team.name.',
+    });
+  }
+
+  if (!parsedPayload.slackUserId) {
+    return response.status(400).json({
+      ok: false,
+      error: 'Missing required field: user.slackUserId.',
+    });
+  }
+
+  if (!parsedPayload.displayName) {
+    return response.status(400).json({
+      ok: false,
+      error: 'Missing required field: user.displayName.',
+    });
+  }
+
+  if (!parsedPayload.date) {
+    return response.status(400).json({
+      ok: false,
+      error: 'Missing required field: date.',
+    });
+  }
+
+  if (!parsedPayload.didToday || !parsedPayload.doingTomorrow) {
+    return response.status(400).json({
+      ok: false,
+      error: 'Missing required fields: standup.didToday and standup.doingTomorrow.',
+    });
+  }
+
+  if (!isValidDateInput(parsedPayload.date)) {
     return response.status(400).json({
       ok: false,
       error: 'Invalid date value. Use YYYY-MM-DD format.',
     });
   }
 
-  const {slackId, email} = getUserIdentifiers(payload);
-  if (!slackId && !email) {
-    return response.status(400).json({
-      ok: false,
-      error: 'Provide user.slack_id or user.email to match a user record.',
-    });
-  }
-
   try {
-    const userId = await resolveUserId(slackId, email);
+    const userId = await resolveUserId(
+        parsedPayload.slackUserId,
+        parsedPayload.displayName,
+    );
     if (!userId) {
       return response.status(404).json({
         ok: false,
-        error: 'User not found for provided slack_id/email.',
+        error: 'User not found for provided user.slackUserId/user.displayName.',
       });
     }
 
-    const [existing] = await Standup.checkDuplicate(userId, date);
+    const [existing] = await Standup.checkDuplicate(userId, parsedPayload.date);
     if (existing.length > 0) {
       return response.status(409).json({
         ok: false,
@@ -146,16 +153,28 @@ exports.post_slack_standup = async (request, response, next) => {
       });
     }
 
-    const standup = new Standup(date, didToday, doTomorrow, blockers, userId);
+    const standup = new Standup(
+        parsedPayload.date,
+        parsedPayload.didToday,
+        parsedPayload.doingTomorrow,
+        parsedPayload.blockers,
+        userId,
+    );
     const [insertResult] = await standup.save();
 
     return response.status(201).json({
       ok: true,
       message: 'Standup received and stored.',
+      mapping: {
+        source: parsedPayload.source,
+        team_name: parsedPayload.teamName,
+        slack_user_id: parsedPayload.slackUserId,
+        display_name: parsedPayload.displayName,
+      },
       standup: {
         standup_id: insertResult.insertId || null,
         user_id: userId,
-        date,
+        date: parsedPayload.date,
       },
     });
   } catch (err) {
