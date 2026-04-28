@@ -490,7 +490,40 @@
                                 copyButton.textContent = 'Copy Markdown';
                             }, 1500);
                         } catch (error) {
+                            console.error('Copy failed:', error && error.message);
                             copyButton.textContent = 'Copy failed';
+
+                            // Manual-select fallback: show the markdown in a selectable textarea
+                            try {
+                                var manual = document.createElement('textarea');
+                                manual.value = htmlToMarkdown(markdown);
+                                manual.style.position = 'fixed';
+                                manual.style.left = '50%';
+                                manual.style.top = '50%';
+                                manual.style.transform = 'translate(-50%, -50%)';
+                                manual.style.zIndex = 99999;
+                                manual.style.width = '80%';
+                                manual.style.height = '240px';
+                                manual.style.padding = '8px';
+                                document.body.appendChild(manual);
+                                manual.focus();
+                                manual.select();
+
+                                setTimeout(function() {
+                                    try { alert('Copy failed. The report content has been selected — press Ctrl+C (Cmd+C) to copy. Press Escape to close.'); } catch (e) {}
+                                }, 50);
+
+                                function escHandler(e) {
+                                    if (e.key === 'Escape') {
+                                        if (manual && manual.parentNode) manual.parentNode.removeChild(manual);
+                                        window.removeEventListener('keydown', escHandler);
+                                    }
+                                }
+                                window.addEventListener('keydown', escHandler);
+                            } catch (e2) {
+                                console.error('Manual-select fallback failed:', e2 && e2.message);
+                            }
+
                             setTimeout(function() {
                                 copyButton.textContent = 'Copy Markdown';
                             }, 1500);

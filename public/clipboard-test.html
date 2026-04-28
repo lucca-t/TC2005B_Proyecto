@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Clipboard Test</title>
+    <style>
+      body { font-family: system-ui, -apple-system, Segoe UI, sans-serif; margin: 24px; }
+      input { width: 320px; padding: 6px; }
+      button { margin-left: 8px; padding: 6px 10px; }
+      pre { background: #f6f6f6; padding: 8px; margin-top: 16px; }
+    </style>
+  </head>
+  <body>
+    <p>Click copy to clipboard</p>
+
+    <input type="text" value="Hello World" id="myInput">
+    <button type="button" id="copyBtn">Copy text</button>
+
+    <pre id="status">Ready</pre>
+
+    <script>
+      const status = document.getElementById('status');
+
+      function setStatus(message) {
+        status.textContent = message;
+      }
+
+      function envInfo() {
+        return [
+          'origin: ' + location.origin,
+          'secureContext: ' + window.isSecureContext,
+          'hasClipboardApi: ' + Boolean(navigator.clipboard),
+          'hasWriteText: ' + Boolean(navigator.clipboard && navigator.clipboard.writeText),
+        ].join('\n');
+      }
+
+      async function copyText() {
+        const input = document.getElementById('myInput');
+        const text = input.value;
+
+        if (navigator.clipboard && window.isSecureContext) {
+          try {
+            await navigator.clipboard.writeText(text);
+            setStatus('Copied via Clipboard API.\n' + envInfo());
+            return;
+          } catch (e) {
+            console.warn('clipboard API failed', e);
+          }
+        }
+
+        try {
+          input.focus();
+          input.select();
+          if (input.setSelectionRange) input.setSelectionRange(0, 99999);
+          const ok = document.execCommand('copy');
+          if (ok) {
+            setStatus('Copied via execCommand.\n' + envInfo());
+            return;
+          }
+        } catch (e) {
+          console.warn('execCommand on input failed', e);
+        }
+
+        try {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          ta.setAttribute('readonly', '');
+          ta.style.position = 'fixed';
+          ta.style.left = '-9999px';
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          setStatus('Copied via textarea fallback.\n' + envInfo());
+          return;
+        } catch (e) {
+          console.error('final copy fallback failed', e);
+        }
+
+        setStatus('Copy failed.\n' + envInfo());
+      }
+
+      document.getElementById('copyBtn').addEventListener('click', copyText);
+      setStatus('Ready.\n' + envInfo());
+    </script>
+  </body>
+</html>
