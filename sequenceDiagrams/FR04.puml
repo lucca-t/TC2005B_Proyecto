@@ -1,0 +1,220 @@
+@startuml
+skinparam style strictuml
+skinparam maxmessagesize 150
+
+actor "Admin / Lead" as U
+boundary "Routes" as RO
+boundary "View: projectsEdit.ejs" as VL
+control "projects.controller" as C
+entity "Project.model" as PM
+database "MySQL" as BD
+
+activate U
+U -> VL: Click Edit on a project
+deactivate U
+
+activate VL
+VL -> RO: GET /projects/edit/:id
+deactivate VL
+
+activate RO
+RO -> C: get_edit(request, response, next)
+deactivate RO
+
+activate C
+C -> C: validate projectId param
+
+alt Missing projectId
+	C -> RO: redirect('/projects/list') + session.error
+	deactivate C
+
+	activate RO
+	RO -> VL: redirect to project list
+	deactivate RO
+
+	activate VL
+	VL -> U: Error notification: Project ID is required.
+	deactivate VL
+else Valid projectId
+	C -> C: getCurrentUserId(request)
+
+	alt Session user missing
+		C -> RO: redirect('/login') + session.error
+		deactivate C
+
+		activate RO
+		RO -> VL: redirect to login page
+		deactivate RO
+
+		activate VL
+		VL -> U: Login required message
+		deactivate VL
+	else Session user found
+		C ->> PM: fetchOneByUserTeams(projectId, userId)
+		activate PM
+		PM ->> BD: SELECT p.project_id, p.name, p.description, p.start_date, p.end_date,\np.status, p.created_at, p.project_state, p.team_id, t.team_name\nFROM project p\nINNER JOIN user_team ut ON p.team_id = ut.team_id\nLEFT JOIN team t ON p.team_id = t.team_id\nWHERE p.project_id = ?\nAND p.status != 'deleted'\nAND ut.user_id = ?\nAND ut.date_end IS NULL\nAND t.deleted_at IS NULL\nLIMIT 1
+		activate BD
+		BD -->> PM: projectRows
+		deactivate BD
+		PM -->> C: projectRows
+		deactivate PM
+
+		C ->> PM: getTeamsByUser(userId)
+		activate PM
+		PM ->> BD: SELECT t.team_id, t.team_name\nFROM team t\nINNER JOIN user_team ut ON t.team_id = ut.team_id\nWHERE t.deleted_at IS NULL\nAND ut.date_end IS NULL\nAND ut.user_id = ?\nORDER BY t.team_name ASC
+		activate BD
+		BD -->> PM: teamRows
+		deactivate BD
+		PM -->> C: teamRows
+		deactivate PM
+
+		alt Project not found or access denied
+			C -> RO: redirect('/projects/list') + session.error
+			deactivate C
+
+			activate RO
+			RO -> VL: render project list with error
+			deactivate RO
+
+			activate VL
+			VL -> U: Error notification: Project not found or access denied.
+			deactivate VL
+		else Project found
+			C -> VL: render('projectsEdit', {project, teams, formData})
+			deactivate C
+
+			activate VL
+			VL -> U: HTML edit form prefilled with project data
+			deactivate VL
+
+			note over VL
+			  Client-side script updates character counters,
+			  sets start_date to today when blank,
+			  and forces end_date to today when status is completed.
+			end note
+
+			activate U
+			U -> VL: Edit fields and submit form
+			deactivate U
+
+			activate VL
+			VL -> RO: POST /projects/edit/:id
+			deactivate VL
+
+			activate RO
+			RO -> C: post_edit(request, response, next)
+			deactivate RO
+
+			activate C
+			C -> C: validate projectId param
+
+			alt Missing projectId
+				C -> RO: redirect('/projects/list') + session.error
+				deactivate C
+
+				activate RO
+				RO -> VL: redirect to project list
+				deactivate RO
+
+				activate VL
+				VL -> U: Error notification: Project ID is required.
+				deactivate VL
+			else Valid projectId
+				C -> C: getCurrentUserId(request)
+
+				alt Session user missing
+					C -> RO: redirect('/login') + session.error
+					deactivate C
+
+					activate RO
+					RO -> VL: redirect to login page
+					deactivate RO
+
+					activate VL
+					VL -> U: Login required message
+					deactivate VL
+				else Session user found
+					C -> C: normalize input and validate required fields, lengths, team, dates
+
+					alt Missing required fields
+						C ->> PM: fetchOneByUserTeams(projectId, userId)
+						activate PM
+						PM ->> BD: SELECT project by project_id and user team access
+						activate BD
+						BD -->> PM: projectRows
+						deactivate BD
+						PM -->> C: projectRows
+						deactivate PM
+
+						C ->> PM: getTeamsByUser(userId)
+						activate PM
+						PM ->> BD: SELECT allowed teams for user
+						activate BD
+						BD -->> PM: teamRows
+						deactivate BD
+						PM -->> C: teamRows
+						deactivate PM
+
+						C -> VL: render('projectsEdit', {errors: 'Missing required fields.'})
+						deactivate C
+
+						activate VL
+						VL -> U: Form with validation error
+						deactivate VL
+					else Valid data
+						C ->> PM: findByNameAndTeamExcludingId(name, teamId, projectId)
+						activate PM
+						PM ->> BD: SELECT project_id FROM project\nWHERE LOWER(name) = LOWER(?) AND team_id = ?\nAND project_id != ?\nLIMIT 1
+						activate BD
+						BD -->> PM: existingRows
+						deactivate BD
+						PM -->> C: existingRows
+						deactivate PM
+
+						alt Duplicate project name
+							C -> VL: render('projectsEdit', {error: 'A project with this name already exists for the selected team.'})
+							deactivate C
+
+							activate VL
+							VL -> U: Form with duplicate-name error
+							deactivate VL
+						else Unique name
+							C -> C: resolve end date for status and compare dates
+
+							alt End date before start date
+								C -> VL: render('projectsEdit', {error: 'End date cannot be before start date.'})
+								deactivate C
+
+								activate VL
+								VL -> U: Form with date-range error
+								deactivate VL
+							else Valid edit
+								C ->> PM: update(projectId, projectData)
+								activate PM
+								PM ->> BD: UPDATE project\nSET name = ?, description = ?, start_date = ?, end_date = ?, team_id = ?, status = ?, project_state = ?\nWHERE project_id = ?
+								activate BD
+								BD -->> PM: result
+								deactivate BD
+								PM -->> C: result
+								deactivate PM
+
+								C -> RO: redirect('/projects/list') + session.success
+								deactivate C
+
+								activate RO
+								RO -> VL: render project list with success message
+								deactivate RO
+
+								activate VL
+								VL -> U: Project updated successfully.
+								deactivate VL
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+end
+
+@enduml
