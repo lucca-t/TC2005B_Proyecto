@@ -372,9 +372,119 @@
 
                     if (!copyButton) return;
 
+                    function htmlToMarkdown(html) {
+                        var parser = new DOMParser();
+                        var doc = parser.parseFromString(html, 'text/html');
+
+                        function serializeInline(node) {
+                            if (!node) return '';
+
+                            if (node.nodeType === Node.TEXT_NODE) {
+                                return node.nodeValue || '';
+                            }
+
+                            if (node.nodeType !== Node.ELEMENT_NODE) {
+                                return '';
+                            }
+
+                            var tag = node.tagName.toLowerCase();
+
+                            if (tag === 'strong' || tag === 'b') {
+                                return '**' + Array.from(node.childNodes).map(serializeInline).join('') + '**';
+                            }
+
+                            if (tag === 'em' || tag === 'i') {
+                                return '*' + Array.from(node.childNodes).map(serializeInline).join('') + '*';
+                            }
+
+                            return Array.from(node.childNodes).map(serializeInline).join('');
+                        }
+
+                        function serializeBlock(node) {
+                            if (!node || node.nodeType !== Node.ELEMENT_NODE) {
+                                return '';
+                            }
+
+                            var tag = node.tagName.toLowerCase();
+
+                            if (tag === 'div' || tag === 'section' || tag === 'article') {
+                                return Array.from(node.childNodes).map(serializeBlock).join('');
+                            }
+
+                            if (tag === 'h1') {
+                                return '# ' + Array.from(node.childNodes).map(serializeInline).join('').trim() + '\n\n';
+                            }
+
+                            if (tag === 'h2') {
+                                return '## ' + Array.from(node.childNodes).map(serializeInline).join('').trim() + '\n\n';
+                            }
+
+                            if (tag === 'h3') {
+                                return '### ' + Array.from(node.childNodes).map(serializeInline).join('').trim() + '\n\n';
+                            }
+
+                            if (tag === 'p') {
+                                var paragraph = Array.from(node.childNodes).map(serializeInline).join('').trim();
+                                return paragraph ? paragraph + '\n\n' : '';
+                            }
+
+                            if (tag === 'ul') {
+                                var items = Array.from(node.children).map(function(child) {
+                                    return serializeBlock(child);
+                                }).join('');
+                                return items + '\n';
+                            }
+
+                            if (tag === 'li') {
+                                var marginLeft = parseFloat(node.style.marginLeft || '0');
+                                var indent = isNaN(marginLeft) ? 0 : Math.max(0, Math.round(marginLeft / 20));
+                                var content = Array.from(node.childNodes).map(serializeInline).join('').trim();
+                                return new Array(indent + 1).join('  ') + '* ' + content + '\n';
+                            }
+
+                            if (tag === 'br') {
+                                return '\n';
+                            }
+
+                            return Array.from(node.childNodes).map(serializeBlock).join('');
+                        }
+
+                        return serializeBlock(doc.body)
+                            .replace(/\n{3,}/g, '\n\n')
+                            .trim();
+                    }
+
+                    async function copyTextToClipboard(text) {
+                        if (navigator.clipboard && window.isSecureContext) {
+                            return navigator.clipboard.writeText(text);
+                        }
+
+                        var textarea = document.createElement('textarea');
+                        textarea.value = text;
+                        textarea.setAttribute('readonly', '');
+                        textarea.style.position = 'fixed';
+                        textarea.style.opacity = '0';
+                        textarea.style.left = '-9999px';
+                        document.body.appendChild(textarea);
+                        textarea.select();
+                        textarea.setSelectionRange(0, textarea.value.length);
+
+                        var copied = false;
+
+                        try {
+                            copied = document.execCommand('copy');
+                        } finally {
+                            document.body.removeChild(textarea);
+                        }
+
+                        if (!copied) {
+                            throw new Error('Copy command failed');
+                        }
+                    }
+
                     copyButton.addEventListener('click', async function() {
                         try {
-                            await navigator.clipboard.writeText(markdown);
+                            await copyTextToClipboard(htmlToMarkdown(markdown));
                             copyButton.textContent = 'Copied';
                             setTimeout(function() {
                                 copyButton.textContent = 'Copy Markdown';
