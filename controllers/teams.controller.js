@@ -237,7 +237,7 @@ exports.getReport = (request, response, next) => {
             return response.render('teamReport', {
               csrfToken: request.csrfToken(),
               email: request.session.email || '',
-                role: viewRole,
+              role: viewRole,
               team,
               userTeams,
               selectedTeamId,
@@ -255,7 +255,7 @@ exports.getReport = (request, response, next) => {
                   return response.render('teamReport', {
                     csrfToken: request.csrfToken(),
                     email: request.session.email || '',
-                      role: viewRole,
+                    role: viewRole,
                     team,
                     report: null,
                     error: 'Saved report not found for this team.',
@@ -269,7 +269,7 @@ exports.getReport = (request, response, next) => {
                 return response.render('teamReport', {
                   csrfToken: request.csrfToken(),
                   email: request.session.email || '',
-                    role: viewRole,
+                  role: viewRole,
                   team,
                   userTeams,
                   selectedTeamId,
@@ -294,7 +294,7 @@ exports.getReport = (request, response, next) => {
 exports.postReport = (request, response, next) => {
   const teamId = request.params.teamId;
   const {report_type, start_date, end_date} = request.body;
-    const viewRole = normalizeRole(request.session.role) || request.session.role || '';
+  const viewRole = normalizeRole(request.session.role) || request.session.role || '';
 
   return withTeamAccess(request, response, teamId, () => {
     return Promise.all([Team.getTeamWithMembers(teamId), getCurrentUserTeams(request)])
@@ -321,7 +321,7 @@ exports.postReport = (request, response, next) => {
             return response.status(400).render('teamReport', {
               csrfToken: request.csrfToken(),
               email: request.session.email || '',
-                role: viewRole,
+              role: viewRole,
               team,
               userTeams,
               selectedTeamId,
@@ -457,7 +457,7 @@ exports.postReport = (request, response, next) => {
                 return response.render('teamReport', {
                   csrfToken: request.csrfToken(),
                   email: request.session.email || '',
-                    role: viewRole,
+                  role: viewRole,
                   team,
                   userTeams,
                   selectedTeamId,
@@ -866,26 +866,26 @@ exports.getDetails = (request, response, next) => {
               }))
               .sort(compareUsersByNameThenEmail);
 
-        return Team.selectLast3reports(teamId)
-            .then(([reportRows]) => {
-              const viewData = {
-                csrfToken: request.csrfToken(),
-                error: error,
-                email: request.session.email || '',
-                role: viewRole,
-                teamId: teamId,
-                teamName: teamName,
-                members: members,
-                reports: reportRows || [],
-              };
+          return Team.selectLast3reports(teamId)
+              .then(([reportRows]) => {
+                const viewData = {
+                  csrfToken: request.csrfToken(),
+                  error: error,
+                  email: request.session.email || '',
+                  role: viewRole,
+                  teamId: teamId,
+                  teamName: teamName,
+                  members: members,
+                  reports: reportRows || [],
+                };
 
-              response.render('teamDetails', viewData);
-            });
-      })
-      .catch((error) => {
-        console.error('[GET /teams/details] Failed to fetch team details:', error);
-        request.session.error = 'Could not load team details. Please try again.';
-        return response.redirect('/teams/list');
-      });
+                response.render('teamDetails', viewData);
+              });
+        })
+        .catch((error) => {
+          console.error('[GET /teams/details] Failed to fetch team details:', error);
+          request.session.error = 'Could not load team details. Please try again.';
+          return response.redirect('/teams/list');
+        });
   });
 };

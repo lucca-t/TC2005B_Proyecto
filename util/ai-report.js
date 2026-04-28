@@ -4,23 +4,23 @@ const {openai} = require('@ai-sdk/openai');
 // Simple markdown to HTML converter
 function markdownToHtml(markdown) {
   let html = markdown;
-  
+
   // Headers (must be done before other replacements)
   html = html.replace(/^### (.*?)$/gm, '<h3 class="title is-5">$1</h3>');
   html = html.replace(/^## (.*?)$/gm, '<h2 class="title is-4">$1</h2>');
   html = html.replace(/^# (.*?)$/gm, '<h1 class="title is-3">$1</h1>');
-  
+
   // Bold and italic
   html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
   html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
-  
+
   // Split into paragraphs first to handle lists properly
   const lines = html.split('\n');
-  let result = [];
+  const result = [];
   let inList = false;
   let listContent = '';
-  
-  for (let line of lines) {
+
+  for (const line of lines) {
     // Check if line is already an HTML tag (header, etc)
     if (line.trim().startsWith('<h') || line.trim().startsWith('<div')) {
       if (inList) {
@@ -66,23 +66,23 @@ function markdownToHtml(markdown) {
       }
     }
   }
-  
+
   // Close any remaining list
   if (inList) {
     listContent += '</ul>';
     result.push(listContent);
   }
-  
+
   // Join and clean up
   html = result.join('\n');
-  
+
   // Remove empty paragraphs
   html = html.replace(/<p><\/p>/g, '');
   html = html.replace(/<p>\s+<\/p>/g, '');
-  
+
   // Wrap in content div with styling
   html = '<div class="content">' + html + '</div>';
-  
+
   return html;
 }
 

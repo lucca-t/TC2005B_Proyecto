@@ -660,10 +660,10 @@ exports.getReport = (request, response, next) => {
           console.log('[GET /projects/report] No reportId, showing form');
           console.log('  - startDate formatted:', formatDateForInput(project.start_date));
           console.log('  - endDate formatted:', formatDateForInput(project.end_date));
-          
+
           const startStr = formatDateForInput(project.start_date);
           const endStr = formatDateForInput(project.end_date);
-          
+
           return response.render('projectReport', {
             csrfToken: request.csrfToken(),
             email: request.session.email || '',
@@ -798,11 +798,11 @@ exports.postReport = (request, response, next) => {
           console.error('[POST /projects/report] start_date is unexpected type:', typeof project.start_date);
           startDate = new Date(project.start_date);
         }
-        
+
         console.log('[POST /projects/report] Final startDate:', startDate);
         console.log('[POST /projects/report] startDate.getTime():', startDate.getTime());
         console.log('[POST /projects/report] isNaN(startDate.getTime()):', isNaN(startDate.getTime()));
-        
+
         if (isNaN(startDate.getTime())) {
           console.error('[POST /projects/report] Error: Invalid startDate after parsing');
           console.error('  - Input was:', project.start_date);
@@ -870,33 +870,33 @@ exports.postReport = (request, response, next) => {
 
               console.log('[POST /projects/report] >>> Creating NEW report - DELETED_AT will NOT be set');
               console.log('[POST /projects/report] Generating new AI report');
-                    return generateProjectReport(
-                        project,
-                        startDate,
-                        endDate,
-                        standups,
-                    )
-                        .then((reportText) => {
-                          console.log('[POST /projects/report] AI report generated, saving to database');
-                          const standupIds = standups.map(
-                              (r) => r.standup_id,
-                          );
-                          return Reports.createProjectReport({
-                            generatedByUserId: userId,
-                            projectId,
-                            startDate: startStr,
-                            endDate: endStr,
-                            aiContent: reportText,
-                            standupIds,
-                          });
-                        })
-                        .then((created) => {
-                          console.log('[POST /projects/report] Report saved successfully:', created.report_id);
-                          return response.redirect(
-                              '/projects/report/' + projectId +
+              return generateProjectReport(
+                  project,
+                  startDate,
+                  endDate,
+                  standups,
+              )
+                  .then((reportText) => {
+                    console.log('[POST /projects/report] AI report generated, saving to database');
+                    const standupIds = standups.map(
+                        (r) => r.standup_id,
+                    );
+                    return Reports.createProjectReport({
+                      generatedByUserId: userId,
+                      projectId,
+                      startDate: startStr,
+                      endDate: endStr,
+                      aiContent: reportText,
+                      standupIds,
+                    });
+                  })
+                  .then((created) => {
+                    console.log('[POST /projects/report] Report saved successfully:', created.report_id);
+                    return response.redirect(
+                        '/projects/report/' + projectId +
                               '?reportId=' + created.report_id + '&newReport=true',
-                          );
-                        });
+                    );
+                  });
             })
             .catch((aiError) => {
               console.error('[POST /projects/report] Error during report generation:');
