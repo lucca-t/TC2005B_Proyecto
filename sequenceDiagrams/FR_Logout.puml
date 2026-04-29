@@ -1,0 +1,87 @@
+@startuml LogoutSequence
+
+actor "User" as user
+boundary "Browser" as browser
+boundary "_header.ejs" as header
+boundary "login.ejs" as view
+control "app.js" as routes
+control "login.controller.js" as controller
+entity "express-session" as session
+
+== Trigger Logout ==
+
+activate user
+user -> browser: 1. Click "Log out" link\n(in _header.ejs)
+deactivate user
+activate browser
+
+browser -> header: 2. Follow href="/logout"
+activate header
+header -> browser: 3. Navigate to /logout
+deactivate header
+
+browser -> routes: 4. GET /logout
+deactivate browser
+activate routes
+
+routes -> controller: 5. get_logout(request, response, next)
+deactivate routes
+activate controller
+
+== Destroy Session ==
+
+controller ->> session: 6. request.session.destroy(callback)
+activate session
+
+alt Session destroyed successfully
+
+    session -->> controller: 7b. callback() (no error)
+    deactivate session
+
+    controller -> browser: 8b. response.redirect('/login')
+    deactivate controller
+    activate browser
+
+else Session destroy error
+
+    session -->> controller: 7a. callback(err)
+    activate controller
+    controller -> routes: 8a. next(err)
+    deactivate controller
+    activate routes
+    routes -> browser: 9a. Render error response
+    deactivate routes
+    activate browser
+    browser -> user: 10a. Show error page
+    activate user
+    deactivate browser
+    deactivate user
+end
+
+== Redirect to Login ==
+
+browser -> routes: 9. GET /login
+activate browser
+deactivate browser
+activate routes
+
+routes -> controller: 10. get_login(request, response, next)
+deactivate routes
+activate controller
+
+controller -> controller: 11. Read request.session.error\nand request.session.email
+
+controller -> view: 12. render("login",\n{csrfToken, error, title, email})
+deactivate controller
+activate view
+
+view -> browser: 13. HTML login form
+deactivate view
+activate browser
+
+browser -> user: 14. Login page displayed
+activate user
+deactivate browser
+deactivate user
+
+@enduml
