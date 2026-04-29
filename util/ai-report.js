@@ -49,14 +49,6 @@ async function generateUserReport(user, startDate, endDate, standupData, role) {
     '  * [Collaboration consistency or isolation signals]',
   ];
 
-  if (role !== 'Member') {
-    systemPromptLines.push(
-        '',
-        '#### What feedback do you have for me as your manager?',
-        '*',
-    );
-  }
-
   const systemPrompt = systemPromptLines.join('\n');
 
   const userPrompt = [
