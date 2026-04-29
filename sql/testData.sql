@@ -46,7 +46,6 @@
 
     INSERT INTO `user` (`user_id`, `email`, `password`, `full_name`, `slack_handle`, `slack_id`, `created_at`, `deleted_at`) VALUES
     (1, 'sd@example.com', '$2b$12$GfBKWs2krI3TVUMGw75oeuXLg03ZRg1Is2TsmAvtT/YL4lozTXUje', 'sd User', '@sd', 'U1000000001', NOW(), NULL),
-    (44, 'admin', '$2b$12$GfBKWs2krI3TVUMGw75oeuXLg03ZRg1Is2TsmAvtT/YL4lozTXUje', 'Administrator', '@admin', 'U0000000000', NOW(), NULL),
     (2, 'alice.smith@example.com', '$2b$12$dummyhash...', 'Alice Smith', '@alices', 'U1000000002', '2026-04-21 20:30:00', NULL),
     (3, 'bob.johnson@example.com', '$2b$12$dummyhash...', 'Bob Johnson', '@bobj', 'U1000000003', '2026-04-21 20:30:00', NULL),
     (4, 'charlie.brown@example.com', '$2b$12$dummyhash...', 'Charlie Brown', '@charlieb', 'U1000000004', '2026-04-21 20:30:00', NULL),
@@ -305,7 +304,6 @@
 
     INSERT INTO `user_role` (`user_id`, `role_id`, `start_date`, `end_date`) VALUES
     (1, 1, '2026-04-22 02:30:00.000000', NULL),
-    (44, 1, '2026-04-22 02:30:00.000000', NULL),
     (2, 3, '2026-04-22 02:30:00.000000', NULL),
     (3, 3, '2026-04-22 02:30:00.000000', NULL),
     (4, 3, '2026-04-22 02:30:00.000000', NULL),
