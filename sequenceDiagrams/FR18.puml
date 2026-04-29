@@ -1,0 +1,106 @@
+@startuml FR26_Registrar_Reporte_Miembro_Filtrado
+skinparam style strictuml
+skinparam maxmessagesize 150
+
+actor Lead as U
+boundary "Routes" as RO
+boundary "View: daily_standup_member_form.ejs" as VF
+control "daily_standup.controller" as C
+entity "Standup.model" as SM
+entity "User.model" as UM
+database "MySQL" as BD
+
+activate U
+U -> RO: GET /daily_standup/member/add
+deactivate U
+
+activate RO
+RO -> C: get_add_member(request, response, next)
+deactivate RO
+
+activate C
+C ->> UM: getUsers()
+activate UM
+
+UM ->> BD: SELECT user_id, email, name\nFROM User\nWHERE deleted_at IS NULL\nORDER BY name ASC
+activate BD
+
+BD -->> UM: rows
+deactivate BD
+
+UM -->> C: rows
+deactivate UM
+
+C -> VF: render('daily_standup_member_form', {csrfToken, email, users, formData, errors, error, msg})
+deactivate C
+
+activate VF
+VF -> U: HTML form
+deactivate VF
+
+activate U
+U -> RO: POST /daily_standup/member/add
+deactivate U
+
+activate RO
+RO -> C: post_add_member(request, response, next)
+deactivate RO
+
+activate C
+C -> C: normalize user_id, date, did_today, do_tomorrow, blockers
+
+alt Validation errors
+    C -> VF: render form with errors
+    deactivate C
+
+    activate VF
+    VF -> U: HTML form with errors
+    deactivate VF
+else Valid data
+    C ->> SM: checkDuplicate(user_id, date)
+    activate SM
+
+    SM ->> BD: SELECT standup_id\nFROM Standup\nWHERE user_id = ? AND date = ?
+    activate BD
+
+    BD -->> SM: rows
+    deactivate BD
+
+    alt Duplicate exists
+        SM -->> C: duplicate
+        deactivate SM
+
+        C -> VF: render form with duplicate error
+        deactivate C
+
+        activate VF
+        VF -> U: HTML form with error
+        deactivate VF
+    else No duplicate
+        SM -->> C: no duplicate
+        deactivate SM
+
+        C ->> SM: save(date, did_today, do_tomorrow, blockers, user_id)
+        activate SM
+
+        SM ->> BD: INSERT INTO Standup\n(date, did_today, do_tomorrow, blockers, user_id)\nVALUES (?, ?, ?, ?, ?)
+        activate BD
+
+        BD -->> SM: result
+        deactivate BD
+
+        SM -->> C: success
+        deactivate SM
+
+        C -> RO: redirect('/daily_standup/member/history') + session.success
+        deactivate C
+
+        activate RO
+        RO -> U: redirect response
+        deactivate RO
+    end
+end
+
+deactivate U
+@enduml</content>
+<parameter name="filePath">c:\Users\capit\OneDrive\Desktop\Construccion de software\Proyecto\sequenceDiagrams\FR26_Registrar_Reporte_Miembro_Filtrado.puml

@@ -1,0 +1,104 @@
+@startuml FR27_Registrar_Reporte_Equipo_Filtrado
+skinparam style strictuml
+skinparam maxmessagesize 150
+
+actor Lead as U
+boundary "Routes" as RO
+boundary "View: team_report_form.ejs" as VF
+control "reports.controller" as C
+entity "Reports.model" as RM
+entity "Team.model" as TM
+entity "User.model" as UM
+entity "Standup.model" as SM
+database "MySQL" as BD
+
+activate U
+U -> RO: GET /reports/team/add
+deactivate U
+
+activate RO
+RO -> C: get_add_team_report(request, response, next)
+deactivate RO
+
+activate C
+C ->> TM: getTeams()
+activate TM
+
+TM ->> BD: SELECT team_id, team_name\nFROM Team\nWHERE deleted_at IS NULL\nORDER BY team_name ASC
+activate BD
+
+BD -->> TM: rows
+deactivate BD
+
+TM -->> C: rows
+deactivate TM
+
+C -> VF: render('team_report_form', {csrfToken, email, teams, formData, errors, error, msg})
+deactivate C
+
+activate VF
+VF -> U: HTML form
+deactivate VF
+
+activate U
+U -> RO: POST /reports/team/add
+deactivate U
+
+activate RO
+RO -> C: post_add_team_report(request, response, next)
+deactivate RO
+
+activate C
+C -> C: normalize team_id, date_from, date_to, filters
+
+alt Validation errors
+    C -> VF: render form with errors
+    deactivate C
+
+    activate VF
+    VF -> U: HTML form with errors
+    deactivate VF
+else Valid data
+    C ->> RM: generateTeamReport(team_id, date_from, date_to, filters)
+    activate RM
+
+    RM ->> UM: getUsersByTeam(team_id)
+    activate UM
+
+    UM ->> BD: SELECT user_id, email, name\nFROM User\nWHERE team_id = ? AND deleted_at IS NULL
+    activate BD
+
+    BD -->> UM: users
+    deactivate BD
+
+    UM -->> RM: users
+    deactivate UM
+
+    RM ->> SM: getStandupsForUsers(users, date_from, date_to)
+    activate SM
+
+    SM ->> BD: SELECT * FROM Standup\nWHERE user_id IN (?) AND date BETWEEN ? AND ?\nORDER BY date DESC, user_id
+    activate BD
+
+    BD -->> SM: standups
+    deactivate BD
+
+    SM -->> RM: standups
+    deactivate SM
+
+    RM -> RM: filter and aggregate data
+
+    RM -->> C: reportData
+    deactivate RM
+
+    C -> RO: redirect('/reports/team/view') + session.success + reportData
+    deactivate C
+
+    activate RO
+    RO -> U: redirect response
+    deactivate RO
+end
+
+deactivate U
+@enduml</content>
+<parameter name="filePath">c:\Users\capit\OneDrive\Desktop\Construccion de software\Proyecto\sequenceDiagrams\FR27_Registrar_Reporte_Equipo_Filtrado.puml
