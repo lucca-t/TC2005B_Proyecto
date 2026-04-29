@@ -3,6 +3,26 @@ const Team = require('../models/teams.model');
 const User = require('../models/users.model');
 const Standup = require('../models/standup.model');
 
+const STANDUP_TEXT_MAX_LENGTH = 65535;
+
+const isDataTooLongError = (error) => {
+  return error && (
+    error.code === 'ER_DATA_TOO_LONG' ||
+    error.errno === 1406 ||
+    error.sqlState === '22001'
+  );
+};
+
+const validateStandupTextLength = (label, value) => {
+  const normalizedValue = (value || '').trim();
+
+  if (normalizedValue.length > STANDUP_TEXT_MAX_LENGTH) {
+    return `${label} cannot exceed ${STANDUP_TEXT_MAX_LENGTH} characters.`;
+  }
+
+  return '';
+};
+
 const getCurrentUserId = async (request) => {
   const email = (request.session.email || '').trim();
 
@@ -206,6 +226,14 @@ exports.post_standup = (request, response, next) => {
   }
 
   const {did_today, do_tomorrow, blockers} = request.body;
+  const didTodayError = validateStandupTextLength('What did you do today?', did_today);
+  const doTomorrowError = validateStandupTextLength('What will you do tomorrow?', do_tomorrow);
+  const blockersError = validateStandupTextLength('Blockers', blockers);
+
+  if (didTodayError || doTomorrowError || blockersError) {
+    request.session.error = didTodayError || doTomorrowError || blockersError;
+    return response.redirect('/daily_standup');
+  }
 
   if (!did_today || !did_today.trim() || !do_tomorrow || !do_tomorrow.trim()) {
     request.session.error = 'Please fill in the required fields: What did you do today? and What will you do tomorrow?';
@@ -241,6 +269,10 @@ exports.post_standup = (request, response, next) => {
       })
       .catch((err) => {
         console.error('Error saving standup:', err);
+        if (isDataTooLongError(err)) {
+          request.session.error = `One or more standup fields are too long. Maximum allowed is ${STANDUP_TEXT_MAX_LENGTH} characters.`;
+          return response.redirect('/daily_standup');
+        }
         request.session.error = 'An error occurred while saving your activity. Please try again';
         return response.redirect('/daily_standup');
       });
@@ -429,6 +461,14 @@ exports.post_standup_edit = (request, response, next) => {
 
   const standupId = request.params.id;
   const {did_today, do_tomorrow, blockers, date} = request.body;
+  const didTodayError = validateStandupTextLength('What did you do today?', did_today);
+  const doTomorrowError = validateStandupTextLength('What will you do tomorrow?', do_tomorrow);
+  const blockersError = validateStandupTextLength('Blockers', blockers);
+
+  if (didTodayError || doTomorrowError || blockersError) {
+    request.session.error = didTodayError || doTomorrowError || blockersError;
+    return response.redirect(`/daily_standup/edit/${standupId}`);
+  }
 
   if (!did_today || !did_today.trim() || !do_tomorrow || !do_tomorrow.trim()) {
     request.session.error = 'Please fill in the required fields.';
@@ -442,6 +482,10 @@ exports.post_standup_edit = (request, response, next) => {
       })
       .catch((err) => {
         console.error('Error updating standup:', err);
+        if (isDataTooLongError(err)) {
+          request.session.error = `One or more standup fields are too long. Maximum allowed is ${STANDUP_TEXT_MAX_LENGTH} characters.`;
+          return response.redirect(`/daily_standup/edit/${standupId}`);
+        }
         request.session.error = 'Error updating record. Please try again.';
         return response.redirect(`/daily_standup/edit/${standupId}`);
       });
