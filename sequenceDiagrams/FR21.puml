@@ -1,0 +1,177 @@
+@startuml LinkRoleToUserSequence
+
+actor "User" as user
+boundary "Browser" as browser
+boundary "userRole.ejs" as view
+control "users.routes.js" as routes
+control "users.controller.js" as controller
+entity "users.model.js" as model
+database "MySQL" as db
+
+== Load Assign Role Form ==
+
+activate user
+user -> browser: 1. Click "Assign Role" for a user
+deactivate user
+activate browser
+
+browser -> routes: 2. GET /users/role/:userId
+deactivate browser
+activate routes
+
+routes -> controller: 3. get_role(request, response)
+deactivate routes
+activate controller
+
+controller ->> model: 4. async User.getAll()
+activate model
+model ->> db: 5. SELECT user_id, email, password,\nfull_name, slack_handle, slack_id\nFROM user WHERE deleted_at IS NULL
+activate db
+db -->> model: 6. User rows
+deactivate db
+model -->> controller: 7. [rows, fieldData]
+deactivate model
+
+controller -> controller: 8. Find user by userId from rows
+
+controller ->> model: 9. async User.getAllRoles()
+activate model
+model ->> db: 10. SELECT role_id, role_name\nFROM role ORDER BY role_name ASC
+activate db
+db -->> model: 11. Role rows
+deactivate db
+model -->> controller: 12. [roles, fieldData]
+deactivate model
+
+controller ->> model: 13. async User.getUserRole(userId)
+activate model
+model ->> db: 14. SELECT r.role_id, r.role_name\nFROM user_role ur\nINNER JOIN role r ON ur.role_id = r.role_id\nWHERE ur.user_id = ? AND ur.end_date IS NULL
+activate db
+db -->> model: 15. Current role row (or empty)
+deactivate db
+model -->> controller: 16. [rows, fieldData]
+deactivate model
+
+controller -> view: 17. render("userRole",\n{user, roles, currentRole, csrfToken})
+deactivate controller
+activate view
+
+view -> browser: 18. HTML form with role selector
+deactivate view
+activate browser
+
+browser -> user: 19. Form displayed with current role pre-selected
+deactivate browser
+activate user
+
+== Submit Role Assignment ==
+
+user -> browser: 20. Select role from dropdown,\nClick "Assign Role"
+deactivate user
+activate browser
+
+browser -> routes: 21. POST /users/role/:userId\n(role_id, _csrf)
+deactivate browser
+activate routes
+
+routes -> controller: 22. post_role(request, response)
+deactivate routes
+activate controller
+
+controller -> controller: 23. Validate role_id is not empty
+
+alt role_id is valid
+
+    controller ->> model: 24b. User.assignRole(userId, roleId)
+    activate model
+
+    model ->> db: 25b. UPDATE user_role\nSET end_date = CURDATE()\nWHERE user_id = ? AND end_date IS NULL
+    activate db
+    db -->> model: 26b. OK (previous role ended)
+    deactivate db
+
+    model ->> db: 27b. INSERT INTO user_role\n(user_id, role_id, start_date)\nVALUES (?, ?, CURDATE())
+    activate db
+    db -->> model: 28b. OK (new role assigned)
+    deactivate db
+
+    model -->> controller: 29b. Success
+    deactivate model
+
+    controller -> browser: 30b. redirect('/users/list')
+    activate browser
+    deactivate browser
+
+else role_id is empty or invalid
+
+    controller ->> model: 24a. async User.getAll()
+    activate model
+    model ->> db: 25a. SELECT * FROM user WHERE deleted_at IS NULL
+    activate db
+    db -->> model: 26a. User rows
+    deactivate db
+    model -->> controller: 27a. [rows]
+    deactivate model
+
+    controller ->> model: 28a. async User.getAllRoles()
+    activate model
+    model ->> db: 29a. SELECT role_id, role_name FROM role
+    activate db
+    db -->> model: 30a. Role rows
+    deactivate db
+    model -->> controller: 31a. [roles]
+    deactivate model
+
+    controller ->> model: 32a. async User.getUserRole(userId)
+    activate model
+    model ->> db: 33a. SELECT r.role_id, r.role_name\nFROM user_role ur\nINNER JOIN role r ON ur.role_id = r.role_id\nWHERE ur.user_id = ? AND ur.end_date IS NULL
+    activate db
+    db -->> model: 34a. Current role row
+    deactivate db
+    model -->> controller: 35a. [rows]
+    deactivate model
+
+    controller -> view: 36a. render("userRole",\n{user, roles, currentRole, error})
+    deactivate controller
+    activate view
+    view -> browser: 37a. Display validation error
+    deactivate view
+    activate browser
+    activate user
+    browser -> user: 38a. Show error message
+    deactivate user
+    deactivate browser
+
+end
+deactivate controller
+deactivate routes
+
+== Redirect to User List ==
+
+browser -> routes: 31. GET /users/list
+activate browser
+activate routes
+deactivate browser
+routes -> controller: 32. get_list(req, res)
+deactivate routes
+activate controller
+controller ->> model: 33. async User.getAll()
+activate model
+model ->> db: 34. SELECT user_id, email, password,\nfull_name, slack_handle, slack_id\nFROM user WHERE deleted_at IS NULL
+activate db
+db -->> model: 35. User rows
+deactivate db
+model -->> controller: 36. [rows, fieldData]
+deactivate model
+controller -> view: 37. render("userList", {users, csrfToken})
+deactivate controller
+activate view
+view -> browser: 38. HTML user list
+deactivate view
+activate browser
+activate user
+browser -> user: 39. User list displayed
+deactivate browser
+deactivate user
+
+@enduml
