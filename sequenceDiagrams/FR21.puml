@@ -1,0 +1,68 @@
+@startuml IntegrationWithSlack
+
+actor Slack as slack
+boundary "Slack Workflow" as workflow
+boundary "standup_api.routes.js" as routes
+control "standup_api.controller.js" as controller
+entity "standup.model.js" as standupModel
+database mysql as db
+
+activate slack
+slack -> workflow: POST /api/standups/slack
+deactivate slack
+
+activate workflow
+workflow -> routes: POST /slack
+deactivate workflow
+
+activate routes
+routes -> controller: post_slack_standup(request, response, next)
+deactivate routes
+
+activate controller
+controller -> controller: Validate token, source, required fields and date
+
+alt Successful case
+	controller -->> standupModel: getUserIdBySlackId(slackUserId)
+	activate standupModel
+	standupModel -->> db: execute("SELECT user_id FROM users WHERE slack_user_id = ?", [slackUserId])
+	activate db
+	db --> standupModel: Result set (user)
+	deactivate db
+	standupModel --> controller: user_id
+	deactivate standupModel
+
+	controller -->> standupModel: checkDuplicate(userId, date)
+	activate standupModel
+	standupModel -->> db: execute("SELECT standup_id FROM standups WHERE user_id = ? AND date = ?", [userId, date])
+	activate db
+	db --> standupModel: Empty result set
+	deactivate db
+	standupModel --> controller: no duplicate
+	deactivate standupModel
+
+	controller -->> standupModel: save()
+	activate standupModel
+	standupModel -->> db: execute("INSERT INTO standups (date, did_today, do_tomorrow, blockers, user_id) VALUES (?, ?, ?, ?, ?)", [date, didToday, doingTomorrow, blockers, userId])
+	activate db
+	db --> standupModel: Query OK / insertId
+	deactivate db
+	standupModel --> controller: promesa
+	deactivate standupModel
+
+	controller --> workflow: 201 Created JSON (ok: true)
+	deactivate controller
+	activate workflow
+	workflow --> slack: Standup stored in database
+	deactivate workflow
+	activate slack
+else Failure case
+	controller --> workflow: 4xx / 5xx JSON error
+	deactivate controller
+	activate workflow
+	workflow --> slack: Error response
+	deactivate workflow
+	activate slack
+end
+
+@enduml
