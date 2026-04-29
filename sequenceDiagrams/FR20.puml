@@ -1,5 +1,4 @@
 @startuml TeamMemberConsultsTeamStandups
-	autonumber
 
 	actor Member as member
 	boundary Browser as browser
@@ -61,9 +60,11 @@
 			browser-->>member: Página con historial del equipo
             deactivate browser
             activate member
+            view->browser
             deactivate member
 		else Caso Fallido (Sin Registros o Error)
 			db-->>standupModel: Empty / Error
+            activate standupModel
 			deactivate db
 			standupModel-->>controller: Promesa(reject / empty)
 			deactivate standupModel
@@ -75,14 +76,17 @@
 			browser-->>member: Página con aviso de sin registros
             deactivate browser
             activate member
+            view->browser
             deactivate member
 		end
 	else Caso Fallido (Sin Equipo Activo)
 		db-->>teamModel: Empty / Error
+        activate  teamModel
 		deactivate db
 		teamModel-->>controller: Promesa(reject / empty)
 		deactivate teamModel
 		controller->>view: response.render("standup_team_history", {error: "No active team was found for your account."})
+	    deactivate controller
 		activate view
 		view-->>browser: HTML con mensaje de equipo no encontrado
 		deactivate view
@@ -90,9 +94,8 @@
 		browser-->>member: Página con mensaje de error
         deactivate browser
         activate member
-            deactivate member
+        deactivate member
 	end
 
-	deactivate controller
 
 @enduml
