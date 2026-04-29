@@ -1,5 +1,25 @@
 const Standup = require('../models/standup.model');
 
+const STANDUP_TEXT_MAX_LENGTH = 65535;
+
+const isDataTooLongError = (error) => {
+  return error && (
+    error.code === 'ER_DATA_TOO_LONG' ||
+    error.errno === 1406 ||
+    error.sqlState === '22001'
+  );
+};
+
+const validateStandupTextLength = (label, value) => {
+  const normalizedValue = (value || '').trim();
+
+  if (normalizedValue.length > STANDUP_TEXT_MAX_LENGTH) {
+    return `${label} cannot exceed ${STANDUP_TEXT_MAX_LENGTH} characters.`;
+  }
+
+  return '';
+};
+
 const isValidDateInput = (value) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
     return false;
@@ -126,6 +146,17 @@ exports.post_slack_standup = async (request, response, next) => {
     });
   }
 
+  const didTodayError = validateStandupTextLength('standup.didToday', parsedPayload.didToday);
+  const doingTomorrowError = validateStandupTextLength('standup.doingTomorrow', parsedPayload.doingTomorrow);
+  const blockersError = validateStandupTextLength('standup.blockers', parsedPayload.blockers);
+
+  if (didTodayError || doingTomorrowError || blockersError) {
+    return response.status(400).json({
+      ok: false,
+      error: didTodayError || doingTomorrowError || blockersError,
+    });
+  }
+
   if (!isValidDateInput(parsedPayload.date)) {
     return response.status(400).json({
       ok: false,
@@ -179,6 +210,12 @@ exports.post_slack_standup = async (request, response, next) => {
     });
   } catch (err) {
     console.error('Error saving standup from API:', err);
+    if (isDataTooLongError(err)) {
+      return response.status(400).json({
+        ok: false,
+        error: `One or more standup fields are too long. Maximum allowed is ${STANDUP_TEXT_MAX_LENGTH} characters.`,
+      });
+    }
     return response.status(500).json({
       ok: false,
       error: 'Server connection error. Please try again later.',

@@ -1,0 +1,62 @@
+@startuml register_activity
+
+actor Member as member 
+boundary activity_routes as actrout 
+boundary activity_ejs as actejs
+control activity_controller as actcont
+entity activity as activity
+database mysql as mysql
+
+activate member
+member -> actrout : 1 GET /activity/new
+deactivate member
+activate actrout
+actrout -> actcont : 2 get_activity (request, response)
+deactivate actrout
+activate actcont
+actcont -> actejs : 3 response.render("activity.ejs")
+deactivate actcont
+activate actejs
+actejs -> member : 4 HTML
+deactivate actejs
+activate member
+member -> actrout : 5 POST /Activity/new
+deactivate member
+activate actrout
+actrout -> actcont : 6 post_activity(request, response)
+deactivate actrout
+activate actcont
+actcont -> activity : 7 new Actividad(request.body.que_hizo_hoy, request.body.que_hara_manana, request.body.blockers)
+activate activity
+actcont ->> activity : 8 save()
+activity ->> mysql : 9 execute("INSERT INTO Bitacora_Daily (que_hizo_hoy, que_hara_manana, blockers, correo, id_proyecto) VALUES (?, ?, ?, ?, ?)", [this.hoy, this.mañana, this.blockers])
+activate mysql
+alt#Gold #LightBlue Successful case
+    mysql --> activity : 10 Query OK
+    deactivate mysql
+    activity --> actcont : 11 promesa
+    deactivate activity
+    actcont -> actrout : 12 response.redirect("/activity/history")
+    activate actrout
+    deactivate actrout
+    deactivate actcont
+else #Pink Failure
+    activate mysql
+    mysql --> activity : 13 Query Error
+    deactivate mysql
+    activate activity
+    activity --> actcont : 14 promesa(reject)
+    deactivate activity
+    activate actcont
+    actcont -> actejs : 15 response.render("activity.ejs", {error: "No se pudo guardar la actividad"})
+    deactivate actcont
+    activate actejs
+    actejs --> member : 16 HTML con mensaje de error
+    deactivate actejs
+    activate member
+    deactivate member
+end
+
+
+@enduml
+

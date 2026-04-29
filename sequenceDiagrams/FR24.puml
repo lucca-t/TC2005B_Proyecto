@@ -1,0 +1,51 @@
+@startuml sequenceDiagram
+    autonumber
+    actor Member as member
+    boundary activity_routes as actrout
+    boundary activity_ejs as actejs
+    control activity_controller as actcont
+    entity activity as activity
+    database mysql as mysql
+
+    Note over member, mysql: Flujo de Consulta de Actividad
+
+    activate member
+    member->>actrout: GET /activity/history
+    deactivate member
+    
+    activate actrout
+    actrout->>actcont: get_history(request, response)
+    deactivate actrout
+    
+    activate actcont
+    actcont->>activity: fetchAllByUsuario(request.session.user)
+    activate activity
+    
+    activity->>mysql: execute("SELECT * FROM Bitacora_Daily WHERE correo = ?", [user_email])
+    activate mysql
+    
+    alt#Gold #LightBlue Caso Exitoso (Con Registros)
+        mysql-->>activity: Result set (Rows)
+        deactivate mysql
+        activity-->>actcont: Promesa(resultados)
+        deactivate activity
+        actcont->>actejs: response.render("history.ejs", {actividades: resultados})
+        activate actejs
+        actejs-->>member: HTML con Tabla de Resultados
+        deactivate actejs
+    else #Pink Caso Fallido (Sin Registros o Error)
+        activate mysql
+        mysql-->>activity: Empty / Error
+        deactivate mysql
+        activate activity
+        activity-->>actcont: Promesa(reject / empty)
+        deactivate activity
+        activate actcont
+        actcont->>actejs: response.render("history.ejs", {error: "Sin registros"})
+        activate actejs
+        actejs-->>member: HTML con mensaje 'Sin registros'
+        deactivate actejs
+    end
+    deactivate actcont
+
+@enduml

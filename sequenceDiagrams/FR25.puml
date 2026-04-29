@@ -1,0 +1,61 @@
+title Edit Activity - Daily Standup+
+
+actor User
+boundary Browser
+boundary Router
+participant isAuth
+control StandupController
+entity StandupModel
+database Database
+
+
+User->Browser: Navigate to /daily_standup/edit/:id
+Browser->Router: GET /daily_standup/edit/:id
+Router->isAuth: Check session
+alt Session invalid
+    isAuth-->Browser: Redirect to /users/login
+    Browser-->User: Login page
+else Session valid
+    isAuth->StandupController: get_standup_edit(req, res)
+    StandupController->StandupModel: findById(standupId)
+    StandupModel->Database: SELECT * FROM standup WHERE standup_id = ?
+    Database-->StandupModel: rows
+    alt Record not found
+        StandupModel-->StandupController: promise(empty)
+        StandupController-->Browser: Redirect to /daily_standup/history\n(session.error = 'Record not found')
+        Browser-->User: History page with error message
+    else Record found
+        StandupModel-->StandupController: promise(rows)
+        StandupController-->Browser: Render daily_standup view\n(editMode: true, standup: rows[0])
+        Browser-->User: Pre-filled edit form
+    end
+end
+
+
+User->Browser: Fill in form and submit
+Browser->Router: POST /daily_standup/edit/:id
+Router->isAuth: Check session
+alt Session invalid
+    isAuth-->Browser: Redirect to /users/login
+    Browser-->User: Login page
+else Session valid
+    isAuth->StandupController: post_standup_edit(req, res)
+    alt Required fields missing (did_today or do_tomorrow empty)
+        StandupController-->Browser: Redirect to /daily_standup/edit/:id\n(session.error = 'Please fill in the required fields.')
+        Browser-->User: Edit form with error message
+    else Fields valid
+        StandupController->StandupModel: update(standupId, date, did_today, do_tomorrow, blockers)
+        StandupModel->Database: UPDATE standup SET date=?, did_today=?,\ndo_tomorrow=?, blockers=? WHERE standup_id=?
+        alt Update successful
+            Database-->StandupModel: OK
+            StandupModel-->StandupController: resolved
+            StandupController-->Browser: Redirect to /daily_standup/history\n(session.success = 'Record updated successfully')
+            Browser-->User: History page with success message
+        else Update failed
+            Database-->StandupModel: Error
+            StandupModel-->StandupController: rejected (err)
+            StandupController-->Browser: Redirect to /daily_standup/edit/:id\n(session.error = 'Error updating record. Please try again.')
+            Browser-->User: Edit form with error message
+        end
+    end
+end

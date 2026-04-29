@@ -1,0 +1,75 @@
+@startuml CU_23_Delete_activity
+
+actor User as member
+boundary daily_standup_routes as actrout
+boundary standup_history_ejs as actejs
+control daily_standup_controller as actcont
+entity standup_model as activity
+database mysql as mysql
+
+activate member
+member  -> actrout  : 1: GET /daily_standup/history
+deactivate member
+activate actrout
+actrout -> actcont  : 2: get_standup_history(request, response, next)
+deactivate actrout
+activate actcont
+activate activity
+actcont -> activity : 3: getHistory()
+activate mysql
+activity -> mysql   : 4: SELECT s.standup_id, ... FROM Standup s INNER JOIN User u ON s.user_id = u.user_id 
+mysql   --> activity : rows
+deactivate mysql
+activity --> actcont : Promise(rows)
+deactivate activity
+actcont --> actejs  : response.render('standup_history', {standups: rows})
+activate actejs
+actejs  --> member  : HTML with records history   
+activate member
+
+member  -> actejs   : 5: Select record
+deactivate actejs
+member  -> actrout  : 6: DELETE /activities/:id
+deactivate member
+activate actrout
+actrout -> actcont  : 7: post_deleteRegister(request, response, next)
+deactivate actrout
+actcont --> actejs  : 8: show confirmation message
+activate actejs
+actejs  --> member  : ¿Confirm elimination?»
+deactivate actejs
+activate member
+member  -> actrout  : 9: confirm
+deactivate member
+activate actrout
+actrout -> actcont  : 10: post_deleteRegister(request, response, next)
+deactivate actrout
+actcont -> activity : 11: DeleteRegister(standupId)
+activate activity
+activity -> mysql   : 12: DELETE FROM standup WHERE standup_id = standupId
+deactivate activity
+activate mysql
+mysql   --> activity : rows
+deactivate mysql
+
+activate activity
+activity --> actcont : Promise(rows)
+deactivate activity
+actcont -> activity : 13: getHistory()
+activate activity
+activity -> mysql   : SELECT s.standup_id, ... FROM Standup s INNER JOIN User u ON s.user_id = u.user_id 
+deactivate activity
+activate mysql
+mysql   --> activity : rows
+deactivate mysql
+activate activity
+activity --> actcont : Promise(rows)
+deactivate activity
+actcont --> actejs  : 14: response.render('standup_history', {standups: rows})
+activate actejs
+actejs  --> member  : HTML with records history   
+deactivate actejs
+
+
+
+@enduml

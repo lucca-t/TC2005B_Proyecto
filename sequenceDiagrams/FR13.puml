@@ -1,0 +1,57 @@
+@startuml login
+
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+
+actor User as user
+boundary login_routes as loginrout
+boundary login_ejs as loginejs
+control login_controller as logincont
+entity users_model as usermodel
+database mysql as mysql
+
+user -> loginrout : 1 GET /login
+activate loginrout
+loginrout -> logincont : 2 get_login(req, res)
+activate logincont
+logincont -> loginejs : 3 res.render("login", {data})
+activate loginejs
+loginejs -->> user : 4 HTML Response
+deactivate loginejs
+deactivate logincont
+deactivate loginrout
+
+user -> loginrout : 5 POST /login
+activate loginrout
+loginrout -> logincont : 6 post_login(req, res)
+activate logincont
+
+logincont ->> usermodel : 7 User.fetchOne(email)
+activate usermodel
+usermodel ->> mysql : 8 execute("SELECT...")
+activate mysql
+mysql -->> usermodel : 9 Query Result
+deactivate mysql
+usermodel -->> logincont : 10 resolve(userData)
+deactivate usermodel
+
+alt  User not found
+    logincont -> logincont : 11A Set session error
+    logincont -> loginrout : 12A res.redirect("/login")
+else User found
+    logincont -> logincont : 11 bcrypt.compare(pass, hash)
+    
+   alt Password mismatch
+        logincont -> logincont : 12A Set session error
+        logincont -> loginrout : 13A res.redirect("/login")
+    else Password match
+        logincont -> logincont : 12 Success: Set session variables
+        logincont ->> logincont : 13 req.session.save()
+        logincont -> loginrout : 14 res.redirect("/homepage")
+    end
+end
+
+deactivate logincont
+deactivate loginrout
+
+@enduml
